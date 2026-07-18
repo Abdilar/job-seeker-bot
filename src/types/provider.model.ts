@@ -1,0 +1,10 @@
+export type Provider =
+  | "linked_in"
+  | "greenhouse"
+  | "indeed"
+  | "seek"
+  | "workday"
+  | "lever"
+  | "job_vision"
+  | "iran_talent"
+  | "job_in_ja"

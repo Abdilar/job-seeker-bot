@@ -17,7 +17,10 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
+    "date-fns-jalali": "^4.4.0-0",
     "dotenv": "^17.4.2",
-    "grammy": "^1.44.0"
+    "grammy": "^1.44.0",
+    "nanoid": "^6.0.0",
+    "playwright": "^1.61.1"
   }
 }
