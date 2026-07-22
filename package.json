@@ -12,15 +12,18 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@prisma/adapter-pg": "^7.9.0",
     "@types/node": "^26.1.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "typescript": "5.9"
   },
   "dependencies": {
+    "@prisma/client": "^7.8.0",
     "date-fns-jalali": "^4.4.0-0",
     "dotenv": "^17.4.2",
     "grammy": "^1.44.0",
     "nanoid": "^6.0.0",
-    "playwright": "^1.61.1"
+    "playwright": "^1.61.1",
+    "prisma": "^7.8.0"
   }
 }

@@ -1,15 +1,16 @@
 import { ICompany } from "./company.model"
+import { EContractType } from "./contract.model"
 import { ILocation } from "./location.model"
-import { Provider } from "./provider.model"
+import { EProvider } from "./provider.model"
 
 export interface IJob {
   id: string
   title: string
-  contractType: string
+  url?: string
+  contractType: EContractType 
   company: ICompany
   location: ILocation
-  url?: string
   salary?: string
   postedAt?: string
-  provider: Provider
+  provider: EProvider
 }
