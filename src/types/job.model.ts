@@ -6,7 +6,7 @@ import { EProvider } from "./provider.model"
 export interface IJob {
   id: string
   title: string
-  url?: string
+  url: string
   contractType: EContractType 
   company: ICompany
   location: ILocation

@@ -1,11 +1,10 @@
 import { Job, Prisma } from "@prisma/client";
+import { IJob } from "../../types/job.model";
 
 export interface IJobRepository {
-  create(data: Prisma.JobCreateInput): Promise<Job>;
+  create(data: IJob): Promise<Job>;
 
-  createMany(data: Array<Prisma.JobCreateInput>): Promise<Job[]>;
-
-  update(id: string, data: Prisma.JobUpdateInput): Promise<Job>;
+  createMany(data: Array<IJob>): Promise<Job[]>;
 
   delete(id: string): Promise<Job>;
 

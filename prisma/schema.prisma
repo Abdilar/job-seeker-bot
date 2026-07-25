@@ -34,14 +34,14 @@ model Job {
   companyId    String
   company      Company   @relation(fields: [companyId], references: [id])
   locationId   String
-  Location     Location  @relation(fields: [locationId], references: [id])
+  location     Location  @relation(fields: [locationId], references: [id])
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 }
 
 model Company {
   id          String  @id @default(cuid())
-  fullName    String
+  fullName    String  @unique
   persianName String?
   englishName String?
   jobs        Job[]
@@ -50,7 +50,7 @@ model Company {
 model Location {
   id       String  @id @default(cuid())
   country  String
-  province String?
-  city     String?
+  province String
   jobs     Job[]
+  @@unique([country, province])
 }
