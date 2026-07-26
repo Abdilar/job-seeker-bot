@@ -1,5 +1,4 @@
-import { Job } from "@prisma/client";
-import { IJob } from "../../types/job.model";
+import { ICrawledJob, IJob } from "../../types";
 
 export type SaveJobsResultType = {
   total: number;
@@ -8,7 +7,7 @@ export type SaveJobsResultType = {
 };
 
 export interface IJobService {
-  isValid(data: IJob): boolean;
-  save(data: IJob): Promise<Job>;
-  saveAll(data: Array<IJob>): Promise<SaveJobsResultType>;
+  isValid(data: ICrawledJob): boolean;
+  save(data: ICrawledJob): Promise<IJob>;
+  saveAll(data: Array<ICrawledJob>): Promise<SaveJobsResultType>;
 }

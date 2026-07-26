@@ -1,12 +1,11 @@
-import { Job } from "@prisma/client";
-import { IJob } from "../../types/job.model";
+import { ICrawledJob, IJob } from "../../types";
 import { IJobService, SaveJobsResultType } from "./job.model";
 import { IJobRepository } from "../../repositories/job";
 
 export class JobService implements IJobService {
   constructor(private readonly repository: IJobRepository) {}
 
-  async save(data: IJob): Promise<Job> {
+  async save(data: ICrawledJob): Promise<IJob> {
     try {
       this.validate(data);
       return this.repository.create(data);
@@ -15,7 +14,7 @@ export class JobService implements IJobService {
     }
   }
 
-  async saveAll(data: Array<IJob>): Promise<SaveJobsResultType> {
+  async saveAll(data: Array<ICrawledJob>): Promise<SaveJobsResultType> {
     const result: SaveJobsResultType = {
       total: data.length,
       saved: 0,
@@ -35,7 +34,7 @@ export class JobService implements IJobService {
     return result
   }
 
-  isValid(data: IJob): boolean {
+  isValid(data: ICrawledJob): boolean {
     try {
       this.validate(data);
       return true;
@@ -44,7 +43,7 @@ export class JobService implements IJobService {
     }
   }
 
-  private validate(data: IJob): void {
+  private validate(data: ICrawledJob): void {
     if (!data.title) {
       throw new Error("The title is required!");
     }
@@ -53,7 +52,7 @@ export class JobService implements IJobService {
       throw new Error("The contract type is required!");
     }
 
-    if (!data.company.full_name) {
+    if (!data.company.fullName) {
       throw new Error("The company is required!");
     }
 

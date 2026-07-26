@@ -1,5 +1,5 @@
 import { Company, Job, Location } from "@prisma/client";
-import { ICrawledJob, IJob } from "../../types/job.model";
+import { ICrawledJob, IJob } from "../../types";
 
 export type PrismaJobType = Job & {
   company: Company
