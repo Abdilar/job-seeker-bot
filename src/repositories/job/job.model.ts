@@ -1,18 +1,23 @@
-import { Job, Prisma } from "@prisma/client";
-import { IJob } from "../../types/job.model";
+import { Company, Job, Location } from "@prisma/client";
+import { ICrawledJob, IJob } from "../../types/job.model";
+
+export type PrismaJobType = Job & {
+  company: Company
+  location: Location
+}
 
 export interface IJobRepository {
-  create(data: IJob): Promise<Job>;
+  create(data: ICrawledJob): Promise<IJob>;
 
-  createMany(data: Array<IJob>): Promise<Job[]>;
+  createMany(data: Array<ICrawledJob>): Promise<IJob[]>;
 
-  delete(id: string): Promise<Job>;
+  delete(id: string): Promise<IJob>;
 
-  findById(id: string): Promise<Job | null>;
+  findById(id: string): Promise<IJob | null>;
 
-  findByUrl(url: string): Promise<Job | null>;
+  findByUrl(url: string): Promise<IJob | null>;
 
-  findAll(): Promise<Job[]>;
+  findAll(): Promise<IJob[]>;
 
   exists(url: string): Promise<boolean>;
 
