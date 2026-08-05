@@ -1,4 +1,4 @@
 export enum EContractType {
-  FULL_TIME = 'full_name',
+  FULL_TIME = 'full_time',
   PART_TIME = 'part_time'
 }
