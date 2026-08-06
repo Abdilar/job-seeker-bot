@@ -8,7 +8,7 @@ export class JobParser implements IJobParser {
       case EProvider.JOB_IN_JA:
         return new JobInJaParser()
       default:
-        break;
+        throw new Error(`Unsupported provider: ${provider}`)
     }
   }
 }
