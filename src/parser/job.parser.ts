@@ -1,8 +1,15 @@
 import { Locator } from "playwright";
-import { IJobParserStrategy } from "./job.model";
+import { IJobParser, IJobParserStrategy } from "./job.model";
 
-export class JobParser implements IJobParserStrategy {
+export class JobParser implements IJobParser {
   constructor(private parser: IJobParserStrategy) {}
+
+  setParser(parser: IJobParserStrategy) {
+    if (!parser) {
+      throw new Error('The parser is invalid!')
+    }
+    this.parser = parser
+  }
 
   async parse(content: Locator) {
     if (!this.parser) {
