@@ -1,9 +1,5 @@
 import { Locator } from "playwright";
-import { EProvider, ICrawledJob } from "../types";
-
-export interface IJobParser {
-  create(type: EProvider): IBaseJobParser | undefined
-}
+import { ICrawledJob } from "../types";
 
 export interface IBaseJobParser {
   parse(content: Locator): Promise<ICrawledJob>
