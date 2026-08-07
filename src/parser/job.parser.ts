@@ -1,8 +1,8 @@
 import { Locator } from "playwright";
-import { IBaseJobParser } from "./job.model";
+import { IJobParserStrategy } from "./job.model";
 
-export class JobParser implements IBaseJobParser {
-  constructor(private parser: IBaseJobParser) {}
+export class JobParser implements IJobParserStrategy {
+  constructor(private parser: IJobParserStrategy) {}
 
   async parse(content: Locator) {
     if (!this.parser) {

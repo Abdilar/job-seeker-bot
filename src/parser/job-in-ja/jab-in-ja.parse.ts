@@ -3,9 +3,9 @@ import { EProvider, ICompany, ICrawledJob, ILocation } from "../../types";
 import { convertDaysAgoToJalaliDate, convertPersianContractTypeToEContractType, toEnglishDigits } from "../../utilities";
 import { TODAY } from "../../constants";
 import { LOCATION_COUNTRY } from "./job-in-ja.constant";
-import { IBaseJobParser } from "../job.model";
+import { IJobParserStrategy } from "../job.model";
 
-export class JobInJaParser implements IBaseJobParser {
+export class JobInJaParser implements IJobParserStrategy {
   async parse(content: Locator): Promise<ICrawledJob> {
     const url = await content
       .locator(".c-jobListView__titleLink")
