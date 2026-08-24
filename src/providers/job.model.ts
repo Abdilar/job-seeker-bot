@@ -1,10 +1,14 @@
-import { Page } from "playwright";
+// import { Page } from "playwright";
 // import { ICrawledJob } from "../types";
 
-export type InitializeReturnType = {
-  page: Page
-}
-export interface IJobProvider {
-  initialize(): Promise<InitializeReturnType>
+// export type InitializeReturnType = {
+//   page: Page
+// }
+// export interface IJobProvider {
+//   initialize(): Promise<InitializeReturnType>
   // getJobs(): Promise<ICrawledJob[]>
+// }
+
+export interface IJobProvider {
+
 }

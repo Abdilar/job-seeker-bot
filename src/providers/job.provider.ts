@@ -1,14 +1,18 @@
-import { Browser, chromium } from "playwright";
-import { IJobProvider, InitializeReturnType } from "./job.model";
+import { Browser, chromium, Page } from "playwright";
+import { IJobProvider } from "./job.model";
 
-abstract class JobProvider implements IJobProvider {
+export abstract class JobProvider {
+  protected abstract createProvider(page: Page): IJobProvider
   protected browser?: Browser;
 
-  protected async initialize(): Promise<InitializeReturnType> {
+  protected async initialize(): Promise<Page> {
     this.browser = await chromium.launch({ headless: false });
     const page = await this.browser.newPage();
 
-    return Promise.resolve({ page });
+    const provider = this.createProvider(page)
+    const jobs = await provider.getJobs()
+
+    return Promise.resolve(jobs);
   }
 
   protected async closeBrowser(): Promise<void> {
