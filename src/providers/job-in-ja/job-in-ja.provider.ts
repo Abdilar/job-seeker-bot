@@ -69,8 +69,10 @@ export class JobInJaProvider extends JobProvider {
     const jobs: ICrawledJob[] = [];
 
     for (let index = 0; index < this.lastPage; index++) {
+      console.info(`Jobinja Provider: Fetching the page of ${index + 1}`)
       this.fetchJobs().then(async (items) => {
         jobs.push(...items);
+        console.info(`Jobinja Provider: Fetch has been done.`)
         await this.goNextPage();
       });
     }
