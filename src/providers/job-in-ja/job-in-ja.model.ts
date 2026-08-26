@@ -17,7 +17,3 @@ export interface IJobInJaJob {
   location: ILocation
   company: ICompany
 }
-
-export interface IJobInJaProvider {
-
-}

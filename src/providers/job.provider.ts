@@ -1,11 +1,11 @@
 import { Browser, chromium, Page } from "playwright";
 import { IJobProvider } from "./job.model";
 
-export abstract class JobProvider {
-  protected abstract createProvider(page: Page): IJobProvider
+export abstract class JobProvider implements IJobProvider {
+  protected abstract createProvider(page: Page): Promise<IJobProvider>
   protected browser?: Browser;
 
-  protected async saveJobs(): Promise<Page> {
+  async saveJobs(): Promise<Page> {
     this.browser = await chromium.launch({ headless: false });
     const page = await this.browser.newPage();
 
@@ -15,7 +15,7 @@ export abstract class JobProvider {
     return Promise.resolve(jobs);
   }
 
-  protected async closeBrowser(): Promise<void> {
+  async closeBrowser(): Promise<void> {
     if (this.browser) {
       await this.browser.close()
     }

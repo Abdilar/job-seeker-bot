@@ -24,7 +24,7 @@ export class JobInJaProvider extends JobProvider {
     return provider;
   }
 
-  async initialize(): Promise<void> {
+  private async initialize(): Promise<void> {
     await this.page.goto(JOB_IN_JA_URL, { waitUntil: WAIT_UNTIL });
     this.mainElement = await this.getElement(MAIN_ELEMENT_SELECTOR);
 
