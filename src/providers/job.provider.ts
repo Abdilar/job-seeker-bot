@@ -5,7 +5,7 @@ export abstract class JobProvider {
   protected abstract createProvider(page: Page): IJobProvider
   protected browser?: Browser;
 
-  protected async initialize(): Promise<Page> {
+  protected async saveJobs(): Promise<Page> {
     this.browser = await chromium.launch({ headless: false });
     const page = await this.browser.newPage();
 
