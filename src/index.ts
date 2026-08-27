@@ -1,26 +1,39 @@
 
 import { Bot } from "grammy"
 import dotenv from "dotenv"
-import {start} from './providers/job-in-ja.provider'
+// import {start} from './providers/job-in-ja.provider'
 import { IJob } from "./types/job.model"
 import {prisma} from './database/prisma'
 import { EProvider } from "./types/provider.model"
+import { JobInJaCreator } from "./providers"
 
 dotenv.config()
 
 console.log(process.env.DATABASE_URL)
 
-async function testDB() {
-  const company = await prisma.company.create({
-    data: {
-      fullName: EProvider.JOB_IN_JA
-    }
-  })
-
-  console.log({company})
+async function main() {
+  try {
+    const provider = new JobInJaCreator()
+    const jobs = await provider.crawlJobs()
+    console.log({jobs})
+  } catch (error) {
+    console.error('Error: ' + error)
+  }
 }
 
-testDB().catch(console.error).finally(() => prisma.$disconnect())
+main()
+
+// async function testDB() {
+//   const company = await prisma.company.create({
+//     data: {
+//       fullName: EProvider.JOB_IN_JA
+//     }
+//   })
+
+//   console.log({company})
+// }
+
+// testDB().catch(console.error).finally(() => prisma.$disconnect())
 
 // const botToken = process.env.BOT_TOKEN
 
