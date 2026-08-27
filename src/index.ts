@@ -1,27 +1,31 @@
+import { Bot } from "grammy";
+import dotenv from "dotenv";
+import { IJob } from "./types/job.model";
+import { prisma } from "./database/prisma";
+import { EProvider } from "./types/provider.model";
+import { JobInJaCreator } from "./providers";
+import fs from "node:fs";
 
-import { Bot } from "grammy"
-import dotenv from "dotenv"
-// import {start} from './providers/job-in-ja.provider'
-import { IJob } from "./types/job.model"
-import {prisma} from './database/prisma'
-import { EProvider } from "./types/provider.model"
-import { JobInJaCreator } from "./providers"
+dotenv.config();
 
-dotenv.config()
-
-console.log(process.env.DATABASE_URL)
+console.log(process.env.DATABASE_URL);
 
 async function main() {
   try {
-    const provider = new JobInJaCreator()
-    const jobs = await provider.crawlJobs()
-    console.log({jobs})
+    const provider = new JobInJaCreator();
+    const jobs = await provider.crawlJobs();
+    provider.closeBrowser()
+    fs.writeFile("./crawled-data/jobinja.json", JSON.stringify(jobs), (err) => {
+      if (err) {
+        console.error(err);
+      }
+    });
   } catch (error) {
-    console.error('Error: ' + error)
+    console.error("Error: " + error);
   }
 }
 
-main()
+main();
 
 // async function testDB() {
 //   const company = await prisma.company.create({
@@ -77,6 +81,6 @@ main()
 //     }
 //     lines.push("")
 //   })
-  
+
 //   return lines.join("\n")
 // }

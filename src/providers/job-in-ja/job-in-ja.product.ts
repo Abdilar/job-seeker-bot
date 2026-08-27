@@ -25,24 +25,26 @@ export class JobInJaProduct implements IJobProvider {
 
   private async getElement(selector: string): Promise<Locator> {
     const element = this.page.locator(selector);
-    await element.waitFor({ state: "visible" });
+    // await element.waitFor({ state: "visible" });
     return element;
   }
 
   private async getLastPage() {
     const paginationElements = await this.getElement(
-      ".js-jobSearchPaginator ul > li",
+      "#js-jobSearchPaginator ul > li",
     );
     const paginationElementsTotal = await paginationElements.count();
-
+    console.log({paginationElementsTotal})
     if (!paginationElementsTotal) {
       return 1;
     }
 
     const lastPageFa = await paginationElements
-      .nth(paginationElementsTotal - 1)
+      .nth(paginationElementsTotal - 2)
       .locator("a")
       .textContent();
+
+      console.log({lastPageFa})
 
     return Number(toEnglishDigits(lastPageFa ?? "1")) || 1;
   }
@@ -64,7 +66,7 @@ export class JobInJaProduct implements IJobProvider {
       console.info(`Jobinja Provider: Fetching page "${page}"`);
       const items = await this.fetchJobs();
       jobs.push(...items);
-      console.info(`Jobinja Provider: Fetch has been done.`);
+      console.info(`Jobinja Provider: Fetch has been done.`, {page, lastPage: this.lastPage});
 
       if (page <= this.lastPage) {
         await this.goNextPage();
