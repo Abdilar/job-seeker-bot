@@ -3,28 +3,20 @@ import { WAIT_UNTIL } from "../../constants";
 import { JOB_IN_JA_URL, MAIN_ELEMENT_SELECTOR } from "./job-in-ja.constant";
 import { toEnglishDigits } from "../../utilities";
 import { IJobProvider } from "../job.model";
-import { JobProvider } from "..";
 import { ICrawledJob } from "../../types";
-import { JobInJaParser, JobParser } from "../../parser";
+import { JobParser } from "../../parser";
 
-export class JobInJaProvider extends JobProvider {
+export class JobInJaProduct implements IJobProvider {
   private lastPage: number = 1;
   private currentPage: number = 1;
   private mainElement?: Locator;
 
-  private constructor(
+  constructor(
     private readonly page: Page,
-  ) {
-    super();
-  }
+    private readonly parser: JobParser,
+  ) {}
 
-  protected async createProvider(page: Page): Promise<IJobProvider> {
-    const provider = new JobInJaProvider(page);
-    await provider.initialize();
-    return provider;
-  }
-
-  private async initialize(): Promise<void> {
+  async initialize(): Promise<void> {
     await this.page.goto(JOB_IN_JA_URL, { waitUntil: WAIT_UNTIL });
     this.mainElement = await this.getElement(MAIN_ELEMENT_SELECTOR);
 
@@ -55,7 +47,7 @@ export class JobInJaProvider extends JobProvider {
     return Number(toEnglishDigits(lastPageFa ?? "1")) || 1;
   }
 
-  async goNextPage() {
+  private async goNextPage() {
     if (this.currentPage < this.lastPage) {
       this.currentPage++;
       await this.page.goto(`${JOB_IN_JA_URL}&page=${this.currentPage}`, {
@@ -68,16 +60,18 @@ export class JobInJaProvider extends JobProvider {
   async getJobs(): Promise<ICrawledJob[]> {
     const jobs: ICrawledJob[] = [];
 
-    for (let index = 0; index < this.lastPage; index++) {
-      console.info(`Jobinja Provider: Fetching the page of ${index + 1}`)
-      this.fetchJobs().then(async (items) => {
-        jobs.push(...items);
-        console.info(`Jobinja Provider: Fetch has been done.`)
+    for (let page = 1; page <= this.lastPage; page++) {
+      console.info(`Jobinja Provider: Fetching page "${page}"`);
+      const items = await this.fetchJobs();
+      jobs.push(...items);
+      console.info(`Jobinja Provider: Fetch has been done.`);
+
+      if (page <= this.lastPage) {
         await this.goNextPage();
-      });
+      }
     }
 
-    return Promise.resolve(jobs)
+    return jobs;
   }
 
   private async fetchJobs(): Promise<ICrawledJob[]> {
@@ -92,11 +86,8 @@ export class JobInJaProvider extends JobProvider {
     }
     const jobs: Array<ICrawledJob> = [];
 
-    const jobInJaParser = new JobInJaParser();
-    const jobParser = new JobParser(jobInJaParser);
-
     for (let index = 0; index < jobCount; index++) {
-      const job = await jobParser.parse(jobElements.nth(index));
+      const job = await this.parser.parse(jobElements.nth(index));
       if (!job) {
         console.error(
           `Couldn't parse a job: ${jobElements.nth((index + 1) * this.lastPage)}`,
