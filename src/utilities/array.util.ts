@@ -1,4 +1,4 @@
-export function toChunks<T>(items: T[], size: number): T[][] {
+export function chunk<T>(items: T[], size: number): T[][] {
   if (size <= 0) {
     throw new Error("Chunk size must be greater than zero");
   }
