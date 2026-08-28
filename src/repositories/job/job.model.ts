@@ -9,7 +9,7 @@ export type PrismaJobType = Job & {
 export interface IJobRepository {
   create(data: ICrawledJob): Promise<IJob>;
 
-  createMany(data: Array<ICrawledJob>): Promise<IJob[]>;
+  createMany(data: Array<ICrawledJob>): Promise<void>;
 
   delete(id: string): Promise<IJob>;
 

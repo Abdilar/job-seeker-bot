@@ -16,7 +16,7 @@ export class JobService implements IJobService {
 
   async saveAll(data: Array<ICrawledJob>): Promise<SaveJobsResultType> {
     const validJobs = data.filter(item => this.isValid(item))
-    this.repository.createMany(validJobs)
+    await this.repository.createMany(validJobs)
 
     const result: SaveJobsResultType = {
       total: data.length,

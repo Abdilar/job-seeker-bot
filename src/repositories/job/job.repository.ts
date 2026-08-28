@@ -7,6 +7,7 @@ import {
   ICrawledJob,
   EContractType,
 } from "../../types";
+import { chunk } from "../../utilities";
 
 const prismaProviderMap: Record<EDomainProvider, EPrismaProvider> = {
   [EDomainProvider.JOB_IN_JA]: EPrismaProvider.JOB_IN_JA,
@@ -111,10 +112,12 @@ export class JobRepository implements IJobRepository {
     return this.convertPrismaJobToIJob(result);
   }
 
-  async createMany(data: Array<ICrawledJob>): Promise<IJob[]> {
-    const result = await prisma.$transaction(
-      data.map((job) => {
-        return prisma.job.upsert({
+  async createMany(data: Array<ICrawledJob>): Promise<void> {
+    const chunks = chunk(data, 100);
+
+    for (const chunk of chunks) {
+      const prismaData = chunk.map((job) =>
+        prisma.job.upsert({
           where: { url: job.url },
           create: this.convertICrawledJobToJobCreateInput(job),
           update: {
@@ -127,15 +130,18 @@ export class JobRepository implements IJobRepository {
             company: true,
             location: true,
           },
-        });
-      }),
-    );
+        }),
+      );
 
-    return new Promise((resolve) => {
-      const output = result.map((job) => this.convertPrismaJobToIJob(job));
+      await prisma.$transaction(prismaData);
+    }
+    // const result = await prisma.$transaction(data.map((job) => {}));
 
-      resolve(output);
-    });
+    // return new Promise((resolve) => {
+    //   const output = result.map((job) => this.convertPrismaJobToIJob(job));
+
+    //   resolve(output);
+    // });
   }
 
   async delete(id: string): Promise<IJob> {
