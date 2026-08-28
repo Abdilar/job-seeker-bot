@@ -15,20 +15,13 @@ export class JobService implements IJobService {
   }
 
   async saveAll(data: Array<ICrawledJob>): Promise<SaveJobsResultType> {
+    const validJobs = data.filter(item => this.isValid(item))
+    this.repository.createMany(validJobs)
+
     const result: SaveJobsResultType = {
       total: data.length,
-      saved: 0,
-      failed: 0
-    }
-
-    for(const job of data) {
-      try {
-        await this.save(job);
-        result.saved += 1;
-      } catch (error) {
-        result.failed += 1
-        console.error(`Failed to save job: ${job.url}`, error)
-      }
+      saved: validJobs.length,
+      failed: data.length -  validJobs.length
     }
 
     return result
