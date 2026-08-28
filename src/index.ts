@@ -5,6 +5,8 @@ import { prisma } from "./database/prisma";
 import { EProvider } from "./types/provider.model";
 import { JobInJaCreator } from "./providers";
 import fs from "node:fs";
+import { JobService } from "./services/job";
+import { JobRepository } from "./repositories/job";
 
 dotenv.config();
 
@@ -14,12 +16,18 @@ async function main() {
   try {
     const provider = new JobInJaCreator();
     const jobs = await provider.crawlJobs();
+    console.log('Provider: fetched jobs...')
     provider.closeBrowser()
     fs.writeFile("./crawled-data/jobinja.json", JSON.stringify(jobs), (err) => {
       if (err) {
         console.error(err);
       }
     });
+
+    const repository = new JobRepository()
+    const jobService = new JobService(repository)
+    await jobService.saveAll(jobs)
+    console.log('Service: service finished...')
   } catch (error) {
     console.error("Error: " + error);
   }
