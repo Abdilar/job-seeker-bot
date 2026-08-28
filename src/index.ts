@@ -16,18 +16,20 @@ async function main() {
   try {
     const provider = new JobInJaCreator();
     const jobs = await provider.crawlJobs();
-    console.log('Provider: fetched jobs...')
-    provider.closeBrowser()
+    console.log("Provider: fetched jobs...");
+    provider.closeBrowser();
     fs.writeFile("./crawled-data/jobinja.json", JSON.stringify(jobs), (err) => {
       if (err) {
         console.error(err);
       }
     });
 
-    const repository = new JobRepository()
-    const jobService = new JobService(repository)
-    await jobService.saveAll(jobs)
-    console.log('Service: service finished...')
+    const repository = new JobRepository();
+    const jobService = new JobService(repository);
+    const beforeSave = await repository.count();
+    await jobService.saveAll(jobs);
+    const afterSave = await repository.count();
+    console.log("Service: jobs saved 🎉", { beforeSave, afterSave });
   } catch (error) {
     console.error("Error: " + error);
   }
