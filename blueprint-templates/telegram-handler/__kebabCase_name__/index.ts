@@ -1,1 +1,1 @@
-export { {{pascalCase name}} } from './{{kebabCase name}}.handler'
+export { {{pascalCase name}}Handler } from './{{kebabCase name}}.handler'
