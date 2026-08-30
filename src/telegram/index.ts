@@ -1,5 +1,6 @@
 import { Bot } from "grammy";
 import { ITelegramBot } from "./telegram.model";
+import { StartHandler } from "./handlers";
 
 export class TelegramBot implements ITelegramBot {
   private readonly bot: Bot;
@@ -7,13 +8,13 @@ export class TelegramBot implements ITelegramBot {
   constructor(token: string) {
     this.bot = new Bot(token);
 
-    this.startHandler();
+    this.registerHandler();
   }
 
-  private startHandler() {
-    this.bot.command("start", async (context) => {
-      await context.reply("به ربات کاریابی خوش آمدید! 👋");
-    });
+  private registerHandler(): void {
+    const startHandler = new StartHandler()
+
+    this.bot.command('start', context => startHandler.handle(context))
   }
 
   start() {
