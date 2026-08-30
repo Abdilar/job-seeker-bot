@@ -10,4 +10,6 @@ export interface IJobService {
   isValid(data: ICrawledJob): boolean;
   save(data: ICrawledJob): Promise<IJob>;
   saveAll(data: Array<ICrawledJob>): Promise<SaveJobsResultType>;
+  getJobs(page: number, limit: number): Promise<IJob[]>
+  count(): Promise<number>
 }
