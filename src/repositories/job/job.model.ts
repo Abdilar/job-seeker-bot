@@ -8,18 +8,12 @@ export type PrismaJobType = Job & {
 
 export interface IJobRepository {
   create(data: ICrawledJob): Promise<IJob>;
-
   createMany(data: Array<ICrawledJob>): Promise<void>;
-
   delete(id: string): Promise<IJob>;
-
   findById(id: string): Promise<IJob | null>;
-
   findByUrl(url: string): Promise<IJob | null>;
-
   findAll(): Promise<IJob[]>;
-
+  findPaginated(page: number, limit: number): Promise<IJob[]>
   exists(url: string): Promise<boolean>;
-
   count(): Promise<number>;
 }
