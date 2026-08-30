@@ -27,6 +27,10 @@ export class JobService implements IJobService {
     return result
   }
 
+  async getJobs(page: number, limit: number): Promise<IJob[]> {
+    return await this.repository.findPaginated(page, limit)
+  }
+
   isValid(data: ICrawledJob): boolean {
     try {
       this.validate(data);
