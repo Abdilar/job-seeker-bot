@@ -1,1 +1,1 @@
-export { Job } from './job.handler'
+export { JobHandler } from './job.handler'

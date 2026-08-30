@@ -1,1 +1,2 @@
-export * from './job.service'
+export * from "./job.service";
+export { IJobService } from "./job.model";

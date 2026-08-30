@@ -24,8 +24,8 @@ async function main() {
     //   }
     // });
 
-    // const repository = new JobRepository();
-    // const jobService = new JobService(repository);
+    const repository = new JobRepository();
+    const jobService = new JobService(repository);
     // const beforeSave = await repository.count();
     // await jobService.saveAll(jobs);
     // const afterSave = await repository.count();
@@ -37,7 +37,7 @@ async function main() {
       throw new Error('TELEGRAM_BOT_TOKEN is not defined!')
     }
 
-    const telegramBot = new TelegramBot(telegramBotToken)
+    const telegramBot = new TelegramBot(telegramBotToken, jobService)
     telegramBot.start()
 
   } catch (error) {
