@@ -67,4 +67,8 @@ export class JobService implements IJobService {
       throw new Error(`The url of job is required: ${error}`);
     }
   }
+
+  count(): Promise<number> {
+    return this.repository.count()
+  }
 }
