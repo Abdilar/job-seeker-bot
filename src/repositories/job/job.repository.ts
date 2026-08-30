@@ -187,6 +187,24 @@ export class JobRepository implements IJobRepository {
     });
   }
 
+  async findPaginated(page: number, limit: number): Promise<IJob[]> {
+    const offset = (page - 1) * limit
+    const result = await prisma.job.findMany({
+      skip: offset,
+      take: limit,
+      orderBy: {postedAt: "desc"},
+      include: {
+        company: true,
+        location: true
+      }
+    })
+
+    return new Promise((resolve) => {
+      const jobs = result.map(job => this.convertPrismaJobToIJob(job))
+      resolve(jobs)
+    })
+  }
+
   async exists(url: string): Promise<boolean> {
     const job = await prisma.job.findUnique({
       where: { url },
