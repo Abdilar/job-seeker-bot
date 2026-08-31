@@ -1,0 +1,1 @@
+export const PAGINATION_KEYBOARD_PREFIX = 'شغل'

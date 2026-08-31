@@ -6,7 +6,7 @@ export class PaginationKeyboard implements IPaginationKeyboard {
     const keyboard = new InlineKeyboard()
 
     if (page > 1) {
-      keyboard.text('⬅️ قبلی', `${prefix}:${page - 1}`)
+      keyboard.text('قبلی ⬅️', `${prefix}:${page - 1}`)
     }
 
     if (page < totalPages) {

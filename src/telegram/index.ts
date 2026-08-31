@@ -17,11 +17,10 @@ export class TelegramBot implements ITelegramBot {
 
   private registerHandler(): void {
     const startHandler = new StartHandler()
-    const jobHandler = new JobHandler(this.jobService)
+
+    new JobHandler(this.jobService).register(this.bot)
 
     this.bot.command('start', context => startHandler.handle(context))
-
-    this.bot.command('jobs', context => jobHandler.handle(context))
   }
 
   start() {
