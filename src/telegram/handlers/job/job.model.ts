@@ -1,5 +1,5 @@
 import { Context } from "grammy"
 
 export interface IJobHandler {
-  handle(context: Context): Promise<void>
+  handle(context: Context, page?: number): Promise<void>
 }
