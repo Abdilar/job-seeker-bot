@@ -1,0 +1,1 @@
+export { {{pascalCase name}}Keyboard } from './{{kebabCase name}}.keyboard'
