@@ -1,5 +1,5 @@
-import { Context } from "grammy";
+import { Bot } from "grammy";
 
 export interface IStartHandler {
-  handle(context: Context): Promise<void>
+  register(bot: Bot): void
 }

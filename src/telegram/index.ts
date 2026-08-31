@@ -12,15 +12,13 @@ export class TelegramBot implements ITelegramBot {
   ) {
     this.bot = new Bot(token);
 
-    this.registerHandler();
+    this.registerHandlers();
   }
 
-  private registerHandler(): void {
-    const startHandler = new StartHandler()
+  private registerHandlers(): void {
+    new StartHandler().register(this.bot)
 
     new JobHandler(this.jobService).register(this.bot)
-
-    this.bot.command('start', context => startHandler.handle(context))
   }
 
   start() {
