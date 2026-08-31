@@ -41,13 +41,22 @@ export class JobHandler implements IJobHandler {
     const jobMessage = jobs
       .map((job, index) => {
         const jobIndex = (index + 1) + ((page - 1) * PAGINATION_LIMIT)
-        return `${jobIndex}. ${job.title}\n${job.company.fullName}`;
+        return `
+<b>${jobIndex}. ${job.title}</b>
+شرکت: ${job.company.fullName}
+نوع قرارداد: ${job.contractType}
+موقعیت: ${job.location.country}, ${job.location.province}
+حقوق دریافتی: ${job.salary}
+تاریخ انتشار: ${job.postedAt ?? 'همین هفته'}
+
+<a href="${job.url}">مشاهده موقعیت شغلی</a>
+        `;
       })
       .join("\n\n");
 
       const message = jobMessage.concat(`\n\n\nصفحه ${page} از ${totalPages}`)
 
-    await context.reply(message, { reply_markup: keyboard });
+    await context.reply(message, { reply_markup: keyboard, parse_mode: "HTML" });
   }
 
   private async paginationHandler(context: Context): Promise<void> {
