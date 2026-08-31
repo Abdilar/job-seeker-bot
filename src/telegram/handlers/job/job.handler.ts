@@ -38,11 +38,14 @@ export class JobHandler implements IJobHandler {
       PAGINATION_KEYBOARD_PREFIX,
     );
 
-    const message = jobs
+    const jobMessage = jobs
       .map((job, index) => {
-        return `${index + 1}. ${job.title}\n${job.company.fullName}`;
+        const jobIndex = (index + 1) + ((page - 1) * PAGINATION_LIMIT)
+        return `${jobIndex}. ${job.title}\n${job.company.fullName}`;
       })
       .join("\n\n");
+
+      const message = jobMessage.concat(`\n\n\nصفحه ${page} از ${totalPages}`)
 
     await context.reply(message, { reply_markup: keyboard });
   }
