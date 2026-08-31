@@ -1,9 +1,10 @@
 import { Bot, Context } from "grammy";
 import { IJobHandler } from "./job.model";
 import { IJobService } from "../../../services";
-import { PAGINATION_LIMIT } from "../../../constants";
+import { CONTRACT_TYPE_MAP, PAGINATION_LIMIT } from "../../../constants";
 import { PaginationKeyboard } from "../../keyboards";
 import { PAGINATION_KEYBOARD_PREFIX } from "../../telegram.constant";
+import { toJalali } from "../../../utilities";
 
 export class JobHandler implements IJobHandler {
   private readonly keyboard = new PaginationKeyboard();
@@ -43,11 +44,11 @@ export class JobHandler implements IJobHandler {
         const jobIndex = (index + 1) + ((page - 1) * PAGINATION_LIMIT)
         return `
 <b>${jobIndex}. ${job.title}</b>
-شرکت: ${job.company.fullName}
-نوع قرارداد: ${job.contractType}
-موقعیت: ${job.location.country}, ${job.location.province}
-حقوق دریافتی: ${job.salary}
-تاریخ انتشار: ${job.postedAt ?? 'همین هفته'}
+شرکت: <b>${job.company.fullName}</b>
+نوع قرارداد: <b>${CONTRACT_TYPE_MAP[job.contractType]}</b>
+موقعیت: <b>${job.location.country}, ${job.location.province}</b>
+حقوق دریافتی: <b>${job.salary || '-'}</b>
+تاریخ انتشار: <b>${toJalali(job.postedAt ?? new Date())}</b>
 
 <a href="${job.url}">مشاهده موقعیت شغلی</a>
         `;

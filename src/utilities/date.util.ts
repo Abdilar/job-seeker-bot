@@ -1,4 +1,4 @@
-import { subDays } from "date-fns-jalali";
+import { format, subDays,  } from "date-fns-jalali";
 import { TODAY } from "../constants";
 
 export function convertDaysAgoToJalaliDate(date: string): Date | undefined {
@@ -10,4 +10,8 @@ export function convertDaysAgoToJalaliDate(date: string): Date | undefined {
 
   const subDaysDate = subDays(today, Number(date));
   return subDaysDate;
+}
+
+export function toJalali(date: Date): string {
+  return format(date, "yyyy/MM/dd");
 }
