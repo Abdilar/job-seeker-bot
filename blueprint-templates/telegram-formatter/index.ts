@@ -1,0 +1,1 @@
+export { {{pascalCase name}}Formatter } from './{{kebabCase name}}.formatter'
