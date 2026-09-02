@@ -7,6 +7,6 @@ export class JobDetailsKeyboard implements IJobDetailsKeyboard {
     return new InlineKeyboard()
       .url("مشاهده آگهی 🔗", jobUrl)
       .row()
-      .text("⬅️ بازگشت به لیست", `${PAGINATION_KEYBOARD_PREFIX}:${page}`);
+      .text("بازگشت به لیست ⬅️", `${PAGINATION_KEYBOARD_PREFIX}:${page}`);
   }
 }
