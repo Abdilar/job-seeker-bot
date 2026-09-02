@@ -1,4 +1,4 @@
-import { CONTRACT_TYPE_MAP, PAGINATION_LIMIT } from "../../../constants";
+import { CONTRACT_TYPE_MAP, PAGINATION_LIMIT, PROVIDER_MAP } from "../../../constants";
 import { IJob } from "../../../types";
 import { toJalali } from "../../../utilities";
 import { IJobFormatter } from "./job.model";
@@ -20,12 +20,20 @@ ${job.company.fullName}
   formatDetail(job: IJob): string {
     return `
 <b>💼 ${job.title}</b>
+
+
 🏢 شرکت: <b>${job.company.fullName}</b>
+
 📍 موقعیت: <b>${job.location.country}, ${job.location.province}</b>
+
 📄 نوع قرارداد: <b>${CONTRACT_TYPE_MAP[job.contractType]}</b>
+
 💰 حقوق: <b>${job.salary || "نامشخص"}</b>
+
 📅 تاریخ انتشار: <b>${toJalali(job.postedAt ?? new Date())}</b>
-🌐 منبع: <b>${job.provider}</b>
+
+
+🌐 منبع: <b>${PROVIDER_MAP[job.provider]}</b>
     `.trim()
   }
 }
