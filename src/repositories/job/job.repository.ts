@@ -154,42 +154,43 @@ export class JobRepository implements IJobRepository {
   }
 
   async findById(id: string): Promise<IJob | null> {
-    const result = await prisma.job.findUnique({
+    const job = await prisma.job.findUnique({
       where: { id },
       include: { company: true, location: true },
     });
 
-    return new Promise((resolve) => {
-      resolve(!!result ? this.convertPrismaJobToIJob(result) : null);
-    });
+    if (!job) {
+      return null
+    }
+
+    return this.convertPrismaJobToIJob(job)
   }
 
   async findByUrl(url: string): Promise<IJob | null> {
-    const result = await prisma.job.findUnique({
+    const job = await prisma.job.findUnique({
       where: { url },
       include: { company: true, location: true },
     });
 
-    return new Promise((resolve) => {
-      resolve(!!result ? this.convertPrismaJobToIJob(result) : null);
-    });
+    if (!job) {
+      return null
+    }
+
+    return this.convertPrismaJobToIJob(job)
   }
 
   async findAll(): Promise<IJob[]> {
-    const result = await prisma.job.findMany({
+    const jobs = await prisma.job.findMany({
       orderBy: { postedAt: "desc" },
       include: { company: true, location: true },
     });
 
-    return new Promise((resolve) => {
-      const jobs = result.map((job) => this.convertPrismaJobToIJob(job));
-      resolve(jobs);
-    });
+    return jobs.map((job) => this.convertPrismaJobToIJob(job))
   }
 
   async findPaginated(page: number, limit: number): Promise<IJob[]> {
     const offset = (page - 1) * limit
-    const result = await prisma.job.findMany({
+    const jobs = await prisma.job.findMany({
       skip: offset,
       take: limit,
       orderBy: {postedAt: "desc"},
@@ -199,10 +200,7 @@ export class JobRepository implements IJobRepository {
       }
     })
 
-    return new Promise((resolve) => {
-      const jobs = result.map(job => this.convertPrismaJobToIJob(job))
-      resolve(jobs)
-    })
+    return jobs.map(job => this.convertPrismaJobToIJob(job))
   }
 
   async exists(url: string): Promise<boolean> {

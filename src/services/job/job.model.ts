@@ -11,5 +11,6 @@ export interface IJobService {
   save(data: ICrawledJob): Promise<IJob>;
   saveAll(data: Array<ICrawledJob>): Promise<SaveJobsResultType>;
   getJobs(page: number, limit: number): Promise<IJob[]>
+  getJob(id: string): Promise<IJob | null>
   count(): Promise<number>
 }

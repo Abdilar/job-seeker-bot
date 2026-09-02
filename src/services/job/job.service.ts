@@ -31,6 +31,10 @@ export class JobService implements IJobService {
     return this.repository.findPaginated(page, limit)
   }
 
+  getJob(id: string): Promise<IJob | null> {
+    return this.repository.findById(id)
+  }
+
   isValid(data: ICrawledJob): boolean {
     try {
       this.validate(data);
