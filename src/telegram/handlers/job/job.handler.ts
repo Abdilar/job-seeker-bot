@@ -1,10 +1,10 @@
 import { Bot, Context } from "grammy";
 import { IJobHandler } from "./job.model";
 import { IJobService } from "../../../services";
-import { CONTRACT_TYPE_MAP, PAGINATION_LIMIT } from "../../../constants";
+import { PAGINATION_LIMIT } from "../../../constants";
 import { PaginationKeyboard } from "../../keyboards";
 import { PAGINATION_KEYBOARD_PREFIX } from "../../telegram.constant";
-import { toJalali } from "../../../utilities";
+import { JobFormatter } from "../../formatters";
 
 export class JobHandler implements IJobHandler {
   private readonly keyboard = new PaginationKeyboard();
@@ -39,23 +39,8 @@ export class JobHandler implements IJobHandler {
       PAGINATION_KEYBOARD_PREFIX,
     );
 
-    const jobMessage = jobs
-      .map((job, index) => {
-        const jobIndex = index + 1 + (page - 1) * PAGINATION_LIMIT;
-        return `
-<b>${jobIndex}. ${job.title}</b>
-شرکت: <b>${job.company.fullName}</b>
-نوع قرارداد: <b>${CONTRACT_TYPE_MAP[job.contractType]}</b>
-موقعیت: <b>${job.location.country}, ${job.location.province}</b>
-حقوق دریافتی: <b>${job.salary || "-"}</b>
-تاریخ انتشار: <b>${toJalali(job.postedAt ?? new Date())}</b>
-
-<a href="${job.url}">مشاهده موقعیت شغلی</a>
-        `;
-      })
-      .join("\n\n");
-
-    const message = jobMessage.concat(`\n\n\nصفحه ${page} از ${totalPages}`);
+    const jobFormatter = new JobFormatter()
+    const message = jobFormatter.formatList(jobs, page, totalPages, PAGINATION_LIMIT)
 
     await context.reply(message, {
       reply_markup: keyboard,
