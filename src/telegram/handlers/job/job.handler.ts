@@ -8,21 +8,22 @@ import { JobFormatter } from "../../formatters";
 
 export class JobHandler implements IJobHandler {
   private readonly keyboard = new PaginationKeyboard();
+  private readonly jobFormatter = new JobFormatter()
 
   constructor(private readonly jobService: IJobService) {}
 
-  register(bot: Bot) {
+  register(bot: Bot): void {
     bot.command("jobs", (context) => this.handle(context));
 
     const paginationRegex = new RegExp(
       `^${PAGINATION_KEYBOARD_PREFIX}:(\\d+)$`,
     );
     bot.callbackQuery(paginationRegex, (context) =>
-      this.paginationHandler(context),
+      this.handlePagination(context),
     );
   }
 
-  private async handle(context: Context, page: number = 1): Promise<void> {
+  private async handle(context: Context, page: number = 1, edit = false): Promise<void> {
     const jobs = await this.jobService.getJobs(page, PAGINATION_LIMIT);
     const totalJobs = await this.jobService.count();
 
@@ -39,21 +40,27 @@ export class JobHandler implements IJobHandler {
       PAGINATION_KEYBOARD_PREFIX,
     );
 
-    const jobFormatter = new JobFormatter()
-    const message = jobFormatter.formatList(jobs, page, totalPages, PAGINATION_LIMIT)
+    const message = this.jobFormatter.formatList(jobs, page, totalPages, PAGINATION_LIMIT)
 
-    await context.reply(message, {
+    const messageOptions = {
       reply_markup: keyboard,
-      parse_mode: "HTML",
+      parse_mode: "HTML" as const,
       link_preview_options: {
         is_disabled: true,
-      },
-    });
+      }
+    }
+
+    if (edit) {
+      await context.editMessageText(message, messageOptions);
+      return
+    }
+
+    await context.reply(message, messageOptions);
   }
 
-  private async paginationHandler(context: Context): Promise<void> {
-    const page = Number(context?.match?.[1]);
+  private async handlePagination(context: Context): Promise<void> {
+    const page = Number(context.match?.[1]);
     await context.answerCallbackQuery();
-    await this.handle(context, page);
+    await this.handle(context, page, true);
   }
 }
