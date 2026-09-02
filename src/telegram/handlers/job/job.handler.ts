@@ -40,7 +40,7 @@ export class JobHandler implements IJobHandler {
       PAGINATION_KEYBOARD_PREFIX,
     );
 
-    const message = this.jobFormatter.formatList(jobs, page, totalPages, PAGINATION_LIMIT)
+    const message = this.jobFormatter.formatList(jobs, page, totalPages)
 
     const messageOptions = {
       reply_markup: keyboard,
