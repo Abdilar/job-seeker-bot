@@ -2,14 +2,26 @@ import { Bot, Context } from "grammy";
 import { IJobHandler } from "./job.model";
 import { IJobService } from "../../../services";
 import { PAGINATION_LIMIT } from "../../../constants";
-import { JobDetailsKeyboard, JobListKeyboard, PaginationKeyboard } from "../../keyboards";
-import { JOB_DETAILS_KEYBOARD_PREFIX, PAGINATION_KEYBOARD_PREFIX } from "../../telegram.constant";
+import {
+  JobDetailsKeyboard,
+  JobFilterKeyboard,
+  JobListKeyboard,
+  PaginationKeyboard,
+} from "../../keyboards";
+import {
+  JOB_DETAILS_KEYBOARD_PREFIX,
+  PAGINATION_KEYBOARD_PREFIX,
+} from "../../telegram.constant";
 import { JobFormatter } from "../../formatters";
+import { ContractTypeFilterKeyboard } from "../../keyboards/contract-type-filter";
 
 export class JobHandler implements IJobHandler {
   private readonly paginationKeyboard = new PaginationKeyboard();
   private readonly detailsKeyboard = new JobDetailsKeyboard();
   private readonly listKeyboard = new JobListKeyboard();
+  private readonly contractTypeFilterKeyboard =
+    new ContractTypeFilterKeyboard();
+  private readonly jobFilterKeyboard = new JobFilterKeyboard()
   private readonly jobFormatter = new JobFormatter();
 
   constructor(private readonly jobService: IJobService) {}
@@ -21,14 +33,22 @@ export class JobHandler implements IJobHandler {
       `^${PAGINATION_KEYBOARD_PREFIX}:(\\d+)$`,
     );
     const jobDetailsRegex = new RegExp(
-      `^${JOB_DETAILS_KEYBOARD_PREFIX}:([^:]+):(\\d+)$`
-    )
+      `^${JOB_DETAILS_KEYBOARD_PREFIX}:([^:]+):(\\d+)$`,
+    );
     bot.callbackQuery(paginationRegex, (context) =>
       this.handlePagination(context),
     );
 
     bot.callbackQuery(jobDetailsRegex, (context) =>
       this.handleDetails(context),
+    );
+
+    bot.callbackQuery("jobs:filters", (context) =>
+      this.handleJobFilter(context),
+    );
+
+    bot.callbackQuery("jobs:filter:contractType", (context) =>
+      this.handleContractTypeFilter(context),
     );
   }
 
@@ -47,19 +67,17 @@ export class JobHandler implements IJobHandler {
 
     const totalPages = Math.ceil(totalJobs / PAGINATION_LIMIT);
 
-    const keyboard = this.paginationKeyboard.create(
-      page,
-      totalPages,
-    );
-
-    const listKeyboard = this.listKeyboard.create(jobs, page)
-
-    listKeyboard.append(keyboard)
+    const keyboard = this.jobFilterKeyboard.create()
+    const paginationKeyboard = this.paginationKeyboard.create(page, totalPages);
+    const listKeyboard = this.listKeyboard.create(jobs, page);
+    
+    keyboard.append(listKeyboard);
+    keyboard.append(paginationKeyboard)
 
     const message = this.jobFormatter.formatList(jobs, page, totalPages);
 
     const messageOptions = {
-      reply_markup: listKeyboard,
+      reply_markup: keyboard,
       parse_mode: "HTML" as const,
       link_preview_options: {
         is_disabled: true,
@@ -108,5 +126,23 @@ export class JobHandler implements IJobHandler {
     const page = Number(context.match?.[1]);
     await context.answerCallbackQuery();
     await this.handle(context, page, true);
+  }
+
+  private async handleContractTypeFilter(context: Context): Promise<void> {
+    const keyboard = this.contractTypeFilterKeyboard.create()
+    await context.answerCallbackQuery()
+    await context.editMessageText(
+      'نوع قرارداد را انتخاب کنید:',
+      { reply_markup: keyboard }
+    )
+  }
+
+  private async handleJobFilter(context: Context): Promise<void> {
+    const keyboard = this.jobFilterKeyboard.createFilterMenu()
+    await context.answerCallbackQuery()
+    await context.editMessageText(
+      'نوع فیلتر را انتخاب کنید:',
+      { reply_markup: keyboard }
+    )
   }
 }
