@@ -24,3 +24,8 @@ export interface IJob extends ICrawledJob {
   createdAt?: Date
   updatedAt?: Date
 }
+
+export interface IJobFilter {
+  contractType?: EContractType
+  provider?: EProvider
+}
