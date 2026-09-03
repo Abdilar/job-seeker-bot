@@ -1,4 +1,4 @@
-import { ICrawledJob, IJob } from "../../types";
+import { ICrawledJob, IJob, IJobFilter } from "../../types";
 import { IJobService, SaveJobsResultType } from "./job.model";
 import { IJobRepository } from "../../repositories/job";
 
@@ -27,8 +27,8 @@ export class JobService implements IJobService {
     return result
   }
 
-  getJobs(page: number, limit: number): Promise<IJob[]> {
-    return this.repository.findPaginated(page, limit)
+  getJobs(page: number, limit: number, filter?: IJobFilter): Promise<IJob[]> {
+    return this.repository.findPaginated(page, limit, filter)
   }
 
   getJob(id: string): Promise<IJob | null> {
