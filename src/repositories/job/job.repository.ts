@@ -6,6 +6,7 @@ import {
   IJob,
   ICrawledJob,
   EContractType,
+  IJobFilter,
 } from "../../types";
 import { chunk } from "../../utilities";
 
@@ -188,9 +189,13 @@ export class JobRepository implements IJobRepository {
     return jobs.map((job) => this.convertPrismaJobToIJob(job))
   }
 
-  async findPaginated(page: number, limit: number): Promise<IJob[]> {
+  async findPaginated(page: number, limit: number, filter?: IJobFilter): Promise<IJob[]> {
     const offset = (page - 1) * limit
     const jobs = await prisma.job.findMany({
+      where: {
+        ...(filter?.contractType && { contractType: filter.contractType }),
+        ...(filter?.provider && { provider: filter.provider })
+      },
       skip: offset,
       take: limit,
       orderBy: {postedAt: "desc"},
