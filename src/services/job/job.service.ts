@@ -73,6 +73,6 @@ export class JobService implements IJobService {
   }
 
   count(filter?: IJobFilter): Promise<number> {
-    return this.repository.count()
+    return this.repository.count(filter)
   }
 }

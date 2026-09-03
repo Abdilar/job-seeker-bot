@@ -15,5 +15,5 @@ export interface IJobRepository {
   findAll(): Promise<IJob[]>;
   findPaginated(page: number, limit: number, filter?: IJobFilter): Promise<IJob[]>
   exists(url: string): Promise<boolean>;
-  count(): Promise<number>;
+  count(filter?: IJobFilter): Promise<number>;
 }

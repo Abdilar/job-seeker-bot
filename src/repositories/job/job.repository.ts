@@ -192,10 +192,7 @@ export class JobRepository implements IJobRepository {
   async findPaginated(page: number, limit: number, filter?: IJobFilter): Promise<IJob[]> {
     const offset = (page - 1) * limit
     const jobs = await prisma.job.findMany({
-      where: {
-        ...(filter?.contractType && { contractType: filter.contractType }),
-        ...(filter?.provider && { provider: filter.provider })
-      },
+      where: this.toWhereInput(filter),
       skip: offset,
       take: limit,
       orderBy: {postedAt: "desc"},
@@ -216,7 +213,16 @@ export class JobRepository implements IJobRepository {
     return !!job;
   }
 
-  async count(): Promise<number> {
-    return prisma.job.count();
+  async count(filter?: IJobFilter): Promise<number> {
+    return prisma.job.count({
+      where: this.toWhereInput(filter)
+    });
+  }
+
+  private toWhereInput(filter?: IJobFilter): Prisma.JobWhereInput {
+    return {
+      ...(filter?.contractType && { contractType: filter.contractType }),
+      ...(filter?.provider && { provider: filter.provider })
+    }
   }
 }
