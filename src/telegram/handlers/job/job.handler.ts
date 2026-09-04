@@ -8,10 +8,6 @@ import {
   JobListKeyboard,
   PaginationKeyboard,
 } from "../../keyboards";
-import {
-  JOB_DETAILS_KEYBOARD_PREFIX,
-  PAGINATION_KEYBOARD_PREFIX,
-} from "../../telegram.constant";
 import { JobFormatter } from "../../formatters";
 import { ContractTypeFilterKeyboard } from "../../keyboards/contract-type-filter";
 
@@ -44,26 +40,6 @@ export class JobHandler implements IJobHandler {
     bot.callbackQuery(/jobs:filters:contractType:(\d+)$/, (context) =>
       this.handleContractTypeFilter(context),
     );
-    // const paginationRegex = new RegExp(
-    //   `^jobs:(\\d+)$`,
-    // );
-
-    //  const jobFilterRegex = new RegExp(
-    //   `^jobs:filters:(\\d+)$`,
-    // );
-
-    // const jobDetailsRegex = new RegExp(
-    //   `^${JOB_DETAILS_KEYBOARD_PREFIX}:([^:]+):(\\d+)$`,
-    // );
-    
-
-    
-
-    
-
-    // bot.callbackQuery(/^jobs:filters:back:(\d+)$/, (context) => this.handleBackInFilterMenu(context))
-
-    
   }
 
   private async handle(

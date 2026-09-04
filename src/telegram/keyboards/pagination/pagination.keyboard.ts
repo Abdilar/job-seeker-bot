@@ -1,6 +1,5 @@
 import { InlineKeyboard } from "grammy";
 import { IPaginationKeyboard } from "./pagination.model";
-import { PAGINATION_KEYBOARD_PREFIX } from "../../telegram.constant";
 
 export class PaginationKeyboard implements IPaginationKeyboard {
   create(page: number, totalPages: number): InlineKeyboard {
