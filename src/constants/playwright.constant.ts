@@ -1,1 +1,1 @@
-export const WAIT_UNTIL = 'networkidle'
+export const WAIT_UNTIL = 'domcontentloaded'
