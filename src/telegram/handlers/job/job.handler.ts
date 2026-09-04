@@ -29,27 +29,41 @@ export class JobHandler implements IJobHandler {
   register(bot: Bot): void {
     bot.command("jobs", (context) => this.handle(context));
 
-    const paginationRegex = new RegExp(
-      `^${PAGINATION_KEYBOARD_PREFIX}:(\\d+)$`,
-    );
-    const jobDetailsRegex = new RegExp(
-      `^${JOB_DETAILS_KEYBOARD_PREFIX}:([^:]+):(\\d+)$`,
-    );
-    bot.callbackQuery(paginationRegex, (context) =>
-      this.handlePagination(context),
+    bot.callbackQuery(/^jobs:filters:(\d+)$/, (context) =>
+      this.handleFilterMenu(context),
     );
 
-    bot.callbackQuery(jobDetailsRegex, (context) =>
+    bot.callbackQuery(/^jobs:(?!filters:)([^:]+):(\d+)$/, (context) =>
       this.handleDetails(context),
     );
 
-    bot.callbackQuery("jobs:filters", (context) =>
-      this.handleJobFilter(context),
+    bot.callbackQuery(/^jobs:(\d+)$/, (context) =>
+      this.showJobs(context),
     );
 
-    bot.callbackQuery("jobs:filter:contractType", (context) =>
+    bot.callbackQuery(/jobs:filters:contractType:(\d+)$/, (context) =>
       this.handleContractTypeFilter(context),
     );
+    // const paginationRegex = new RegExp(
+    //   `^jobs:(\\d+)$`,
+    // );
+
+    //  const jobFilterRegex = new RegExp(
+    //   `^jobs:filters:(\\d+)$`,
+    // );
+
+    // const jobDetailsRegex = new RegExp(
+    //   `^${JOB_DETAILS_KEYBOARD_PREFIX}:([^:]+):(\\d+)$`,
+    // );
+    
+
+    
+
+    
+
+    // bot.callbackQuery(/^jobs:filters:back:(\d+)$/, (context) => this.handleBackInFilterMenu(context))
+
+    
   }
 
   private async handle(
@@ -67,9 +81,9 @@ export class JobHandler implements IJobHandler {
 
     const totalPages = Math.ceil(totalJobs / PAGINATION_LIMIT);
 
-    const keyboard = this.jobFilterKeyboard.create()
-    const paginationKeyboard = this.paginationKeyboard.create(page, totalPages);
+    const keyboard = this.jobFilterKeyboard.create(page)
     const listKeyboard = this.listKeyboard.create(jobs, page);
+    const paginationKeyboard = this.paginationKeyboard.create(page, totalPages);
     
     keyboard.append(listKeyboard);
     keyboard.append(paginationKeyboard)
@@ -122,14 +136,17 @@ export class JobHandler implements IJobHandler {
     });
   }
 
-  private async handlePagination(context: Context): Promise<void> {
+  private async showJobs(context: Context): Promise<void> {
     const page = Number(context.match?.[1]);
     await context.answerCallbackQuery();
     await this.handle(context, page, true);
   }
 
   private async handleContractTypeFilter(context: Context): Promise<void> {
-    const keyboard = this.contractTypeFilterKeyboard.create()
+    const page = Number(context.match?.[1])
+    console.log('contract type clicked: ', page);
+
+    const keyboard = this.contractTypeFilterKeyboard.create(page)
     await context.answerCallbackQuery()
     await context.editMessageText(
       'نوع قرارداد را انتخاب کنید:',
@@ -137,8 +154,10 @@ export class JobHandler implements IJobHandler {
     )
   }
 
-  private async handleJobFilter(context: Context): Promise<void> {
-    const keyboard = this.jobFilterKeyboard.createFilterMenu()
+  private async handleFilterMenu(context: Context): Promise<void> {
+    const page = Number(context.match?.[1])
+    console.log('filter clicked: ', page);
+    const keyboard = this.jobFilterKeyboard.createFilterMenu(page)
     await context.answerCallbackQuery()
     await context.editMessageText(
       'نوع فیلتر را انتخاب کنید:',

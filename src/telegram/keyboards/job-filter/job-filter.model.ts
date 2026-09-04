@@ -1,5 +1,6 @@
 import { InlineKeyboard } from "grammy"
 
 export interface IJobFilterKeyboard {
-  create(): InlineKeyboard 
+  create(page: number): InlineKeyboard 
+  createFilterMenu(page: number): InlineKeyboard 
 }

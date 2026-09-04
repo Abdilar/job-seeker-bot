@@ -7,11 +7,11 @@ export class PaginationKeyboard implements IPaginationKeyboard {
     const keyboard = new InlineKeyboard()
 
     if (page > 1) {
-      keyboard.text('قبلی ⬅️', `${PAGINATION_KEYBOARD_PREFIX}:${page - 1}`)
+      keyboard.text('قبلی ⬅️', `jobs:${page - 1}`)
     }
 
     if (page < totalPages) {
-      keyboard.text('➡️ بعدی', `${PAGINATION_KEYBOARD_PREFIX}:${page + 1}`)
+      keyboard.text('➡️ بعدی', `jobs:${page + 1}`)
     }
 
     return keyboard

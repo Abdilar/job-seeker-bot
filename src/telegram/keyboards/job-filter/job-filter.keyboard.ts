@@ -2,21 +2,21 @@ import { InlineKeyboard } from "grammy";
 import { IJobFilterKeyboard } from "./job-filter.model";
 
 export class JobFilterKeyboard implements IJobFilterKeyboard {
-  create(): InlineKeyboard {
+  create(page: number): InlineKeyboard {
     const keyboard = new InlineKeyboard();
 
-    return keyboard.text("فیلترها 🔎", "jobs:filters").row();
+    return keyboard.text("فیلترها 🔎", `jobs:filters:${page}`).row();
   }
 
-  createFilterMenu(): InlineKeyboard {
+  createFilterMenu(page: number): InlineKeyboard {
     const keyboard = new InlineKeyboard();
     return keyboard
-      .text("نوع قرارداد 📄", `filters:contractType`)
+      .text("نوع قرارداد 📄", `jobs:filters:contractType:${page}`)
       .row()
       .text("منبع 🏢", "filters:provider")
       .row()
       .text('حذف فیلترها ❌', 'filters:clear')
-      .text('بازگشت به لیست ⬅️', 'filters:back')
+      .text('بازگشت به لیست ⬅️', `jobs:${page}`)
       .row()
   }
 }
