@@ -1,4 +1,4 @@
-import { Bot, Context } from "grammy";
+import { Bot } from "grammy";
 import { IJobHandler } from "./job.model";
 import { IJobService } from "../../../services";
 import { CONTRACT_TYPE_MAP, PAGINATION_LIMIT, PROVIDER_MAP } from "../../../constants";
@@ -49,7 +49,7 @@ export class JobHandler implements IJobHandler {
   }
 
   private async handle(
-    context: Context,
+    context: TelegramContextType,
     page: number = 1,
     edit = false,
     filters?: IJobFilter
@@ -104,7 +104,7 @@ export class JobHandler implements IJobHandler {
     await context.reply(message, messageOptions);
   }
 
-  private async handleDetails(context: Context): Promise<void> {
+  private async handleDetails(context: TelegramContextType): Promise<void> {
     const jobId = context.match?.[1];
     const page = Number(context.match?.[2]);
 
@@ -134,13 +134,13 @@ export class JobHandler implements IJobHandler {
     });
   }
 
-  private async showJobs(context: Context): Promise<void> {
+  private async showJobs(context: TelegramContextType): Promise<void> {
     const page = Number(context.match?.[1]);
     await context.answerCallbackQuery();
     await this.handle(context, page, true);
   }
 
-  private async handleContractTypeFilter(context: Context): Promise<void> {
+  private async handleContractTypeFilter(context: TelegramContextType): Promise<void> {
     const page = Number(context.match?.[1])
     console.log('contract type clicked: ', page);
 
@@ -152,7 +152,7 @@ export class JobHandler implements IJobHandler {
     )
   }
 
-  private async handleFilterMenu(context: Context): Promise<void> {
+  private async handleFilterMenu(context: TelegramContextType): Promise<void> {
     const page = Number(context.match?.[1])
     console.log('filter clicked: ', page);
     const keyboard = this.jobFilterKeyboard.createFilterMenu(page)
@@ -163,7 +163,7 @@ export class JobHandler implements IJobHandler {
     )
   }
 
-  private async handleContractTypeFilterSelected(context: Context): Promise<void> {
+  private async handleContractTypeFilterSelected(context: TelegramContextType): Promise<void> {
     const contractType = context.match?.[1] as EContractType
     console.log('contract type selected: ', {contractType});
     await context.answerCallbackQuery()
