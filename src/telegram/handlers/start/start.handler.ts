@@ -1,8 +1,9 @@
 import { Bot, Context } from "grammy";
 import { IStartHandler } from "./start.model";
+import { TelegramContextType } from "../../telegram.model";
 
 export class StartHandler implements IStartHandler {
-  register(bot: Bot) {
+  register(bot: Bot<TelegramContextType>) {
     bot.command("start", (context) => this.handle(context));
   }
 

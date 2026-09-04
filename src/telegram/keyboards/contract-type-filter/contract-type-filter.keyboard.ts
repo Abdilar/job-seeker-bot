@@ -6,12 +6,12 @@ import { EContractType } from "../../../types"
 export class ContractTypeFilterKeyboard implements IContractTypeFilterKeyboard {
   create(page: number): InlineKeyboard {
     return new InlineKeyboard()
-      .text(CONTRACT_TYPE_MAP.full_time, `filter:contractType:${EContractType.FULL_TIME}`)
+      .text(CONTRACT_TYPE_MAP.full_time, `filters:contractType:${EContractType.FULL_TIME}`)
       .row()
-      .text(CONTRACT_TYPE_MAP.part_time, `filter:contractType:${EContractType.PART_TIME}`)
+      .text(CONTRACT_TYPE_MAP.part_time, `filters:contractType:${EContractType.PART_TIME}`)
       .row()
       .text('❌ حذف فیلتر', 'filter:contractType:clear')
-      .text('⬅️ بازگشت', `jobs:filters:${page}`)
+      .text('⬅️ بازگشت', `filters:${page}`)
       
    }
 }

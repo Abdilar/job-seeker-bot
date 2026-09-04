@@ -1,7 +1,7 @@
 import { Bot, Context } from "grammy";
 import { IJobHandler } from "./job.model";
 import { IJobService } from "../../../services";
-import { PAGINATION_LIMIT } from "../../../constants";
+import { CONTRACT_TYPE_MAP, PAGINATION_LIMIT, PROVIDER_MAP } from "../../../constants";
 import {
   JobDetailsKeyboard,
   JobFilterKeyboard,
@@ -10,6 +10,8 @@ import {
 } from "../../keyboards";
 import { JobFormatter } from "../../formatters";
 import { ContractTypeFilterKeyboard } from "../../keyboards/contract-type-filter";
+import { EContractType, IJobFilter } from "../../../types";
+import { TelegramContextType } from "../../telegram.model";
 
 export class JobHandler implements IJobHandler {
   private readonly paginationKeyboard = new PaginationKeyboard();
@@ -22,14 +24,14 @@ export class JobHandler implements IJobHandler {
 
   constructor(private readonly jobService: IJobService) {}
 
-  register(bot: Bot): void {
+  register(bot: Bot<TelegramContextType>): void {
     bot.command("jobs", (context) => this.handle(context));
 
-    bot.callbackQuery(/^jobs:filters:(\d+)$/, (context) =>
+    bot.callbackQuery(/^filters:(\d+)$/, (context) =>
       this.handleFilterMenu(context),
     );
 
-    bot.callbackQuery(/^jobs:(?!filters:)([^:]+):(\d+)$/, (context) =>
+    bot.callbackQuery(/^jobs:([^:]+):(\d+)$/, (context) =>
       this.handleDetails(context),
     );
 
@@ -37,8 +39,12 @@ export class JobHandler implements IJobHandler {
       this.showJobs(context),
     );
 
-    bot.callbackQuery(/jobs:filters:contractType:(\d+)$/, (context) =>
+    bot.callbackQuery(/^filters:contractType:(\d+)$/, (context) =>
       this.handleContractTypeFilter(context),
+    );
+
+    bot.callbackQuery(/^filters:contractType:(?!\d+)([^:]+)$/, (context) =>
+      this.handleContractTypeFilterSelected(context),
     );
   }
 
@@ -46,9 +52,10 @@ export class JobHandler implements IJobHandler {
     context: Context,
     page: number = 1,
     edit = false,
+    filters?: IJobFilter
   ): Promise<void> {
-    const jobs = await this.jobService.getJobs(page, PAGINATION_LIMIT);
-    const totalJobs = await this.jobService.count();
+    const jobs = await this.jobService.getJobs(page, PAGINATION_LIMIT, filters);
+    const totalJobs = await this.jobService.count(filters);
 
     if (!jobs.length) {
       await context.reply("متاسفانه شغلی یافت نشد!");
@@ -64,7 +71,22 @@ export class JobHandler implements IJobHandler {
     keyboard.append(listKeyboard);
     keyboard.append(paginationKeyboard)
 
-    const message = this.jobFormatter.formatList(jobs, page, totalPages);
+    let message = this.jobFormatter.formatList(jobs, page, totalPages);
+
+    if (filters) {
+      let filterMessage =  "فیلترهای انتخاب شده:\n"
+
+      filters.contractType && (filterMessage += `
+نوع قرارداد: <b>${CONTRACT_TYPE_MAP[filters.contractType]}</b>
+      `)
+
+      filters.provider && (filterMessage += `
+منبع: <b>${PROVIDER_MAP[filters.provider]}</b>
+      
+
+`)
+      message = filterMessage + message
+    }
 
     const messageOptions = {
       reply_markup: keyboard,
@@ -139,5 +161,12 @@ export class JobHandler implements IJobHandler {
       'نوع فیلتر را انتخاب کنید:',
       { reply_markup: keyboard }
     )
+  }
+
+  private async handleContractTypeFilterSelected(context: Context): Promise<void> {
+    const contractType = context.match?.[1] as EContractType
+    console.log('contract type selected: ', {contractType});
+    await context.answerCallbackQuery()
+    this.handle(context, 1, true, {contractType})
   }
 }

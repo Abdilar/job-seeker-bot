@@ -11,6 +11,7 @@ export class JobFormatter implements IJobFormatter {
       return `
 <b>${jobIndex}. ${job.title}</b>
 ${job.company.fullName}
+${CONTRACT_TYPE_MAP[job.contractType]}
       `
     }).join('\n')
 
