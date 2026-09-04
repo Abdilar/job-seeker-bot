@@ -10,9 +10,10 @@ import {
 } from "../../keyboards";
 import { JobFormatter } from "../../formatters";
 import { ContractTypeFilterKeyboard } from "../../keyboards/contract-type-filter";
-import { EContractType, IJobFilter } from "../../../types";
+import { EContractType, EProvider, IJobFilter } from "../../../types";
 import { TelegramContextType } from "../../telegram.model";
 import { isEmptyObject } from "../../../utilities";
+import { ProviderFilterKeyboard } from "../../keyboards/provider-filter";
 
 export class JobHandler implements IJobHandler {
   private readonly paginationKeyboard = new PaginationKeyboard();
@@ -20,6 +21,7 @@ export class JobHandler implements IJobHandler {
   private readonly listKeyboard = new JobListKeyboard();
   private readonly contractTypeFilterKeyboard =
     new ContractTypeFilterKeyboard();
+  private readonly providerFilterKeyboard = new ProviderFilterKeyboard()
   private readonly jobFilterKeyboard = new JobFilterKeyboard()
   private readonly jobFormatter = new JobFormatter();
 
@@ -45,11 +47,17 @@ export class JobHandler implements IJobHandler {
     );
 
     bot.callbackQuery(/^filters:contractType:(?!\d+)(?!clear$)([^:]+)$/, (context) =>
-      this.handleContractTypeFilterSelected(context),
+      this.selectedContractTypeFilter(context),
     );
 
     bot.callbackQuery(/^filters:contractType:clear$/, (context) => this.clearContractTypeFilter(context))
     bot.callbackQuery(/^filters:clear$/, (context) => this.clearFilters(context))
+
+    bot.callbackQuery(/^filters:provider:(\d+)$/, (context) => this.handleProviderFilter(context))
+    bot.callbackQuery(/^filters:provider:(?!\d+)(?!clear$)([^:]+)$/, (context) =>
+      this.selectedProviderFilter(context),
+    );
+    bot.callbackQuery(/^filters:provider:clear$/, (context) => this.clearProviderFilter(context))
   }
 
   private async handle(
@@ -166,7 +174,7 @@ export class JobHandler implements IJobHandler {
     )
   }
 
-  private async handleContractTypeFilterSelected(context: TelegramContextType): Promise<void> {
+  private async selectedContractTypeFilter(context: TelegramContextType): Promise<void> {
     const contractType = context.match?.[1] as EContractType
     console.log('contract type selected: ', {contractType});
     context.session.jobFilter.contractType = contractType
@@ -187,4 +195,31 @@ export class JobHandler implements IJobHandler {
     await context.answerCallbackQuery()
     this.handle(context, 1, true)
   }
-}
+
+  private async handleProviderFilter(context: TelegramContextType): Promise<void> {
+    const page = Number(context.match?.[1])
+    console.log('provider clicked: ', page);
+
+    const keyboard = this.providerFilterKeyboard.create(page)
+    await context.answerCallbackQuery()
+    await context.editMessageText(
+      'منبع را انتخاب کنید:',
+      { reply_markup: keyboard }
+    )
+  }
+
+  private async selectedProviderFilter(context: TelegramContextType): Promise<void> {
+    const provider = context.match?.[1] as EProvider
+    console.log('provider selected: ', {provider});
+    context.session.jobFilter.provider = provider
+    await context.answerCallbackQuery()
+    this.handle(context, 1, true)
+  }
+
+  private async clearProviderFilter(context: TelegramContextType): Promise<void> {
+    const {provider, ...restFilter} = context.session.jobFilter
+    context.session.jobFilter = restFilter
+    await context.answerCallbackQuery()
+    this.handle(context, 1, true)
+  }
+ }
