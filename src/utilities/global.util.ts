@@ -1,7 +1,7 @@
 import { EContractType } from "../types";
 
 export function convertPersianContractTypeToEContractType(contractType: string): EContractType {
-  if (contractType.trim() === 'تمام وقت') {
+  if (contractType.trim() === 'تمام وقت' || contractType.trim() === 'تمام‌وقت') {
     return EContractType.FULL_TIME
   }
 
