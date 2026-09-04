@@ -10,7 +10,7 @@ export class ContractTypeFilterKeyboard implements IContractTypeFilterKeyboard {
       .row()
       .text(CONTRACT_TYPE_MAP.part_time, `filters:contractType:${EContractType.PART_TIME}`)
       .row()
-      .text('❌ حذف فیلتر', 'filter:contractType:clear')
+      .text('❌ حذف فیلتر', 'filters:contractType:clear')
       .text('⬅️ بازگشت', `filters:${page}`)
       
    }

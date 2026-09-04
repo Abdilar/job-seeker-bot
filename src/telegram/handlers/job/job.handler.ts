@@ -12,6 +12,7 @@ import { JobFormatter } from "../../formatters";
 import { ContractTypeFilterKeyboard } from "../../keyboards/contract-type-filter";
 import { EContractType, IJobFilter } from "../../../types";
 import { TelegramContextType } from "../../telegram.model";
+import { isEmptyObject } from "../../../utilities";
 
 export class JobHandler implements IJobHandler {
   private readonly paginationKeyboard = new PaginationKeyboard();
@@ -43,9 +44,12 @@ export class JobHandler implements IJobHandler {
       this.handleContractTypeFilter(context),
     );
 
-    bot.callbackQuery(/^filters:contractType:(?!\d+)([^:]+)$/, (context) =>
+    bot.callbackQuery(/^filters:contractType:(?!\d+)(?!clear$)([^:]+)$/, (context) =>
       this.handleContractTypeFilterSelected(context),
     );
+
+    bot.callbackQuery(/^filters:contractType:clear$/, (context) => this.clearContractTypeFilter(context))
+    bot.callbackQuery(/^filters:clear$/, (context) => this.clearFilters(context))
   }
 
   private async handle(
@@ -72,7 +76,7 @@ export class JobHandler implements IJobHandler {
 
     let message = this.jobFormatter.formatList(jobs, page, totalPages);
 
-    if (context.session.jobFilter) {
+    if (!isEmptyObject(context.session.jobFilter)) {
       let filterMessage =  "فیلترهای انتخاب شده:\n"
 
       context.session.jobFilter.contractType && (filterMessage += `
@@ -166,6 +170,20 @@ export class JobHandler implements IJobHandler {
     const contractType = context.match?.[1] as EContractType
     console.log('contract type selected: ', {contractType});
     context.session.jobFilter.contractType = contractType
+    await context.answerCallbackQuery()
+    this.handle(context, 1, true)
+  }
+
+  private async clearContractTypeFilter(context: TelegramContextType): Promise<void> {
+    const {contractType, ...restFilter} = context.session.jobFilter
+    context.session.jobFilter = restFilter
+    await context.answerCallbackQuery()
+    this.handle(context, 1, true)
+  }
+
+  private async clearFilters(context: TelegramContextType): Promise<void> {
+    context.session.jobFilter = {}
+    console.log('clear filters clicked')
     await context.answerCallbackQuery()
     this.handle(context, 1, true)
   }
