@@ -52,10 +52,9 @@ export class JobHandler implements IJobHandler {
     context: TelegramContextType,
     page: number = 1,
     edit = false,
-    filters?: IJobFilter
   ): Promise<void> {
-    const jobs = await this.jobService.getJobs(page, PAGINATION_LIMIT, filters);
-    const totalJobs = await this.jobService.count(filters);
+    const jobs = await this.jobService.getJobs(page, PAGINATION_LIMIT, context.session.jobFilter);
+    const totalJobs = await this.jobService.count(context.session.jobFilter);
 
     if (!jobs.length) {
       await context.reply("متاسفانه شغلی یافت نشد!");
@@ -73,15 +72,15 @@ export class JobHandler implements IJobHandler {
 
     let message = this.jobFormatter.formatList(jobs, page, totalPages);
 
-    if (filters) {
+    if (context.session.jobFilter) {
       let filterMessage =  "فیلترهای انتخاب شده:\n"
 
-      filters.contractType && (filterMessage += `
-نوع قرارداد: <b>${CONTRACT_TYPE_MAP[filters.contractType]}</b>
+      context.session.jobFilter.contractType && (filterMessage += `
+نوع قرارداد: <b>${CONTRACT_TYPE_MAP[context.session.jobFilter.contractType]}</b>
       `)
 
-      filters.provider && (filterMessage += `
-منبع: <b>${PROVIDER_MAP[filters.provider]}</b>
+      context.session.jobFilter.provider && (filterMessage += `
+منبع: <b>${PROVIDER_MAP[context.session.jobFilter.provider]}</b>
       
 
 `)
@@ -166,7 +165,8 @@ export class JobHandler implements IJobHandler {
   private async handleContractTypeFilterSelected(context: TelegramContextType): Promise<void> {
     const contractType = context.match?.[1] as EContractType
     console.log('contract type selected: ', {contractType});
+    context.session.jobFilter.contractType = contractType
     await context.answerCallbackQuery()
-    this.handle(context, 1, true, {contractType})
+    this.handle(context, 1, true)
   }
 }
