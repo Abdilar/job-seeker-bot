@@ -1,8 +1,11 @@
 import cron from "node-cron";
 import { ICrawlJobsTask } from "../../tasks";
 import { ICrawlerScheduler } from "./crawler.model";
+import { randomDelay } from "../../utilities";
 
 export class CrawlerScheduler implements ICrawlerScheduler {
+  private isRunning = false;
+
   constructor(private readonly crawlJobs: ICrawlJobsTask) {}
 
   start(): void {
@@ -10,7 +13,7 @@ export class CrawlerScheduler implements ICrawlerScheduler {
       "0 10 * * *",
       async () => {
         try {
-          await this.runWithJitter()
+          await this.runWithJitter();
         } catch (error) {
           console.error("Crawler scheduler failed:", error);
         }
@@ -22,17 +25,20 @@ export class CrawlerScheduler implements ICrawlerScheduler {
   }
 
   private async runWithJitter(): Promise<void> {
-    const maxDelaySeconds = 600;
-    const delay = Math.floor(Math.random() * maxDelaySeconds * 1_000);
+    if (this.isRunning) {
+      console.log("Crawler is already running. Skipping...");
+      return;
+    }
 
-    console.log(`Crawler will start in ${delay}ms`);
+    this.isRunning = true;
 
-    await new Promise((resolve) => {
-      setTimeout(resolve, delay);
-    });
+    try {
+      const maxDelaySeconds = 600;
+      await randomDelay(0, maxDelaySeconds);
 
-    console.log("Crawler started");
-
-    await this.crawlJobs.run();
+      await this.crawlJobs.run();
+    } catch (error) {
+      this.isRunning = false;
+    }
   }
 }
