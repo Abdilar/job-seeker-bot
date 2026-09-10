@@ -1,4 +1,4 @@
-import { JobInJaCreator } from "./crawlers/providers";
+import { JobInJaCreator } from "./crawlers";
 import { JobRepository } from "./repositories";
 import { JobService } from "./services";
 import { CrawlJobsTask } from "./tasks";

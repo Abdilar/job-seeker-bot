@@ -1,5 +1,5 @@
-import { JobProvider } from "../crawlers/providers";
-import { IJobService } from "../services";
+import { JobProvider } from "../../crawlers";
+import { IJobService } from "../../services";
 import { ICrawlJobsTask } from "./crawl-jobs.model";
 
 export class CrawlJobsTask implements ICrawlJobsTask{
