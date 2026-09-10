@@ -1,5 +1,6 @@
 import { JobInJaCreator } from "./crawlers";
 import { JobRepository } from "./repositories";
+import { CrawlerScheduler } from "./scheduler";
 import { JobService } from "./services";
 import { CrawlJobsTask } from "./tasks";
 
@@ -10,5 +11,10 @@ const providers = [
   new JobInJaCreator()
 ]
 
-const crawlJobs = new CrawlJobsTask(jobService, providers)
-crawlJobs.run().catch(console.error)
+const crawlJobsTask = new CrawlJobsTask(jobService, providers)
+
+const scheduler = new CrawlerScheduler(
+  crawlJobsTask,
+);
+
+scheduler.start();
