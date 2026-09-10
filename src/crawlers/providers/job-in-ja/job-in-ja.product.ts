@@ -5,6 +5,7 @@ import { IJobProvider } from "../job.model";
 import { ICrawledJob } from "../../../types";
 import { JobParser } from "../../parsers";
 import { JOB_IN_JA_URL, MAIN_ELEMENT_SELECTOR } from "./job-in-ja.constant";
+import { randomDelay } from "../../../utilities";
 
 export class JobInJaProduct implements IJobProvider {
   private lastPage: number = 1;
@@ -69,6 +70,7 @@ export class JobInJaProduct implements IJobProvider {
       console.info(`Jobinja Provider: Fetch has been done.`, {page, lastPage: this.lastPage});
 
       if (page <= this.lastPage) {
+        await randomDelay(2000, 5000);
         await this.goNextPage();
       }
     }
