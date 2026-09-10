@@ -37,7 +37,7 @@ export class CrawlerScheduler implements ICrawlerScheduler {
       await randomDelay(0, maxDelaySeconds);
 
       await this.crawlJobs.run();
-    } catch (error) {
+    } finally {
       this.isRunning = false;
     }
   }
