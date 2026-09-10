@@ -1,7 +1,7 @@
 import { InlineKeyboard } from "grammy"
 import { IJobListKeyboard } from './job-list.model'
 import { IJob } from "../../../types"
-import { PAGINATION_LIMIT } from "../../../constants"
+import { PAGINATION_LIMIT } from "../../constants"
 
 export class JobListKeyboard implements IJobListKeyboard {
   create(jobs: Array<IJob>, page: number): InlineKeyboard { 

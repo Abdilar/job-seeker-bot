@@ -1,9 +1,8 @@
 import { Bot, session } from "grammy";
 import { ITelegramBot, ITelegramSession, TelegramContextType } from "./telegram.model";
-import { JobHandler, StartHandler } from "./handlers";
+import { JobHandler, JobFilterHandler, StartHandler } from "./handlers";
 import { IJobService } from "../services";
 import { IJobRenderer, JobRenderer } from "./renders";
-import { JobFilterHandler } from "./handlers/job-filter";
 
 export class TelegramBot implements ITelegramBot {
   private readonly bot: Bot<TelegramContextType>;

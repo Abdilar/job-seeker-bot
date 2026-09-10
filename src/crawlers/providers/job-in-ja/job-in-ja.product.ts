@@ -1,10 +1,10 @@
 import { Locator, Page } from "playwright";
 import { WAIT_UNTIL } from "../../constants";
-import { JOB_IN_JA_URL, MAIN_ELEMENT_SELECTOR } from "./job-in-ja.constant";
 import { toEnglishDigits } from "../../utilities";
 import { IJobProvider } from "../job.model";
-import { ICrawledJob } from "../../types";
-import { JobParser } from "../../parser";
+import { ICrawledJob } from "../../../types";
+import { JobParser } from "../../parsers";
+import { JOB_IN_JA_URL, MAIN_ELEMENT_SELECTOR } from "./job-in-ja.constant";
 
 export class JobInJaProduct implements IJobProvider {
   private lastPage: number = 1;

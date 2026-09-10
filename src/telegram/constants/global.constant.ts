@@ -1,4 +1,5 @@
-import { EContractType, EProvider } from "../types"
+import { EContractType, EProvider } from "../../types"
+
 
 export const PAGINATION_LIMIT = 15
 

@@ -1,6 +1,6 @@
-import { CONTRACT_TYPE_MAP, PAGINATION_LIMIT, PROVIDER_MAP } from "../../../constants";
 import { IJob } from "../../../types";
 import { toJalali } from "../../../utilities";
+import { CONTRACT_TYPE_MAP, PAGINATION_LIMIT, PROVIDER_MAP } from "../../constants";
 import { IJobFormatter } from "./job.model";
 
 export class JobFormatter implements IJobFormatter {

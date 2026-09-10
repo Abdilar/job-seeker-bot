@@ -1,7 +1,7 @@
 import { InlineKeyboard } from "grammy";
 import { IProviderFilterKeyboard } from "./provider-filter.model";
 import { EProvider } from "../../../types";
-import { PROVIDER_MAP } from "../../../constants";
+import { PROVIDER_MAP } from "../../constants";
 
 export class ProviderFilterKeyboard implements IProviderFilterKeyboard {
   create(page: number): InlineKeyboard {

@@ -1,10 +1,6 @@
-import {
-  CONTRACT_TYPE_MAP,
-  PAGINATION_LIMIT,
-  PROVIDER_MAP,
-} from "../../../constants";
 import { IJobService } from "../../../services";
 import { isEmptyObject } from "../../../utilities";
+import { CONTRACT_TYPE_MAP, PAGINATION_LIMIT, PROVIDER_MAP } from "../../constants";
 import { JobFormatter } from "../../formatters";
 import {
   JobFilterKeyboard,

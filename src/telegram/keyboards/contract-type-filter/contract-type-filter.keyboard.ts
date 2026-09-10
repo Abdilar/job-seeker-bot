@@ -1,6 +1,6 @@
 import { InlineKeyboard } from "grammy"
 import { IContractTypeFilterKeyboard } from './contract-type-filter.model'
-import { CONTRACT_TYPE_MAP } from "../../../constants"
+import { CONTRACT_TYPE_MAP } from "../../constants"
 import { EContractType } from "../../../types"
 
 export class ContractTypeFilterKeyboard implements IContractTypeFilterKeyboard {

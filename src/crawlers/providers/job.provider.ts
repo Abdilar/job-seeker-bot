@@ -1,6 +1,6 @@
 import { Browser, chromium, Page } from "playwright";
 import { IJobProvider } from "./job.model";
-import { ICrawledJob } from "../types";
+import { ICrawledJob } from "../../types";
 
 export abstract class JobProvider {
   protected browser?: Browser;

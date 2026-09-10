@@ -1,4 +1,4 @@
-import { format, subDays,  } from "date-fns-jalali";
+import { format, subDays } from "date-fns-jalali";
 import { TODAY } from "../constants";
 
 export function convertDaysAgoToJalaliDate(date: string): Date | undefined {

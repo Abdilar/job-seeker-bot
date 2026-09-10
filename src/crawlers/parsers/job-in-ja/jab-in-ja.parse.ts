@@ -1,13 +1,10 @@
 import { Locator } from "playwright";
-import { EProvider, ICompany, ICrawledJob, ILocation } from "../../types";
-import {
-  convertDaysAgoToJalaliDate,
-  convertPersianContractTypeToEContractType,
-  toEnglishDigits,
-} from "../../utilities";
-import { TODAY } from "../../constants";
+import { EProvider, ICompany, ICrawledJob, ILocation } from "../../../types";
+import { TODAY } from "../../../constants";
 import { LOCATION_COUNTRY } from "./job-in-ja.constant";
 import { IJobParserStrategy } from "../job.model";
+import { convertPersianContractTypeToEContractType, toEnglishDigits } from "../../utilities";
+import { convertDaysAgoToJalaliDate } from "../../../utilities";
 
 export class JobInJaParser implements IJobParserStrategy {
   async parse(content: Locator): Promise<ICrawledJob | undefined> {
@@ -58,7 +55,7 @@ export class JobInJaParser implements IJobParserStrategy {
         company,
       };
     } catch (error) {
-      console.error(`Jobinja parser: ${error}`)
+      console.error(`Jobinja parser: ${error}`);
     }
   }
 

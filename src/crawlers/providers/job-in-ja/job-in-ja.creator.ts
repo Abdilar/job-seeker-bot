@@ -2,7 +2,7 @@ import { Page } from "playwright";
 import { IJobProvider } from "../job.model";
 import { JobProvider } from "../job.provider";
 import { JobInJaProduct } from "./job-in-ja.product";
-import { JobInJaParser, JobParser } from "../../parser";
+import { JobInJaParser, JobParser } from "../../parsers";
 
 export class JobInJaCreator extends JobProvider {
   protected async createProvider(page: Page): Promise<IJobProvider> {
