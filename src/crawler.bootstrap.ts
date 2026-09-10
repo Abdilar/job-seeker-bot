@@ -11,4 +11,4 @@ const providers = [
 ]
 
 const crawlJobs = new CrawlJobsTask(jobService, providers)
-crawlJobs.run()
+crawlJobs.run().catch(console.error)
