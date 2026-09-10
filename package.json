@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node src/index.ts",
+    "dev:bot": "ts-node src/bot.bootstrap.ts",
+    "dev:crawler": "ts-node src/crawler.bootstrap.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start:bot": "node dist/bot.bootstrap.ts",
+    "start:crawler": "node dist/crawler.bootstrap.ts"
   },
   "keywords": [],
   "author": "",
