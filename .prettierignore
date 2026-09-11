@@ -1,0 +1,6 @@
+node_modules
+dist
+crawled-data
+.prisma
+prisma/generated
+package-lock.json

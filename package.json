@@ -7,7 +7,9 @@
     "dev:crawler": "ts-node src/crawler.bootstrap.ts",
     "build": "tsc",
     "start:bot": "node dist/bot.bootstrap.ts",
-    "start:crawler": "node dist/crawler.bootstrap.ts"
+    "start:crawler": "node dist/crawler.bootstrap.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "keywords": [],
   "author": "",
@@ -16,6 +18,7 @@
   "devDependencies": {
     "@prisma/adapter-pg": "^7.9.0",
     "@types/node": "^26.1.1",
+    "prettier": "^3.9.6",
     "prisma": "^7.10.0",
     "ts-node": "^10.9.2",
     "typescript": "5.9"
