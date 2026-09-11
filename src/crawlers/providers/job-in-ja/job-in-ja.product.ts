@@ -68,7 +68,7 @@ export class JobInJaProduct implements IJobProvider {
       console.info(`Jobinja Provider: Fetch has been done.`, { page, lastPage: this.lastPage })
 
       if (page <= this.lastPage) {
-        await randomDelay(2_000, 10_000)
+        await randomDelay(2_000, 5_000)
         await this.goNextPage()
       }
     }
