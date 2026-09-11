@@ -1,7 +1,7 @@
-import { InlineKeyboard } from "grammy"
+import { InlineKeyboard } from 'grammy'
 import { IContractTypeFilterKeyboard } from './contract-type-filter.model'
-import { CONTRACT_TYPE_MAP } from "../../constants"
-import { EContractType } from "../../../types"
+import { CONTRACT_TYPE_MAP } from '../../constants'
+import { EContractType } from '../../../types'
 
 export class ContractTypeFilterKeyboard implements IContractTypeFilterKeyboard {
   create(page: number): InlineKeyboard {
@@ -12,6 +12,5 @@ export class ContractTypeFilterKeyboard implements IContractTypeFilterKeyboard {
       .row()
       .text('❌ حذف فیلتر', 'filters:contractType:clear')
       .text('⬅️ بازگشت', `filters:${page}`)
-      
-   }
+  }
 }

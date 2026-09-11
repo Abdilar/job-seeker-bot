@@ -1,4 +1,4 @@
-import { ICrawledJob } from "../../types";
+import { ICrawledJob } from '../../types'
 
 export interface IJobProvider {
   getJobs(): Promise<ICrawledJob[]>

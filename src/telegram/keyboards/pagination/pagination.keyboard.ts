@@ -1,5 +1,5 @@
-import { InlineKeyboard } from "grammy";
-import { IPaginationKeyboard } from "./pagination.model";
+import { InlineKeyboard } from 'grammy'
+import { IPaginationKeyboard } from './pagination.model'
 
 export class PaginationKeyboard implements IPaginationKeyboard {
   create(page: number, totalPages: number): InlineKeyboard {

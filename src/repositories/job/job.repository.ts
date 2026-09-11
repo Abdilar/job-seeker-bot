@@ -1,14 +1,14 @@
-import { Prisma, EProvider as EPrismaProvider } from "@prisma/client";
-import { IJobRepository, PrismaJobType } from "./job.model";
-import { prisma } from "../../database/prisma";
+import { Prisma, EProvider as EPrismaProvider } from '@prisma/client'
+import { IJobRepository, PrismaJobType } from './job.model'
+import { prisma } from '../../database/prisma'
 import {
   EProvider as EDomainProvider,
   IJob,
   ICrawledJob,
   EContractType,
   IJobFilter,
-} from "../../types";
-import { chunk } from "../../utilities";
+} from '../../types'
+import { chunk } from '../../utilities'
 
 const prismaProviderMap: Record<EDomainProvider, EPrismaProvider> = {
   [EDomainProvider.JOB_IN_JA]: EPrismaProvider.JOB_IN_JA,
@@ -20,7 +20,7 @@ const prismaProviderMap: Record<EDomainProvider, EPrismaProvider> = {
   [EDomainProvider.SEEK]: EPrismaProvider.SEEK,
   [EDomainProvider.WORKDAY]: EPrismaProvider.WORKDAY,
   [EDomainProvider.LEVER]: EPrismaProvider.LEVER,
-};
+}
 
 const domainProviderMap: Record<EPrismaProvider, EDomainProvider> = {
   [EPrismaProvider.JOB_IN_JA]: EDomainProvider.JOB_IN_JA,
@@ -32,17 +32,15 @@ const domainProviderMap: Record<EPrismaProvider, EDomainProvider> = {
   [EPrismaProvider.SEEK]: EDomainProvider.SEEK,
   [EPrismaProvider.WORKDAY]: EDomainProvider.WORKDAY,
   [EPrismaProvider.LEVER]: EDomainProvider.LEVER,
-};
+}
 
 const contractTypeMap: Record<string, EContractType> = {
   [EContractType.FULL_TIME]: EContractType.FULL_TIME,
   [EContractType.PART_TIME]: EContractType.PART_TIME,
-};
+}
 
 export class JobRepository implements IJobRepository {
-  private convertICrawledJobToJobCreateInput(
-    data: ICrawledJob,
-  ): Prisma.JobCreateInput {
+  private convertICrawledJobToJobCreateInput(data: ICrawledJob): Prisma.JobCreateInput {
     return {
       ...data,
       salary: data.salary ?? null,
@@ -74,7 +72,7 @@ export class JobRepository implements IJobRepository {
           },
         },
       },
-    };
+    }
   }
 
   private convertPrismaJobToIJob(data: PrismaJobType): IJob {
@@ -91,7 +89,7 @@ export class JobRepository implements IJobRepository {
         englishName: data.company.englishName ?? undefined,
         persianName: data.company.persianName ?? undefined,
       },
-    };
+    }
   }
 
   async create(data: ICrawledJob): Promise<IJob> {
@@ -108,22 +106,19 @@ export class JobRepository implements IJobRepository {
         company: true,
         location: true,
       },
-    });
+    })
 
-    return this.convertPrismaJobToIJob(result);
+    return this.convertPrismaJobToIJob(result)
   }
 
   async createMany(data: Array<ICrawledJob>): Promise<void> {
-    const chunks = chunk(data, 100);
+    const chunks = chunk(data, 100)
 
-    console.log("total jobs:", data.length);
-    console.log("total chunks:", chunks.length);
+    console.log('total jobs:', data.length)
+    console.log('total chunks:', chunks.length)
 
     for (const [index, chunk] of chunks.entries()) {
-      console.log(
-        `processing chunk ${index + 1}/${chunks.length}`,
-        chunk.length,
-      );
+      console.log(`processing chunk ${index + 1}/${chunks.length}`, chunk.length)
 
       const prismaData = chunk.map((job) =>
         prisma.job.upsert({
@@ -140,9 +135,9 @@ export class JobRepository implements IJobRepository {
             location: true,
           },
         }),
-      );
+      )
 
-      await prisma.$transaction(prismaData);
+      await prisma.$transaction(prismaData)
     }
   }
 
@@ -150,15 +145,15 @@ export class JobRepository implements IJobRepository {
     const result = await prisma.job.delete({
       where: { id },
       include: { company: true, location: true },
-    });
-    return this.convertPrismaJobToIJob(result);
+    })
+    return this.convertPrismaJobToIJob(result)
   }
 
   async findById(id: string): Promise<IJob | null> {
     const job = await prisma.job.findUnique({
       where: { id },
       include: { company: true, location: true },
-    });
+    })
 
     if (!job) {
       return null
@@ -171,7 +166,7 @@ export class JobRepository implements IJobRepository {
     const job = await prisma.job.findUnique({
       where: { url },
       include: { company: true, location: true },
-    });
+    })
 
     if (!job) {
       return null
@@ -182,9 +177,9 @@ export class JobRepository implements IJobRepository {
 
   async findAll(): Promise<IJob[]> {
     const jobs = await prisma.job.findMany({
-      orderBy: { postedAt: "desc" },
+      orderBy: { postedAt: 'desc' },
       include: { company: true, location: true },
-    });
+    })
 
     return jobs.map((job) => this.convertPrismaJobToIJob(job))
   }
@@ -195,34 +190,34 @@ export class JobRepository implements IJobRepository {
       where: this.toWhereInput(filter),
       skip: offset,
       take: limit,
-      orderBy: {postedAt: "desc"},
+      orderBy: { postedAt: 'desc' },
       include: {
         company: true,
-        location: true
-      }
+        location: true,
+      },
     })
 
-    return jobs.map(job => this.convertPrismaJobToIJob(job))
+    return jobs.map((job) => this.convertPrismaJobToIJob(job))
   }
 
   async exists(url: string): Promise<boolean> {
     const job = await prisma.job.findUnique({
       where: { url },
       select: { id: true },
-    });
-    return !!job;
+    })
+    return !!job
   }
 
   async count(filter?: IJobFilter): Promise<number> {
     return prisma.job.count({
-      where: this.toWhereInput(filter)
-    });
+      where: this.toWhereInput(filter),
+    })
   }
 
   private toWhereInput(filter?: IJobFilter): Prisma.JobWhereInput {
     return {
       ...(filter?.contractType && { contractType: filter.contractType }),
-      ...(filter?.provider && { provider: filter.provider })
+      ...(filter?.provider && { provider: filter.provider }),
     }
   }
 }

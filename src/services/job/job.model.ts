@@ -1,15 +1,15 @@
-import { ICrawledJob, IJob, IJobFilter } from "../../types";
+import { ICrawledJob, IJob, IJobFilter } from '../../types'
 
 export type SaveJobsResultType = {
-  total: number;
-  saved: number;
-  failed: number;
-};
+  total: number
+  saved: number
+  failed: number
+}
 
 export interface IJobService {
-  isValid(data: ICrawledJob): boolean;
-  save(data: ICrawledJob): Promise<IJob>;
-  saveAll(data: Array<ICrawledJob>): Promise<SaveJobsResultType>;
+  isValid(data: ICrawledJob): boolean
+  save(data: ICrawledJob): Promise<IJob>
+  saveAll(data: Array<ICrawledJob>): Promise<SaveJobsResultType>
   getJobs(page: number, limit: number, filter?: IJobFilter): Promise<IJob[]>
   getJob(id: string): Promise<IJob | null>
   count(filter?: IJobFilter): Promise<number>

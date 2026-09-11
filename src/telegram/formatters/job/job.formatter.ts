@@ -1,21 +1,23 @@
-import { IJob } from "../../../types";
-import { toJalali } from "../../../utilities";
-import { CONTRACT_TYPE_MAP, PAGINATION_LIMIT, PROVIDER_MAP } from "../../constants";
-import { IJobFormatter } from "./job.model";
+import { IJob } from '../../../types'
+import { toJalali } from '../../../utilities'
+import { CONTRACT_TYPE_MAP, PAGINATION_LIMIT, PROVIDER_MAP } from '../../constants'
+import { IJobFormatter } from './job.model'
 
 export class JobFormatter implements IJobFormatter {
   formatList(jobs: Array<IJob>, page: number, totalPages: number): string {
-    const jobMessage = jobs.map((job, index) => {
-      const jobIndex = index + 1 + (page - 1) * PAGINATION_LIMIT;
-      
-      return `
+    const jobMessage = jobs
+      .map((job, index) => {
+        const jobIndex = index + 1 + (page - 1) * PAGINATION_LIMIT
+
+        return `
 <b>${jobIndex}. ${job.title}</b>
 ${job.company.fullName}
 ${CONTRACT_TYPE_MAP[job.contractType]}
       `
-    }).join('\n')
+      })
+      .join('\n')
 
-    return jobMessage.concat(`\n\n\nصفحه ${page} از ${totalPages}`);
+    return jobMessage.concat(`\n\n\nصفحه ${page} از ${totalPages}`)
   }
 
   formatDetail(job: IJob): string {
@@ -29,7 +31,7 @@ ${CONTRACT_TYPE_MAP[job.contractType]}
 
 📄 نوع قرارداد: <b>${CONTRACT_TYPE_MAP[job.contractType]}</b>
 
-💰 حقوق: <b>${job.salary || "نامشخص"}</b>
+💰 حقوق: <b>${job.salary || 'نامشخص'}</b>
 
 📅 تاریخ انتشار: <b>${toJalali(job.postedAt ?? new Date())}</b>
 

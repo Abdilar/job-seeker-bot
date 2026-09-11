@@ -1,5 +1,5 @@
-import { Locator } from "playwright";
-import { ICrawledJob } from "../../types";
+import { Locator } from 'playwright'
+import { ICrawledJob } from '../../types'
 
 export interface IJobParserStrategy {
   parse(content: Locator): Promise<ICrawledJob | undefined>

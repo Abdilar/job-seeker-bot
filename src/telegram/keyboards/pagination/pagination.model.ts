@@ -1,5 +1,5 @@
-import { InlineKeyboard } from "grammy";
+import { InlineKeyboard } from 'grammy'
 
 export interface IPaginationKeyboard {
-  create(page: number, totalPages: number): InlineKeyboard 
+  create(page: number, totalPages: number): InlineKeyboard
 }

@@ -1,5 +1,5 @@
-import { Locator } from "playwright";
-import { IJobParser, IJobParserStrategy } from "./job.model";
+import { Locator } from 'playwright'
+import { IJobParser, IJobParserStrategy } from './job.model'
 
 export class JobParser implements IJobParser {
   constructor(private parser: IJobParserStrategy) {}

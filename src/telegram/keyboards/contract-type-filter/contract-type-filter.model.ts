@@ -1,5 +1,5 @@
-import { InlineKeyboard } from "grammy"
+import { InlineKeyboard } from 'grammy'
 
 export interface IContractTypeFilterKeyboard {
-  create(page: number): InlineKeyboard 
+  create(page: number): InlineKeyboard
 }

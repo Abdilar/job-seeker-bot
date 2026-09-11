@@ -1,18 +1,18 @@
-import { ICompany } from "./company.model"
-import { EContractType } from "./contract.model"
-import { ILocation } from "./location.model"
-import { EProvider } from "./provider.model"
+import { ICompany } from './company.model'
+import { EContractType } from './contract.model'
+import { ILocation } from './location.model'
+import { EProvider } from './provider.model'
 
 interface IBaseJob {
   title: string
   url: string
-  contractType: EContractType 
+  contractType: EContractType
   salary?: string
   postedAt?: Date
   provider: EProvider
 }
 
-export interface ICrawledJob extends IBaseJob{
+export interface ICrawledJob extends IBaseJob {
   company: ICompany
   location: ILocation
 }
