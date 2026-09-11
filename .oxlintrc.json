@@ -1,0 +1,83 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+
+  "env": {
+    "node": true
+  },
+   "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "perf": "warn",
+    "style": "off",
+    "pedantic": "off",
+    "restriction": "off",
+    "nursery": "off"
+  },
+  "rules": {
+    "no-console": "error",
+
+    "typescript/no-explicit-any": "error",
+    "typescript/consistent-type-imports": "warn",
+    
+    "typescript/no-floating-promises": "error",
+    "typescript/no-misused-promises": "error",
+    "typescript/no-unnecessary-type-assertion": "warn",
+
+    "typescript/no-unsafe-assignment": "warn",
+    "typescript/no-unsafe-argument": "warn",
+    "typescript/no-unsafe-call": "warn",
+    "typescript/no-unsafe-member-access": "warn",
+    "typescript/no-unsafe-return": "warn",
+
+    "eqeqeq": "error",
+    "no-var": "error",
+    "prefer-const": "warn",
+    "no-shadow": "warn",
+    "no-useless-constructor": "warn",
+    "no-unneeded-ternary": "warn",
+
+    "no-unreachable": "error",
+    "no-func-assign": "error",
+    "no-self-assign": "error",
+    "no-global-assign": "error",
+    "no-import-assign": "error",
+    "no-loss-of-precision": "warn",
+    "no-sparse-arrays": "error",
+    "no-unsafe-finally": "error",
+    "no-unsafe-negation": "error",
+    "no-unsafe-optional-chaining": "allow",
+    "no-useless-catch": "error",
+    "use-isnan": "error",
+    "no-useless-rename": "allow",
+    "typescript/no-extra-non-null-assertion": "error",
+    "typescript/prefer-as-const": "error",
+    "typescript/no-misused-new": "error",
+    "typescript/no-useless-empty-export": "error",
+    "typescript/triple-slash-reference": "error",
+    // "typescript/no-floating-promises": "error",
+    "typescript/unbound-method": "error",
+    "typescript/no-for-in-array": "error",
+    "typescript/no-misused-spread": "error",
+    "typescript/no-meaningless-void-operator": "error",
+    // "no-shadow": "error",
+    // "no-useless-constructor": "allow",
+    "no-useless-concat": "error",
+    // "no-unneeded-ternary": "error",
+    // "typescript/no-unnecessary-type-assertion": "error",
+    "typescript/no-unnecessary-type-arguments": "error",
+    "typescript/no-unnecessary-template-expression": "error",
+    "typescript/no-unnecessary-type-constraint": "error",
+    // "no-var": "error",
+    "no-var-requires": "error",
+
+  },
+   "ignorePatterns": [
+    "dist/**",
+    "coverage/**",
+    "prisma/generated/**",
+    "node_modules/**"
+  ],
+  "options": {
+    "typeAware": true
+  }
+}

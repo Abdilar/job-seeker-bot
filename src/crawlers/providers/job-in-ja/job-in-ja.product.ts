@@ -62,14 +62,19 @@ export class JobInJaProduct implements IJobProvider {
     const jobs: ICrawledJob[] = []
 
     for (let page = 1; page <= this.lastPage; page++) {
-      console.info(`Jobinja Provider: Fetching page "${page}"`)
-      const items = await this.fetchJobs()
-      jobs.push(...items)
-      console.info(`Jobinja Provider: Fetch has been done.`, { page, lastPage: this.lastPage })
+      try {
+        console.info(`Jobinja Provider: Fetching page "${page}"`)
+        const items = await this.fetchJobs()
+        jobs.push(...items)
+        console.info(`Jobinja Provider: Fetch has been done.`, { page, lastPage: this.lastPage })
 
-      if (page <= this.lastPage) {
-        await randomDelay(2_000, 5_000)
-        await this.goNextPage()
+        if (page <= this.lastPage) {
+          await randomDelay(1_000, 3_000)
+          await this.goNextPage()
+        }
+      } catch (error) {
+        console.error(error)
+        continue;
       }
     }
 
