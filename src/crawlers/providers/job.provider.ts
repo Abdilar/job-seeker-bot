@@ -8,7 +8,7 @@ export abstract class JobProvider {
   protected abstract createProvider(page: Page): Promise<IJobProvider>
 
   async crawlJobs(): Promise<ICrawledJob[]> {
-    this.browser = await chromium.launch({ headless: false });
+    this.browser = await chromium.launch({ headless: true });
     const context = await this.browser.newContext({
       ignoreHTTPSErrors: true,
     });
