@@ -6,8 +6,8 @@ export function chunk<T>(items: T[], size: number): T[][] {
   const chunks: T[][] = []
   const chunkLength = Math.ceil(items.length / size)
   for (let index = 0; index < chunkLength; index++) {
-    const chunk = items.slice(index * size, size * (index + 1))
-    chunks.push(chunk)
+    const chunkItem = items.slice(index * size, size * (index + 1))
+    chunks.push(chunkItem)
   }
   return chunks
 }

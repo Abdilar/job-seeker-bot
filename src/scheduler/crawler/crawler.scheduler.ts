@@ -15,6 +15,7 @@ export class CrawlerScheduler implements ICrawlerScheduler {
         try {
           await this.runWithJitter()
         } catch (error) {
+          // eslint-disable-next-line no-console
           console.error('Crawler scheduler failed:', error)
         }
       },
@@ -26,6 +27,7 @@ export class CrawlerScheduler implements ICrawlerScheduler {
 
   private async runWithJitter(): Promise<void> {
     if (this.isRunning) {
+      // eslint-disable-next-line no-console
       console.log('Crawler is already running. Skipping...')
       return
     }

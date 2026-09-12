@@ -37,17 +37,19 @@ export class JobRenderer implements IJobRenderer {
     if (!isEmptyObject(context.session.jobFilter)) {
       let filterMessage = 'فیلترهای انتخاب شده:\n'
 
-      context.session.jobFilter.contractType &&
-        (filterMessage += `
+      if (context.session.jobFilter.contractType) {
+        filterMessage += `
 نوع قرارداد: <b>${CONTRACT_TYPE_MAP[context.session.jobFilter.contractType]}</b>
-        `)
+        `
+      }
 
-      context.session.jobFilter.provider &&
-        (filterMessage += `
+      if (context.session.jobFilter.provider) {
+        filterMessage += `
 منبع: <b>${PROVIDER_MAP[context.session.jobFilter.provider]}</b>
         
   
-    `)
+ `
+      }
       message = filterMessage + message
     }
 

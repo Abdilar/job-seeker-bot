@@ -25,7 +25,7 @@ export class ProviderFilter implements IJobFilterStrategy<EProvider> {
   }
 
   async clear(context: TelegramContextType): Promise<void> {
-    const { provider, ...restFilter } = context.session.jobFilter
+    const { provider: _provider, ...restFilter } = context.session.jobFilter
     context.session.jobFilter = restFilter
     await context.answerCallbackQuery()
     await this.jobRenderer.render(context, 1, true)

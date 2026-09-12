@@ -26,7 +26,7 @@ export class ContractTypeFilter implements IJobFilterStrategy<EContractType> {
   }
 
   async clear(context: TelegramContextType): Promise<void> {
-    const { contractType, ...restFilter } = context.session.jobFilter
+    const { contractType: _contractType, ...restFilter } = context.session.jobFilter
     context.session.jobFilter = restFilter
     await context.answerCallbackQuery()
     await this.jobRenderer.render(context, 1, true)

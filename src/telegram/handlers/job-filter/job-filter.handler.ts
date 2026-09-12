@@ -78,6 +78,6 @@ export class JobFilterHandler implements IJobFilterHandler {
   private async clearFilters(context: TelegramContextType): Promise<void> {
     context.session.jobFilter = {}
     await context.answerCallbackQuery()
-    this.jobRenderer.render(context, 1, true)
+    await this.jobRenderer.render(context, 1, true)
   }
 }

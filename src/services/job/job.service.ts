@@ -9,13 +9,14 @@ export class JobService implements IJobService {
     try {
       this.validate(data)
       return this.repository.create(data)
-    } catch (error) {
+    } catch {
       throw new Error('Failed saving job operation!')
     }
   }
 
   async saveAll(data: Array<ICrawledJob>): Promise<SaveJobsResultType> {
     const validJobs = data.filter((item) => this.isValid(item))
+    // eslint-disable-next-line no-console
     console.log('Saving jobs started...', {validJobs})
     await this.repository.createMany(validJobs)
 
@@ -40,7 +41,7 @@ export class JobService implements IJobService {
     try {
       this.validate(data)
       return true
-    } catch (_) {
+    } catch {
       return false
     }
   }

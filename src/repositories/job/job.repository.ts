@@ -114,12 +114,15 @@ export class JobRepository implements IJobRepository {
   async createMany(data: ICrawledJob[]): Promise<void> {
   const chunks = chunk(data, 100);
 
+  // eslint-disable-next-line no-console
   console.log("total jobs:", data.length);
+  // eslint-disable-next-line no-console
   console.log("total chunks:", chunks.length);
 
   for (const [index, chunkItem] of chunks.entries()) {
     const startedAt = Date.now();
 
+    // eslint-disable-next-line no-console
     console.log(
       `processing chunk ${index + 1}/${chunks.length}`,
       `items: ${chunkItem.length}`,
@@ -142,11 +145,12 @@ export class JobRepository implements IJobRepository {
       );
 
       await prisma.$transaction(prismaData);
-
+      // eslint-disable-next-line no-console
       console.log(
         `chunk ${index + 1} completed in ${Date.now() - startedAt}ms`,
       );
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(
         `chunk ${index + 1}/${chunks.length} failed`,
         error,
@@ -156,6 +160,7 @@ export class JobRepository implements IJobRepository {
     }
   }
 
+  // eslint-disable-next-line no-console
   console.log("all chunks completed");
 }
 

@@ -33,6 +33,7 @@ export class JobInJaProduct implements IJobProvider {
   private async getLastPage() {
     const paginationElements = await this.getElement('#js-jobSearchPaginator ul > li')
     const paginationElementsTotal = await paginationElements.count()
+    // eslint-disable-next-line no-console
     console.log({ paginationElementsTotal })
     if (!paginationElementsTotal) {
       return 1
@@ -42,7 +43,7 @@ export class JobInJaProduct implements IJobProvider {
       .nth(paginationElementsTotal - 2)
       .locator('a')
       .textContent()
-
+    // eslint-disable-next-line no-console
     console.log({ lastPageFa })
 
     return Number(toEnglishDigits(lastPageFa ?? '1')) || 1
@@ -63,9 +64,11 @@ export class JobInJaProduct implements IJobProvider {
 
     for (let page = 1; page <= this.lastPage; page++) {
       try {
+        // eslint-disable-next-line no-console
         console.info(`Jobinja Provider: Fetching page "${page}"`)
         const items = await this.fetchJobs()
         jobs.push(...items)
+        // eslint-disable-next-line no-console
         console.info(`Jobinja Provider: Fetch has been done.`, { page, lastPage: this.lastPage })
 
         if (page <= this.lastPage) {
