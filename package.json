@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "commit": "cz",
     "dev:bot": "ts-node src/bot.bootstrap.ts",
     "dev:crawler": "ts-node src/crawler.bootstrap.ts",
     "build": "tsc",
@@ -24,6 +25,8 @@
     "@commitlint/config-conventional": "^21.2.2",
     "@prisma/adapter-pg": "^7.9.0",
     "@types/node": "^26.1.1",
+    "commitizen": "^4.3.2",
+    "cz-conventional-changelog": "^3.3.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
     "oxlint": "^1.82.0",
