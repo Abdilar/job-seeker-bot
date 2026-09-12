@@ -20,6 +20,8 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
     "@prisma/adapter-pg": "^7.9.0",
     "@types/node": "^26.1.1",
     "husky": "^9.1.7",
