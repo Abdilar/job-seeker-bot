@@ -73,6 +73,7 @@ export class JobInJaProduct implements IJobProvider {
           await this.goNextPage()
         }
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error(error)
         continue;
       }
@@ -96,7 +97,9 @@ export class JobInJaProduct implements IJobProvider {
     for (let index = 0; index < jobCount; index++) {
       const job = await this.parser.parse(jobElements.nth(index))
       if (!job) {
-        console.error(`Couldn't parse a job: ${jobElements.nth((index + 1) * this.lastPage)}`)
+        const jobIndex = (index + 1) * this.lastPage
+        // eslint-disable-next-line no-console
+        console.error(`Couldn't parse a job: ${jobIndex}`)
         continue
       }
       jobs.push(job)

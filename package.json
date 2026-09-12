@@ -9,7 +9,10 @@
     "start:bot": "node dist/bot.bootstrap.ts",
     "start:crawler": "node dist/crawler.bootstrap.ts",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "lint": "oxlint src",
+    "lint:fast": "oxlint src --disable-type-aware",
+    "lint:fix": "oxlint src --fix"
   },
   "keywords": [],
   "author": "",
@@ -19,6 +22,7 @@
     "@prisma/adapter-pg": "^7.9.0",
     "@types/node": "^26.1.1",
     "oxlint": "^1.82.0",
+    "oxlint-tsgolint": "^7.0.2001",
     "prettier": "^3.9.6",
     "prisma": "^7.10.0",
     "ts-node": "^10.9.2",

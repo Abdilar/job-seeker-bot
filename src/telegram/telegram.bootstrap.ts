@@ -32,6 +32,12 @@ export class TelegramBot implements ITelegramBot {
   }
 
   start() {
-    this.bot.start()
+    this.bot.start().then(() => {
+      // eslint-disable-next-line no-console
+      console.log('The bot started successfully!')
+    }).catch(() => {
+      // eslint-disable-next-line no-console
+      console.error('Starting bot has been occurred an Error!')
+    })
   }
 }

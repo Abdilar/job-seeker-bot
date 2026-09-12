@@ -43,8 +43,10 @@ export class JobInJaParser implements IJobParserStrategy {
         location,
         company,
       }
-    } catch (error) {
-      console.error(`Jobinja parser: ${error}`)
+    } catch {
+      // eslint-disable-next-line no-console
+      console.error(`Jobinja parser has been occurred an Error!`)
+      return undefined
     }
   }
 

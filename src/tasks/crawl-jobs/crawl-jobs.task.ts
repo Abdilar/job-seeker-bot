@@ -11,8 +11,8 @@ export class CrawlJobsTask implements ICrawlJobsTask {
   async run(): Promise<void> {
     for (const provider of this.providers) {
       const jobs = await provider.crawlJobs()
-      this.jobService.saveAll(jobs)
-      provider.closeBrowser()
+      await this.jobService.saveAll(jobs)
+      await provider.closeBrowser()
     }
   }
 }

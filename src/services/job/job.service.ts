@@ -16,6 +16,7 @@ export class JobService implements IJobService {
 
   async saveAll(data: Array<ICrawledJob>): Promise<SaveJobsResultType> {
     const validJobs = data.filter((item) => this.isValid(item))
+    console.log('Saving jobs started...', {validJobs})
     await this.repository.createMany(validJobs)
 
     const result: SaveJobsResultType = {
@@ -67,8 +68,8 @@ export class JobService implements IJobService {
 
     try {
       new URL(data.url)
-    } catch (error) {
-      throw new Error(`The url of job is required: ${error}`)
+    } catch {
+      throw new Error('The url of job is required')
     }
   }
 

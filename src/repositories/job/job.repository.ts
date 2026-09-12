@@ -114,13 +114,16 @@ export class JobRepository implements IJobRepository {
   async createMany(data: Array<ICrawledJob>): Promise<void> {
     const chunks = chunk(data, 100)
 
+    // eslint-disable-next-line no-console
     console.log('total jobs:', data.length)
-    console.log('total chunks:', chunks.length)
+    // eslint-disable-next-line no-console
+    console.log('total chunks:', {chunks, total: chunks.length})
 
-    for (const [index, chunk] of chunks.entries()) {
+    for (const [index, chunkItem] of chunks.entries()) {
+      // eslint-disable-next-line no-console
       console.log(`processing chunk ${index + 1}/${chunks.length}`, chunk.length)
 
-      const prismaData = chunk.map((job) =>
+      const prismaData = chunkItem.map((job) =>
         prisma.job.upsert({
           where: { url: job.url },
           create: this.convertICrawledJobToJobCreateInput(job),
