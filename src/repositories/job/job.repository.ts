@@ -111,38 +111,53 @@ export class JobRepository implements IJobRepository {
     return this.convertPrismaJobToIJob(result)
   }
 
-  async createMany(data: Array<ICrawledJob>): Promise<void> {
-    const chunks = chunk(data, 20)
+  async createMany(data: ICrawledJob[]): Promise<void> {
+  const chunks = chunk(data, 100);
 
-    // eslint-disable-next-line no-console
-    console.log('total jobs:', data.length)
-    // eslint-disable-next-line no-console
-    console.log('total chunks:', {chunks, total: chunks.length})
+  console.log("total jobs:", data.length);
+  console.log("total chunks:", chunks.length);
 
-    for (const [index, chunkItem] of chunks.entries()) {
-      // eslint-disable-next-line no-console
-      console.log(`processing chunk ${index + 1}/${chunks.length}`, chunk.length)
+  for (const [index, chunkItem] of chunks.entries()) {
+    const startedAt = Date.now();
 
+    console.log(
+      `processing chunk ${index + 1}/${chunks.length}`,
+      `items: ${chunkItem.length}`,
+    );
+
+    try {
       const prismaData = chunkItem.map((job) =>
         prisma.job.upsert({
           where: { url: job.url },
+
           create: this.convertICrawledJobToJobCreateInput(job),
+
           update: {
             title: job.title,
             contractType: job.contractType,
             salary: job.salary,
             postedAt: job.postedAt,
           },
-          include: {
-            company: true,
-            location: true,
-          },
         }),
-      )
+      );
 
-      await prisma.$transaction(prismaData)
+      await prisma.$transaction(prismaData);
+
+      console.log(
+        `chunk ${index + 1} completed in ${Date.now() - startedAt}ms`,
+      );
+    } catch (error) {
+      console.error(
+        `chunk ${index + 1}/${chunks.length} failed`,
+        error,
+      );
+
+      throw error;
     }
   }
+
+  console.log("all chunks completed");
+}
 
   async delete(id: string): Promise<IJob> {
     const result = await prisma.job.delete({
