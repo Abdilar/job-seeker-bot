@@ -112,7 +112,7 @@ export class JobRepository implements IJobRepository {
   }
 
   async createMany(data: Array<ICrawledJob>): Promise<void> {
-    const chunks = chunk(data, 100)
+    const chunks = chunk(data, 20)
 
     // eslint-disable-next-line no-console
     console.log('total jobs:', data.length)
