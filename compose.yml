@@ -1,5 +1,8 @@
 services:
   bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: job-seeker
     container_name: job-bot
     env_file:
