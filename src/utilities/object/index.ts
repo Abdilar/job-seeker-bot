@@ -1,1 +1,1 @@
-export * from '../global.util'
+export * from './object.util'
