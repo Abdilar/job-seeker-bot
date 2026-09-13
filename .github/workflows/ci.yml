@@ -23,3 +23,6 @@ jobs:
         run: npx prisma generate
         env:
           DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+
+      - name: Check types
+        run: npm run typecheck
