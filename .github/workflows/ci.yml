@@ -21,3 +21,5 @@ jobs:
 
       - name: Generate prisma client
         run: npx prisma generate
+        env:
+          DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
