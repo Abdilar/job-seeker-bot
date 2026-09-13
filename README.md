@@ -377,4 +377,4 @@ npm run commit
 
 ## License
 
-License information will be added as the project evolves.
+See the [LICENSE](./LICENSE.md) file for details.
