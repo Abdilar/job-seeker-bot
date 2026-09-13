@@ -1,0 +1,16 @@
+services:
+  bot:
+    image: job-seeker
+    container_name: job-bot
+    env_file:
+      - .env
+    command: node dist/bot.bootstrap.js
+    restart: unless-stopped
+
+  crawler:
+    image: job-seeker
+    container_name: job-crawler
+    env_file:
+      - .env
+    command: node dist/crawler.bootstrap.js
+    restart: unless-stopped
