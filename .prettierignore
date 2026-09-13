@@ -3,4 +3,5 @@ dist
 crawled-data
 .prisma
 prisma/generated
+blueprint-templates
 package-lock.json
