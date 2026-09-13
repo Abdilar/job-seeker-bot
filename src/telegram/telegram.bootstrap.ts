@@ -1,8 +1,9 @@
 import { Bot, session } from 'grammy'
-import { ITelegramBot, ITelegramSession, TelegramContextType } from './telegram.model'
+import type { ITelegramBot, ITelegramSession, TelegramContextType } from './telegram.model'
 import { JobHandler, JobFilterHandler, StartHandler } from './handlers'
-import { IJobService } from '../services'
-import { IJobRenderer, JobRenderer } from './renders'
+import type { IJobService } from '../services'
+import type { IJobRenderer } from './renders'
+import { JobRenderer } from './renders'
 
 export class TelegramBot implements ITelegramBot {
   private readonly bot: Bot<TelegramContextType>
@@ -32,12 +33,15 @@ export class TelegramBot implements ITelegramBot {
   }
 
   start() {
-    this.bot.start().then(() => {
-      // eslint-disable-next-line no-console
-      console.log('The bot started successfully!')
-    }).catch(() => {
-      // eslint-disable-next-line no-console
-      console.error('Starting bot has been occurred an Error!')
-    })
+    this.bot
+      .start()
+      .then(() => {
+        // eslint-disable-next-line no-console
+        console.log('The bot started successfully!')
+      })
+      .catch(() => {
+        // eslint-disable-next-line no-console
+        console.error('Starting bot has been occurred an Error!')
+      })
   }
 }

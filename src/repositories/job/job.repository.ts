@@ -1,13 +1,9 @@
-import { Prisma, EProvider as EPrismaProvider } from '@prisma/client'
-import { IJobRepository, PrismaJobType } from './job.model'
+import type { Prisma } from '@prisma/client'
+import { EProvider as EPrismaProvider } from '@prisma/client'
+import type { IJobRepository, PrismaJobType } from './job.model'
 import { prisma } from '../../database/prisma'
-import {
-  EProvider as EDomainProvider,
-  IJob,
-  ICrawledJob,
-  EContractType,
-  IJobFilter,
-} from '../../types'
+import type { IJob, ICrawledJob, IJobFilter } from '../../types'
+import { EProvider as EDomainProvider, EContractType } from '../../types'
 import { chunk } from '../../utilities'
 
 const prismaProviderMap: Record<EDomainProvider, EPrismaProvider> = {
@@ -112,57 +108,49 @@ export class JobRepository implements IJobRepository {
   }
 
   async createMany(data: ICrawledJob[]): Promise<void> {
-  const chunks = chunk(data, 100);
-
-  // eslint-disable-next-line no-console
-  console.log("total jobs:", data.length);
-  // eslint-disable-next-line no-console
-  console.log("total chunks:", chunks.length);
-
-  for (const [index, chunkItem] of chunks.entries()) {
-    const startedAt = Date.now();
+    const chunks = chunk(data, 100)
 
     // eslint-disable-next-line no-console
-    console.log(
-      `processing chunk ${index + 1}/${chunks.length}`,
-      `items: ${chunkItem.length}`,
-    );
+    console.log('total jobs:', data.length)
+    // eslint-disable-next-line no-console
+    console.log('total chunks:', chunks.length)
 
-    try {
-      const prismaData = chunkItem.map((job) =>
-        prisma.job.upsert({
-          where: { url: job.url },
+    for (const [index, chunkItem] of chunks.entries()) {
+      const startedAt = Date.now()
 
-          create: this.convertICrawledJobToJobCreateInput(job),
-
-          update: {
-            title: job.title,
-            contractType: job.contractType,
-            salary: job.salary,
-            postedAt: job.postedAt,
-          },
-        }),
-      );
-
-      await prisma.$transaction(prismaData);
       // eslint-disable-next-line no-console
-      console.log(
-        `chunk ${index + 1} completed in ${Date.now() - startedAt}ms`,
-      );
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error(
-        `chunk ${index + 1}/${chunks.length} failed`,
-        error,
-      );
+      console.log(`processing chunk ${index + 1}/${chunks.length}`, `items: ${chunkItem.length}`)
 
-      throw error;
+      try {
+        const prismaData = chunkItem.map((job) =>
+          prisma.job.upsert({
+            where: { url: job.url },
+
+            create: this.convertICrawledJobToJobCreateInput(job),
+
+            update: {
+              title: job.title,
+              contractType: job.contractType,
+              salary: job.salary,
+              postedAt: job.postedAt,
+            },
+          }),
+        )
+
+        await prisma.$transaction(prismaData)
+        // eslint-disable-next-line no-console
+        console.log(`chunk ${index + 1} completed in ${Date.now() - startedAt}ms`)
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(`chunk ${index + 1}/${chunks.length} failed`, error)
+
+        throw error
+      }
     }
-  }
 
-  // eslint-disable-next-line no-console
-  console.log("all chunks completed");
-}
+    // eslint-disable-next-line no-console
+    console.log('all chunks completed')
+  }
 
   async delete(id: string): Promise<IJob> {
     const result = await prisma.job.delete({

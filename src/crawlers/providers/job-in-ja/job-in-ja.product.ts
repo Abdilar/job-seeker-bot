@@ -1,9 +1,9 @@
-import { Locator, Page } from 'playwright'
+import type { Locator, Page } from 'playwright'
 import { WAIT_UNTIL } from '../../constants'
 import { toEnglishDigits } from '../../utilities'
-import { IJobProvider } from '../job.model'
-import { ICrawledJob } from '../../../types'
-import { JobParser } from '../../parsers'
+import type { IJobProvider } from '../job.model'
+import type { ICrawledJob } from '../../../types'
+import type { JobParser } from '../../parsers'
 import { JOB_IN_JA_URL, MAIN_ELEMENT_SELECTOR } from './job-in-ja.constant'
 import { randomDelay } from '../../../utilities'
 
@@ -78,7 +78,7 @@ export class JobInJaProduct implements IJobProvider {
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error(error)
-        continue;
+        continue
       }
     }
 
