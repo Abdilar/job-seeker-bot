@@ -4,7 +4,7 @@
   "env": {
     "node": true
   },
-   "categories": {
+  "categories": {
     "correctness": "error",
     "suspicious": "warn",
     "perf": "warn",
@@ -18,7 +18,7 @@
 
     "typescript/no-explicit-any": "error",
     "typescript/consistent-type-imports": "warn",
-    
+
     "typescript/no-floating-promises": "error",
     "typescript/no-misused-promises": "error",
     "typescript/no-unnecessary-type-assertion": "warn",
@@ -62,14 +62,9 @@
     "typescript/no-unnecessary-type-arguments": "error",
     "typescript/no-unnecessary-template-expression": "error",
     "typescript/no-unnecessary-type-constraint": "error",
-    "no-var-requires": "error",
+    "no-var-requires": "error"
   },
-   "ignorePatterns": [
-    "dist/**",
-    "coverage/**",
-    "prisma/generated/**",
-    "node_modules/**"
-  ],
+  "ignorePatterns": ["dist/**", "coverage/**", "prisma/generated/**", "node_modules/**"],
   "options": {
     "typeAware": true
   }

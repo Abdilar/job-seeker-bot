@@ -1,6 +1,6 @@
-import { ICrawledJob, IJob, IJobFilter } from '../../types'
-import { IJobService, SaveJobsResultType } from './job.model'
-import { IJobRepository } from '../../repositories/job'
+import type { ICrawledJob, IJob, IJobFilter } from '../../types'
+import type { IJobService, SaveJobsResultType } from './job.model'
+import type { IJobRepository } from '../../repositories/job'
 
 export class JobService implements IJobService {
   constructor(private readonly repository: IJobRepository) {}
@@ -17,7 +17,7 @@ export class JobService implements IJobService {
   async saveAll(data: Array<ICrawledJob>): Promise<SaveJobsResultType> {
     const validJobs = data.filter((item) => this.isValid(item))
     // eslint-disable-next-line no-console
-    console.log('Saving jobs started...', {validJobs})
+    console.log('Saving jobs started...', { validJobs })
     await this.repository.createMany(validJobs)
 
     const result: SaveJobsResultType = {

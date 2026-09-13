@@ -6,3 +6,7 @@ dist
 /src/generated/prisma
 crawled-data
 .vscode
+coverage
+
+*/**/.DS_Store
+.DS_Store
