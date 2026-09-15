@@ -1,6 +1,6 @@
-import { JobProvider } from '../../crawlers'
-import { IJobService } from '../../services'
-import { ICrawlJobsTask } from './crawl-jobs.model'
+import type { JobProvider } from '../../crawlers'
+import type { IJobService } from '../../services'
+import type { ICrawlJobsTask } from './crawl-jobs.model'
 
 export class CrawlJobsTask implements ICrawlJobsTask {
   constructor(
