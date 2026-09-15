@@ -46,4 +46,4 @@ jobs:
         run: npm run build
 
       - name: Build docker image
-        run: docker build -t job-seeker:ci .
+        run: docker build -t job-seeker:ci . up -d --build
