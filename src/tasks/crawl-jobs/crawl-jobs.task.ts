@@ -13,6 +13,8 @@ export class CrawlJobsTask implements ICrawlJobsTask {
       const jobs = await provider.crawlJobs()
       await this.jobService.saveAll(jobs)
       await provider.closeBrowser()
+      // eslint-disable-next-line no-console
+      console.log('Browser closed...')
     }
   }
 }
