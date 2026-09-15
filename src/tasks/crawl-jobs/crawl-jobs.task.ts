@@ -1,6 +1,6 @@
-import { JobProvider } from '../../crawlers'
-import { IJobService } from '../../services'
-import { ICrawlJobsTask } from './crawl-jobs.model'
+import type { JobProvider } from '../../crawlers'
+import type { IJobService } from '../../services'
+import type { ICrawlJobsTask } from './crawl-jobs.model'
 
 export class CrawlJobsTask implements ICrawlJobsTask {
   constructor(
@@ -13,6 +13,8 @@ export class CrawlJobsTask implements ICrawlJobsTask {
       const jobs = await provider.crawlJobs()
       await this.jobService.saveAll(jobs)
       await provider.closeBrowser()
+      // eslint-disable-next-line no-console
+      console.log('Browser closed...')
     }
   }
 }
