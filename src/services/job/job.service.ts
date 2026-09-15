@@ -19,7 +19,8 @@ export class JobService implements IJobService {
     // eslint-disable-next-line no-console
     console.log('Saving jobs started...', { validJobs })
     await this.repository.createMany(validJobs)
-
+    // eslint-disable-next-line no-console
+    console.log('Save all verified jobs...', { validJobs })
     const result: SaveJobsResultType = {
       total: data.length,
       saved: validJobs.length,
