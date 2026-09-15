@@ -1,6 +1,6 @@
 import cron from 'node-cron'
-import { ICrawlJobsTask } from '../../tasks'
-import { ICrawlerScheduler } from './crawler.model'
+import type { ICrawlJobsTask } from '../../tasks'
+import type { ICrawlerScheduler } from './crawler.model'
 import { randomDelay } from '../../utilities'
 
 export class CrawlerScheduler implements ICrawlerScheduler {
@@ -37,7 +37,8 @@ export class CrawlerScheduler implements ICrawlerScheduler {
     try {
       const maxDelaySeconds = 600
       await randomDelay(0, maxDelaySeconds)
-
+      // eslint-disable-next-line no-console
+      console.log('scheduler will start...')
       await this.crawlJobs.run()
     } finally {
       this.isRunning = false
