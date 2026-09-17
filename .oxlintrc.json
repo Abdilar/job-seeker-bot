@@ -1,6 +1,5 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-
   "env": {
     "node": true
   },
@@ -15,20 +14,16 @@
   },
   "rules": {
     "no-console": "error",
-
     "typescript/no-explicit-any": "error",
     "typescript/consistent-type-imports": "warn",
-
     "typescript/no-floating-promises": "error",
     "typescript/no-misused-promises": "error",
     "typescript/no-unnecessary-type-assertion": "warn",
-
     "typescript/no-unsafe-assignment": "error",
     "typescript/no-unsafe-argument": "error",
     "typescript/no-unsafe-call": "error",
     "typescript/no-unsafe-member-access": "error",
     "typescript/no-unsafe-return": "error",
-
     "eqeqeq": "error",
     "no-var": "error",
     "prefer-const": "error",
@@ -36,7 +31,6 @@
     "no-unneeded-ternary": "error",
     "no-useless-constructor": "warn",
     "use-isnan": "error",
-
     "no-unreachable": "error",
     "no-func-assign": "error",
     "no-self-assign": "error",
@@ -64,6 +58,22 @@
     "typescript/no-unnecessary-type-constraint": "error",
     "no-var-requires": "error"
   },
+  "overrides": [
+    {
+      "files": ["scripts/**/*.mjs"],
+      "rules": {
+        "no-console": "off",
+        "typescript/no-floating-promises": "off",
+        "typescript/no-misused-promises": "off",
+        "typescript/no-unnecessary-type-assertion": "off",
+        "typescript/no-unsafe-assignment": "off",
+        "typescript/no-unsafe-argument": "off",
+        "typescript/no-unsafe-call": "off",
+        "typescript/no-unsafe-member-access": "off",
+        "typescript/no-unsafe-return": "off"
+      }
+    }
+  ],
   "ignorePatterns": ["dist/**", "coverage/**", "prisma/generated/**", "node_modules/**"],
   "options": {
     "typeAware": true
