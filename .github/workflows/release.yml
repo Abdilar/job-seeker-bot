@@ -33,6 +33,28 @@ jobs:
         run: npm ci
 
       - name: Release
+        id: release
         run: npm run release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login to ghcr
+        if: ${{ steps.release.outputs.version != '' }}
+        uses: docker/login-version@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build docker image
+        if: ${{ steps.release.outputs.version != '' }}
+        run: |
+          docker.build \
+          -t ghcr.io/${{ github.repository }}:${{ steps.release.outputs.version }} \
+          .
+
+      - name: Push docker image
+        if: ${{ steps.release.outputs.version != '' }}
+        run: |
+          docker push \
+          ghcr.io/${{ github.repository }}:${{ steps.release.outputs.version }}
