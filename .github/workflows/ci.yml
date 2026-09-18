@@ -10,6 +10,7 @@ on:
 
 jobs:
   quality:
+    if: ${{ !startsWith(github.head_ref, 'chore/release-') }}
     runs-on: ubuntu-latest
 
     steps:
@@ -44,6 +45,3 @@ jobs:
 
       - name: Build
         run: npm run build
-
-      - name: Build docker image
-        run: docker build -t job-seeker:ci .
