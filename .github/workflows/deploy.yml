@@ -10,7 +10,7 @@ on:
 
 jobs:
   deploy:
-    runs_on: ubuntu-latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: Show deployment version
