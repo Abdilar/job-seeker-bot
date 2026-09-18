@@ -21,6 +21,7 @@ enum EProvider {
   JOB_VISION
   IRAN_TALENT
   JOB_IN_JA
+  E_ESTEKHDAM
 }
 
 model Job {
@@ -48,9 +49,10 @@ model Company {
 }
 
 model Location {
-  id       String  @id @default(cuid())
+  id       String @id @default(cuid())
   country  String
   province String
   jobs     Job[]
+
   @@unique([country, province])
 }

@@ -11,6 +11,7 @@ export const PROVIDER_MAP = {
   [EProvider.JOB_IN_JA]: 'جابینجا',
   [EProvider.IRAN_TALENT]: 'ایران تلنت',
   [EProvider.JOB_VISION]: 'جاب ویژن',
+  [EProvider.E_ESTEKHDAM]: 'ای استخدام',
   [EProvider.GREENHOUSE]: 'Greenhouse',
   [EProvider.INDEED]: 'Indeed',
   [EProvider.LEVER]: 'Lever',
