@@ -8,6 +8,7 @@ import { chunk } from '../../utilities'
 
 const prismaProviderMap: Record<EDomainProvider, EPrismaProvider> = {
   [EDomainProvider.JOB_IN_JA]: EPrismaProvider.JOB_IN_JA,
+  [EDomainProvider.E_ESTEKHDAM]: EPrismaProvider.E_ESTEKHDAM,
   [EDomainProvider.LINKED_IN]: EPrismaProvider.LINKED_IN,
   [EDomainProvider.GREENHOUSE]: EPrismaProvider.GREENHOUSE,
   [EDomainProvider.INDEED]: EPrismaProvider.INDEED,
@@ -28,6 +29,7 @@ const domainProviderMap: Record<EPrismaProvider, EDomainProvider> = {
   [EPrismaProvider.SEEK]: EDomainProvider.SEEK,
   [EPrismaProvider.WORKDAY]: EDomainProvider.WORKDAY,
   [EPrismaProvider.LEVER]: EDomainProvider.LEVER,
+  [EPrismaProvider.E_ESTEKHDAM]: EDomainProvider.E_ESTEKHDAM,
 }
 
 const contractTypeMap: Record<string, EContractType> = {
