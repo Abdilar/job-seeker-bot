@@ -39,7 +39,7 @@ jobs:
 
       - name: Check docker image
         run: |
-          IMAGE: ghcr.io/${GITHUB_REPOSITORY,,}:${{ inputs.version }}
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}:${{ inputs.version }}"
           echo "Checking image: $IMAGE"
 
           if ! docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
