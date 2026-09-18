@@ -85,15 +85,20 @@ jobs:
         run: |
           git checkout "${{ steps.release.outputs.version }}"
 
+      - name: Prepare docker image name
+        if: ${{ steps.release.outputs.version != '' }}
+        id: image
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
       - name: Build docker image
         if: ${{ steps.release.outputs.version != '' }}
         run: |
           docker build \
-          -t ghcr.io/${{ github.repository }}:${{ steps.release.outputs.version }} \
+          -t ${{ steps.image.outputs.name }}:${{ steps.release.outputs.version }} \
           .
 
       - name: Push docker image
         if: ${{ steps.release.outputs.version != '' }}
         run: |
           docker push \
-          ghcr.io/${{ github.repository }}:${{ steps.release.outputs.version }}
+          ${{ steps.image.outputs.name }}:${{ steps.release.outputs.version }}
