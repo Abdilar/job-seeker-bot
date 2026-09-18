@@ -12,6 +12,7 @@ on:
 permissions:
   contents: write
   packages: write
+  pull-requests: write
 
 jobs:
   release:
@@ -22,7 +23,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
         with:
+          ref: master
           fetch-depth: 0
+
+      - name: Verify release commit
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ github.event.workflow_run.head_sha }}"
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -38,18 +44,51 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Create version update pull request
+        if: ${{ steps.release.outputs.version != '' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.release.outputs.version }}
+        run: |
+          VERSION="${RELEASE_TAG#v}"
+          BRANCH="chore/release-${VERSION}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git switch -c "$BRANCH"
+          git add package.json package-lock.json
+          git commit -m "chore(release): ${VERSION}"
+          git push origin "$BRANCH"
+
+          gh pr create \
+            --base master \
+            --head "$BRANCH" \
+            --title "chore(release): ${VERSION}" \
+            --body "Update package.json and package-lock.json to version ${VERSION}."
+
+          gh pr merge "$BRANCH" \
+            --squash \
+            --delete-branch \
+            --auto
+
       - name: Login to ghcr
         if: ${{ steps.release.outputs.version != '' }}
-        uses: docker/login-version@v3
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Checkout released version
+        if: ${{ steps.release.outputs.version != '' }}
+        run: |
+          git checkout "${{ steps.release.outputs.version }}"
+
       - name: Build docker image
         if: ${{ steps.release.outputs.version != '' }}
         run: |
-          docker.build \
+          docker build \
           -t ghcr.io/${{ github.repository }}:${{ steps.release.outputs.version }} \
           .
 
