@@ -1,0 +1,66 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy (e.g. v1.0.5)'
+        required: true
+        type: string
+
+permissions:
+  packages: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Show deployment version
+        run: |
+          echo "Deploying version: ${{ inputs.version }}"
+
+      - name: Validate version
+        run: |
+          if [[ ! "${{ inputs.version }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid version: ${{ inputs.version }}"
+            echo "Expected format: v1.0.5"
+            exit 1
+          fi
+
+          echo "Version is valid: ${{ inputs.version }}"
+
+      - name: Login to github container repository
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check docker image
+        run: |
+          IMAGE: ghcr.io/${GITHUB_REPOSITORY,,}:${{ inputs.version }}
+          echo "Checking image: $IMAGE"
+
+          if ! docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
+            echo "Docker image does not exist: $IMAGE"
+            exit 1
+          fi
+
+          echo "Docker image exists: $IMAGE"
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy-key
+          chmod 600 ~/.ssh/deploy_key
+
+          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Test SSH connection
+        run: |
+          ssh \
+            -i ~/.ssh/deploy_key \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+            "echo 'SSH connection successful'"
