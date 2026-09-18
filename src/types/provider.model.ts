@@ -8,4 +8,5 @@ export enum EProvider {
   JOB_VISION = 'JOB_VISION',
   IRAN_TALENT = 'IRAN_TALENT',
   JOB_IN_JA = 'JOB_IN_JA',
+  E_ESTEKHDAM = 'E_ESTEKHDAM',
 }

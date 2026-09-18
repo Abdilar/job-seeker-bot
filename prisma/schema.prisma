@@ -21,6 +21,7 @@ enum EProvider {
   JOB_VISION
   IRAN_TALENT
   JOB_IN_JA
+  E_ESTEKHDAM
 }
 
 model Job {
