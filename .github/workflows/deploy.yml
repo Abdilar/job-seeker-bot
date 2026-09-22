@@ -151,7 +151,7 @@ jobs:
             "$VPS_USER@$VPS_HOST" \
             'cd /var/www/job-seeker-bot && docker compose --env-file .env.production -f compose.production.yml up -d --no-deps --force-recreate bot crawler'
 
-      - name: Verify bot health
+      - name: Verify application health
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
@@ -164,40 +164,37 @@ jobs:
             'bash -s' <<'EOF'
           set -e
 
-          for attempt in $(seq 1 30); do
-            STATUS=$(docker inspect \
-              --format '{{.State.Health.Status}}' \
-              job-bot)
+          for container in job-bot job-crawler; do
+            echo "Checking health of $container..."
 
-            echo "Bot health status: $STATUS"
+            for attempt in $(seq 1 30); do
+              STATUS=$(docker inspect \
+                --format '{{.State.Health.Status}}' \
+                "$container")
 
-            if [ "$STATUS" = "healthy" ]; then
-              echo "Bot is healthy!"
-              exit 0
-            fi
+              echo "$container health status: $STATUS"
 
-            if [ "$STATUS" = "unhealthy" ]; then
-              echo "Bot health check failed!"
+              if [ "$STATUS" = "healthy" ]; then
+                echo "$container is healthy!"
+                break
+              fi
 
-              docker inspect job-bot \
-                --format '{{range .State.Health.Log}}{{.Output}}{{end}}'
+              if [ "$STATUS" = "unhealthy" ]; then
+                docker logs --tail 50 "$container"
+                exit 1
+              fi
 
-              docker logs --tail 50 job-bot
+              if [ "$attempt" -eq 30 ]; then
+                echo "$container health check timed out"
+                docker logs --tail 50 "$container"
+                exit 1
+              fi
 
-              exit 1
-            fi
-
-            sleep 5
+              sleep 2
+            done
           done
 
-          echo "Bot health check timed out!"
-
-          docker inspect job-bot \
-            --format '{{range .State.Health.Log}}{{.Output}}{{end}}'
-
-          docker logs --tail 50 job-bot
-
-          exit 1
+          echo "All application containers are healthy!"
           EOF
 
       - name: Verify deployment
