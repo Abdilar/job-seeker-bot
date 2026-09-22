@@ -7,6 +7,7 @@ dist
 crawled-data
 .vscode
 coverage
+.npmrc
 
 */**/.DS_Store
 .DS_Store
