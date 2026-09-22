@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres:14
+    container_name: job-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    image: ghcr.io/abdilar/job-seeker-bot:${APP_VERSION}
+    env_file:
+      - .env.production
+    command: npx prisma migrate deploy
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: 'no'
+
+  bot:
+    image: ghcr.io/abdilar/job-seeker-bot:${APP_VERSION}
+    env_file:
+      - .env.production
+    command: node dist/bot.bootstrap.js
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  crawler:
+    image: ghcr.io/abdilar/job-seeker-bot:${APP_VERSION}
+    env_file:
+      - .env.production
+    command: node dist/crawler.bootstrap.js
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  postgres_data:
+    external: true
+    name: job_seeker_postgres_data

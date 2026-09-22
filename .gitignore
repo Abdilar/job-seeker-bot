@@ -1,12 +1,13 @@
 
 node_modules
 dist
-.env
+.env*
 
 /src/generated/prisma
 crawled-data
 .vscode
 coverage
+.npmrc
 
 */**/.DS_Store
 .DS_Store

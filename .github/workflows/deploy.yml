@@ -39,7 +39,7 @@ jobs:
 
       - name: Check docker image
         run: |
-          IMAGE: ghcr.io/${GITHUB_REPOSITORY,,}:${{ inputs.version }}
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}:${{ inputs.version }}"
           echo "Checking image: $IMAGE"
 
           if ! docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
@@ -53,14 +53,15 @@ jobs:
         run: |
           mkdir -p ~/.ssh
 
-          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy-key
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
-          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -p "${{ secrets.VPS_PORT }}" -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Test SSH connection
         run: |
           ssh \
+            -p "${{ secrets.VPS_PORT }}" \
             -i ~/.ssh/deploy_key \
             "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
             "echo 'SSH connection successful'"
