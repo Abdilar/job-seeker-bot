@@ -27,6 +27,7 @@ services:
 
   bot:
     image: ghcr.io/abdilar/job-seeker-bot:${APP_VERSION}
+    container_name: job-bot
     env_file:
       - .env.production
     command: node dist/bot.bootstrap.js
@@ -37,6 +38,7 @@ services:
 
   crawler:
     image: ghcr.io/abdilar/job-seeker-bot:${APP_VERSION}
+    container_name: job-crawler
     env_file:
       - .env.production
     command: node dist/crawler.bootstrap.js
