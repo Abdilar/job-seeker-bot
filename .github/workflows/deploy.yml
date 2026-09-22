@@ -65,3 +65,28 @@ jobs:
             -i ~/.ssh/deploy_key \
             "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
             "echo 'SSH connection successful'"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Transfer docker compose file
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: scp \
+          -i ~/.ssh/deploy_key \
+          -P "$VPS_PORT" \
+          compose.production.yml \
+          "$VPS_USER@$VPS_HOST:/var/www/job-seeker-bot/compose.production.yml"
+
+      - name: Validate production docker compose
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: ssh \
+          -i ~/.ssh/deploy_key \
+          -P "$VPS_PORT" \
+          "$VPS_USER@$VPS_HOST" \
+          'cd /var/www/job-seeker-bot && docker compose --env-file .env.production -f compose.production.yml config --quiet'
