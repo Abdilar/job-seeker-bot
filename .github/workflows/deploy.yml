@@ -81,6 +81,13 @@ jobs:
           compose.production.yml \
           "$VPS_USER@$VPS_HOST:/var/www/job-seeker-bot/compose.production.yml"
 
+      - name: Create production environment file
+        env:
+          PRODUCTION_ENV: ${{ secrets.PRODUCTION_ENV }}
+        run: |
+          printf '%s\n' "$PRODUCTION_ENV" > .env.production 
+          chmod 600 .env.production
+
       - name: Validate production docker compose
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
