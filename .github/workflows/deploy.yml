@@ -151,6 +151,43 @@ jobs:
             "$VPS_USER@$VPS_HOST" \
             'cd /var/www/job-seeker-bot && docker compose --env-file .env.production -f compose.production.yml up -d --no-deps --force-recreate bot crawler'
 
+      - name: Verify bot health
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          ssh \
+            -i ~/.ssh/deploy_key \
+            -p "$VPS_PORT" \
+            "$VPS_USER@$VPS_HOST" \
+            'bash -s' <<'EOF'
+            set -e
+            for attempt in $(seq 1 30); do
+            STATUS=$(docker inspect \
+              --format '{{.State.Health.Status}}' \
+              job-bot)
+
+            echo "Bot health status: $STATUS"
+
+            if [ "$STATUS" = "healthy" ]; then
+              echo "Bot is healthy!"
+              exit 0
+            fi
+
+            if [ "$STATUS" = "unhealthy" ]; then
+              docker logs --tail 50 job-bot
+              exit 1
+            fi
+
+            sleep 2
+          done
+
+          echo "Bot health check timed out"
+          docker logs --tail 50 job-bot
+          exit 1
+          EOF
+
       - name: Verify deployment
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}

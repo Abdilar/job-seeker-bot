@@ -15,4 +15,8 @@ if (!telegramBotToken) {
 }
 
 const telegramBot = new TelegramBot(telegramBotToken, jobService)
-telegramBot.start()
+telegramBot.start().catch((error) => {
+  // eslint-disable-next-line no-console
+  console.error('Telegram bot failed:', error)
+  process.exitCode = 1
+})
