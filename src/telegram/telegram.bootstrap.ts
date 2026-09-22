@@ -32,16 +32,12 @@ export class TelegramBot implements ITelegramBot {
     new JobFilterHandler(jobRenderer).register(this.bot)
   }
 
-  start() {
-    this.bot
-      .start()
-      .then(() => {
+  async start(): Promise<void> {
+    await this.bot.start({
+      onStart: (botInfo) => {
         // eslint-disable-next-line no-console
-        console.log('The bot started successfully!')
-      })
-      .catch(() => {
-        // eslint-disable-next-line no-console
-        console.error('Starting bot has been occurred an Error!')
-      })
+        console.log(`Telegram bot @${botInfo.username} started successfully!`)
+      },
+    })
   }
 }

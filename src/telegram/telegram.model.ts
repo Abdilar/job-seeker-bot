@@ -1,8 +1,8 @@
-import { Context, SessionFlavor } from 'grammy'
-import { IJobFilter } from '../types'
+import type { Context, SessionFlavor } from 'grammy'
+import type { IJobFilter } from '../types'
 
 export interface ITelegramBot {
-  start(): void
+  start(): Promise<void>
 }
 
 export interface ITelegramSession {

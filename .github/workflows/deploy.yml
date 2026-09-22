@@ -65,3 +65,137 @@ jobs:
             -i ~/.ssh/deploy_key \
             "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
             "echo 'SSH connection successful'"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create production environment file
+        env:
+          PRODUCTION_ENV: ${{ secrets.PRODUCTION_ENV }}
+          APP_VERSION: ${{ inputs.version }}
+        run: |
+          printf '%s\n' "$PRODUCTION_ENV" > .env.production 
+          printf "APP_VERSION=%s\n" "$APP_VERSION" >> .env.production
+          chmod 600 .env.production
+
+      - name: Transfer docker compose and production environment files
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          scp \
+          -i ~/.ssh/deploy_key \
+          -P "$VPS_PORT" \
+          compose.production.yml \
+          .env.production \
+          "$VPS_USER@$VPS_HOST:/var/www/job-seeker-bot/"
+
+      - name: Secure production environment file
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          ssh \
+          -i ~/.ssh/deploy_key \
+          -p "$VPS_PORT" \
+          "$VPS_USER@$VPS_HOST" \
+          'chmod 600 /var/www/job-seeker-bot/.env.production'
+
+      - name: Validate production docker compose
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          ssh \
+          -i ~/.ssh/deploy_key \
+          -p "$VPS_PORT" \
+          "$VPS_USER@$VPS_HOST" \
+          'cd /var/www/job-seeker-bot && docker compose --env-file .env.production -f compose.production.yml config --quiet'
+
+      - name: Pull docker image
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          ssh \
+            -i ~/.ssh/deploy_key \
+            -p "$VPS_PORT" \
+            "$VPS_USER@$VPS_HOST" \
+            'cd /var/www/job-seeker-bot && docker compose --env-file .env.production -f compose.production.yml pull bot crawler migrate'
+
+      - name: Run prisma migration
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          ssh \
+            -i ~/.ssh/deploy_key \
+            -p "$VPS_PORT" \
+            "$VPS_USER@$VPS_HOST" \
+            'cd /var/www/job-seeker-bot && docker compose --env-file .env.production -f compose.production.yml run --rm migrate'
+
+      - name: Deploy bot and crawler
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          ssh \
+            -i ~/.ssh/deploy_key \
+            -p "$VPS_PORT" \
+            "$VPS_USER@$VPS_HOST" \
+            'cd /var/www/job-seeker-bot && docker compose --env-file .env.production -f compose.production.yml up -d --no-deps --force-recreate bot crawler'
+
+      - name: Verify bot health
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          ssh \
+            -i ~/.ssh/deploy_key \
+            -p "$VPS_PORT" \
+            "$VPS_USER@$VPS_HOST" \
+            'bash -s' <<'EOF'
+            set -e
+            for attempt in $(seq 1 30); do
+            STATUS=$(docker inspect \
+              --format '{{.State.Health.Status}}' \
+              job-bot)
+
+            echo "Bot health status: $STATUS"
+
+            if [ "$STATUS" = "healthy" ]; then
+              echo "Bot is healthy!"
+              exit 0
+            fi
+
+            if [ "$STATUS" = "unhealthy" ]; then
+              docker logs --tail 50 job-bot
+              exit 1
+            fi
+
+            sleep 2
+          done
+
+          echo "Bot health check timed out"
+          docker logs --tail 50 job-bot
+          exit 1
+          EOF
+
+      - name: Verify deployment
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          ssh \
+            -i ~/.ssh/deploy_key \
+            -p "$VPS_PORT" \
+            "$VPS_USER@$VPS_HOST" \
+            'cd /var/www/job-seeker-bot && docker compose --env-file .env.production -f compose.production.yml ps'
