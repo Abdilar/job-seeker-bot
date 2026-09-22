@@ -74,7 +74,8 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
           VPS_USER: ${{ secrets.VPS_USER }}
-        run: scp \
+        run: |
+          scp \
           -i ~/.ssh/deploy_key \
           -P "$VPS_PORT" \
           compose.production.yml \
@@ -85,7 +86,8 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
           VPS_USER: ${{ secrets.VPS_USER }}
-        run: ssh \
+        run: |
+          ssh \
           -i ~/.ssh/deploy_key \
           -P "$VPS_PORT" \
           "$VPS_USER@$VPS_HOST" \
