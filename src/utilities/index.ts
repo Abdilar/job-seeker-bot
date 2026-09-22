@@ -1,4 +1,4 @@
 export * from './array'
 export * from './date'
-export * from './global.util'
+export * from './global'
 export * from './object'
