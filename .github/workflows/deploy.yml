@@ -69,7 +69,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Transfer docker compose file
+      - name: Create production environment file
+        env:
+          PRODUCTION_ENV: ${{ secrets.PRODUCTION_ENV }}
+          APP_VERSION: ${{ inputs.version }}
+        run: |
+          printf '%s\n' "$PRODUCTION_ENV" > .env.production 
+          printf "APP_VERSION=%s\n" "$APP_VERSION" >> .env.production
+          chmod 600 .env.production
+
+      - name: Transfer docker compose and production environment files
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
@@ -79,14 +88,20 @@ jobs:
           -i ~/.ssh/deploy_key \
           -P "$VPS_PORT" \
           compose.production.yml \
-          "$VPS_USER@$VPS_HOST:/var/www/job-seeker-bot/compose.production.yml"
+          .env.production \
+          "$VPS_USER@$VPS_HOST:/var/www/job-seeker-bot/"
 
-      - name: Create production environment file
+      - name: Secure production environment file
         env:
-          PRODUCTION_ENV: ${{ secrets.PRODUCTION_ENV }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
         run: |
-          printf '%s\n' "$PRODUCTION_ENV" > .env.production 
-          chmod 600 .env.production
+          ssh \
+          -i ~/.ssh/deploy_key \
+          -p "$VPS_PORT" \
+          "$VPS_USER@$VPS_HOST" \
+          'chmod 600 /var/www/job-seeker-bot/.env.production'
 
       - name: Validate production docker compose
         env:
