@@ -2,11 +2,15 @@ import cron from 'node-cron'
 import type { ICrawlJobsTask } from '../../tasks'
 import type { ICrawlerScheduler } from './crawler.model'
 import { randomDelay } from '../../utilities'
+import type { CrawlerExecutionService } from '../../services'
 
 export class CrawlerScheduler implements ICrawlerScheduler {
   private isRunning = false
 
-  constructor(private readonly crawlJobs: ICrawlJobsTask) {}
+  constructor(
+    private readonly crawlJobs: ICrawlJobsTask,
+    private readonly executionService: CrawlerExecutionService,
+  ) {}
 
   start(): void {
     cron.schedule(
@@ -33,13 +37,28 @@ export class CrawlerScheduler implements ICrawlerScheduler {
     }
 
     this.isRunning = true
+    let executionId: string | undefined
 
     try {
       const maxDelaySeconds = 600
       await randomDelay(0, maxDelaySeconds)
+      executionId = await this.executionService.start()
       // eslint-disable-next-line no-console
-      console.log('scheduler will start...')
+      console.log('Crawler started...')
       await this.crawlJobs.run()
+      await this.executionService.success(executionId)
+      // eslint-disable-next-line no-console
+      console.log('Crawler completed successfully!')
+    } catch (error) {
+      if (executionId) {
+        try {
+          await this.executionService.failed(executionId, error as string)
+        } catch (recordError) {
+          // eslint-disable-next-line no-console
+          console.error('Failed to record crawler execution:', recordError)
+        }
+      }
+      throw error
     } finally {
       this.isRunning = false
     }
