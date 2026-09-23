@@ -1,2 +1,2 @@
-export * from './global.util'
+export * from './global'
 export * from './number.util'
