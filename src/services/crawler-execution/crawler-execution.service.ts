@@ -1,5 +1,6 @@
 import type { ICrawlerExecutionService } from './crawler-execution.model'
 import type { CrawlerExecutionRepository } from '../../repositories'
+import type { ICrawlerExecution } from '../../types'
 
 export class CrawlerExecutionService implements ICrawlerExecutionService {
   constructor(private readonly repository: CrawlerExecutionRepository) {}
@@ -14,5 +15,9 @@ export class CrawlerExecutionService implements ICrawlerExecutionService {
 
   async failed(id: string, error: string): Promise<void> {
     await this.repository.markFailed(id, error)
+  }
+
+  async getLatestExecution(): Promise<ICrawlerExecution | undefined> {
+    return this.repository.getLatestExecution()
   }
 }
