@@ -13,8 +13,10 @@ export class CrawlerScheduler implements ICrawlerScheduler {
   ) {}
 
   start(): void {
+    const scheduleTime = process.env.JOB_IN_JA_SCHEDULE_TIME || '0 10 * * *'
+
     cron.schedule(
-      '0 17 * * *',
+      scheduleTime,
       async () => {
         try {
           await this.runWithJitter()
