@@ -1,5 +1,6 @@
 export * from './job.model'
 export * from './provider.model'
+export * from './crawler.model'
 export * from './company.model'
 export * from './contract.model'
 export * from './location.model'

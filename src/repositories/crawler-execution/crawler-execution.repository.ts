@@ -1,7 +1,16 @@
-import { ECrawlerStatus } from '@prisma/client'
+import type { CrawlerExecution } from '@prisma/client'
+import { ECrawlerStatus as EPrismaCrawlerStatus } from '@prisma/client'
 
 import { prisma } from '../../database/prisma'
 import type { ICrawlerExecutionRepository } from './crawler-execution.model'
+import type { ICrawlerExecution } from '../../types'
+import { ECrawlerStatus as EDomainCrawlerStatus } from '../../types'
+
+const prismaCrawlerStatusMap = {
+  [EDomainCrawlerStatus.FAILED]: EPrismaCrawlerStatus.FAILED,
+  [EDomainCrawlerStatus.SUCCESS]: EPrismaCrawlerStatus.SUCCESS,
+  [EDomainCrawlerStatus.RUNNING]: EPrismaCrawlerStatus.RUNNING,
+}
 
 export class CrawlerExecutionRepository implements ICrawlerExecutionRepository {
   async markSuccess(id: string): Promise<void> {
@@ -10,7 +19,7 @@ export class CrawlerExecutionRepository implements ICrawlerExecutionRepository {
         id,
       },
       data: {
-        status: ECrawlerStatus.SUCCESS,
+        status: prismaCrawlerStatusMap[EDomainCrawlerStatus.SUCCESS],
         finishedAt: new Date(),
       },
     })
@@ -20,7 +29,7 @@ export class CrawlerExecutionRepository implements ICrawlerExecutionRepository {
     await prisma.crawlerExecution.update({
       where: { id },
       data: {
-        status: ECrawlerStatus.FAILED,
+        status: prismaCrawlerStatusMap[EDomainCrawlerStatus.FAILED],
         finishedAt: new Date(),
         error,
       },
@@ -30,9 +39,30 @@ export class CrawlerExecutionRepository implements ICrawlerExecutionRepository {
 
   async create(): Promise<string> {
     const execution = await prisma.crawlerExecution.create({
-      data: { status: ECrawlerStatus.RUNNING },
+      data: { status: prismaCrawlerStatusMap[EDomainCrawlerStatus.RUNNING] },
     })
 
     return execution.id
+  }
+
+  async getLatestExecution(): Promise<ICrawlerExecution | undefined> {
+    const result = await prisma.crawlerExecution.findFirst({
+      orderBy: [{ startedAt: 'desc' }, { id: 'desc' }],
+    })
+
+    return this.convertPrismaCrawlerExecutionToICrawlerExecution(result)
+  }
+
+  private convertPrismaCrawlerExecutionToICrawlerExecution(
+    data: CrawlerExecution | null,
+  ): ICrawlerExecution | undefined {
+    return data
+      ? {
+          ...data,
+          status: EDomainCrawlerStatus[data.status],
+          finishedAt: data.finishedAt ?? undefined,
+          error: data.error ?? undefined,
+        }
+      : undefined
   }
 }
