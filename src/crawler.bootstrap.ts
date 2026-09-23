@@ -1,7 +1,7 @@
 import { JobInJaCreator } from './crawlers'
-import { JobRepository } from './repositories'
+import { CrawlerExecutionRepository, JobRepository } from './repositories'
 import { CrawlerScheduler } from './scheduler'
-import { JobService } from './services'
+import { CrawlerExecutionService, JobService } from './services'
 import { CrawlJobsTask } from './tasks'
 
 const repository = new JobRepository()
@@ -11,6 +11,9 @@ const providers = [new JobInJaCreator()]
 
 const crawlJobsTask = new CrawlJobsTask(jobService, providers)
 
-const scheduler = new CrawlerScheduler(crawlJobsTask)
+const executionRepository = new CrawlerExecutionRepository()
+const executionService = new CrawlerExecutionService(executionRepository)
+
+const scheduler = new CrawlerScheduler(crawlJobsTask, executionService)
 
 scheduler.start()

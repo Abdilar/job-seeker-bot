@@ -24,6 +24,12 @@ enum EProvider {
   E_ESTEKHDAM
 }
 
+enum ECrawlerStatus {
+  RUNNING
+  SUCCESS
+  FAILED
+}
+
 model Job {
   id           String    @id @default(cuid())
   title        String
@@ -55,4 +61,16 @@ model Location {
   jobs     Job[]
 
   @@unique([country, province])
+}
+
+model CrawlerExecution {
+  id         String         @id @default(cuid())
+  status     ECrawlerStatus
+  startedAt  DateTime       @default(now())
+  finishedAt DateTime?
+  error      String?
+  createdAt  DateTime       @default(now())
+
+  @@index([startedAt])
+  @@index([status, startedAt])
 }
