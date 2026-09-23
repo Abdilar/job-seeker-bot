@@ -10,11 +10,16 @@ export class CrawlJobsTask implements ICrawlJobsTask {
 
   async run(): Promise<void> {
     for (const provider of this.providers) {
-      const jobs = await provider.crawlJobs()
-      await this.jobService.saveAll(jobs)
-      await provider.closeBrowser()
-      // eslint-disable-next-line no-console
-      console.log('Browser closed...')
+      try {
+        const jobs = await provider.crawlJobs()
+        await this.jobService.saveAll(jobs)
+        // eslint-disable-next-line no-console
+        console.log(`Crawler saved ${jobs.length} jobs`)
+      } finally {
+        await provider.closeBrowser()
+        // eslint-disable-next-line no-console
+        console.log('Browser closed...')
+      }
     }
   }
 }

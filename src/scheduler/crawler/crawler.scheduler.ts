@@ -42,19 +42,19 @@ export class CrawlerScheduler implements ICrawlerScheduler {
     let executionId: string | undefined
 
     try {
+      executionId = await this.executionService.start()
+
       const maxDelaySeconds = 0
       await randomDelay(0, maxDelaySeconds)
-      executionId = await this.executionService.start()
-      // eslint-disable-next-line no-console
-      console.log('Crawler started...')
       await this.crawlJobs.run()
       await this.executionService.success(executionId)
       // eslint-disable-next-line no-console
-      console.log('Crawler completed successfully!')
+      console.log(`Crawler execution completed: ${executionId}`)
     } catch (error) {
+      const errorMessage = error instanceof Error ? (error.stack ?? error.message) : String(error)
       if (executionId) {
         try {
-          await this.executionService.failed(executionId, error as string)
+          await this.executionService.failed(executionId, errorMessage)
         } catch (recordError) {
           // eslint-disable-next-line no-console
           console.error('Failed to record crawler execution:', recordError)

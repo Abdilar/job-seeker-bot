@@ -17,6 +17,7 @@ export interface ICrawlerExecutionService {
   success(id: string): Promise<void>
   failed(id: string, error: string): Promise<void>
   getLatestExecution(): Promise<ICrawlerExecution | undefined>
+  recoverInterruptedExecutions(): Promise<number>
 }
 
 export interface ICrawlerExecutionHealthService {
