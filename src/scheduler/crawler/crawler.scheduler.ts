@@ -14,7 +14,7 @@ export class CrawlerScheduler implements ICrawlerScheduler {
 
   start(): void {
     cron.schedule(
-      '0 10 * * *',
+      '0 17 * * *',
       async () => {
         try {
           await this.runWithJitter()
