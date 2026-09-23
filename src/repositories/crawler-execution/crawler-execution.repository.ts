@@ -34,7 +34,6 @@ export class CrawlerExecutionRepository implements ICrawlerExecutionRepository {
         error,
       },
     })
-    throw new Error('Method not implemented.')
   }
 
   async create(): Promise<string> {
