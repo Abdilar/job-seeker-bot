@@ -40,7 +40,7 @@ export class CrawlerScheduler implements ICrawlerScheduler {
     let executionId: string | undefined
 
     try {
-      const maxDelaySeconds = 600
+      const maxDelaySeconds = 0
       await randomDelay(0, maxDelaySeconds)
       executionId = await this.executionService.start()
       // eslint-disable-next-line no-console
