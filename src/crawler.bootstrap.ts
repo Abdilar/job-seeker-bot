@@ -4,16 +4,28 @@ import { CrawlerScheduler } from './scheduler'
 import { CrawlerExecutionService, JobService } from './services'
 import { CrawlJobsTask } from './tasks'
 
-const repository = new JobRepository()
-const jobService = new JobService(repository)
+async function bootstrap(): Promise<void> {
+  const repository = new JobRepository()
+  const jobService = new JobService(repository)
 
-const providers = [new JobInJaCreator()]
+  const providers = [new JobInJaCreator()]
 
-const crawlJobsTask = new CrawlJobsTask(jobService, providers)
+  const executionRepository = new CrawlerExecutionRepository()
+  const executionService = new CrawlerExecutionService(executionRepository)
+  const crawlJobsTask = new CrawlJobsTask(jobService, providers)
 
-const executionRepository = new CrawlerExecutionRepository()
-const executionService = new CrawlerExecutionService(executionRepository)
+  const scheduler = new CrawlerScheduler(crawlJobsTask, executionService)
+  const recoveredCount = await executionService.recoverInterruptedExecutions()
+  // eslint-disable-next-line no-console
+  console.log(`Recovered ${recoveredCount} interrupted crawler executions`)
+  scheduler.start()
+  // eslint-disable-next-line no-console
+  console.log('Crawler scheduler started successfully!')
+}
 
-const scheduler = new CrawlerScheduler(crawlJobsTask, executionService)
+bootstrap().catch((error: string) => {
+  // eslint-disable-next-line no-console
+  console.error('Crawler bootstrap failed:', error)
 
-scheduler.start()
+  process.exitCode = 1
+})

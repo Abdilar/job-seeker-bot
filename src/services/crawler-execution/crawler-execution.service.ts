@@ -20,4 +20,8 @@ export class CrawlerExecutionService implements ICrawlerExecutionService {
   async getLatestExecution(): Promise<ICrawlerExecution | undefined> {
     return this.repository.getLatestExecution()
   }
+
+  async recoverInterruptedExecutions(): Promise<number> {
+    return this.repository.recoverInterruptedExecutions()
+  }
 }

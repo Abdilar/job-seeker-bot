@@ -53,6 +53,21 @@ export class CrawlerExecutionRepository implements ICrawlerExecutionRepository {
     return this.convertPrismaCrawlerExecutionToICrawlerExecution(result)
   }
 
+  async recoverInterruptedExecutions(): Promise<number> {
+    const result = await prisma.crawlerExecution.updateMany({
+      where: {
+        status: EPrismaCrawlerStatus.RUNNING,
+      },
+      data: {
+        status: EPrismaCrawlerStatus.FAILED,
+        finishedAt: new Date(),
+        error: 'Crawler execution interrupted unexpectedly',
+      },
+    })
+
+    return result.count
+  }
+
   private convertPrismaCrawlerExecutionToICrawlerExecution(
     data: CrawlerExecution | null,
   ): ICrawlerExecution | undefined {
