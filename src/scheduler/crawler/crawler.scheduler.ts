@@ -14,6 +14,22 @@ export class CrawlerScheduler implements ICrawlerScheduler {
 
   start(): void {
     const scheduleTime = process.env.JOB_IN_JA_SCHEDULE_TIME || '0 10 * * *'
+    const timeParts = scheduleTime.trim().split(/\s+/)
+    const [min, hour, day, month, weekday] = timeParts
+    const timeDigitRegex = new RegExp(/^\d{1,2}$/)
+
+    if (
+      timeParts.length !== 5 ||
+      !timeDigitRegex.test(min) ||
+      !timeDigitRegex.test(hour) ||
+      Number(min) > 59 ||
+      Number(hour) >= 23 ||
+      day !== '*' ||
+      month !== '*' ||
+      weekday !== '*'
+    ) {
+      throw new Error('Crawler schedule must be daily and before 23:00')
+    }
 
     cron.schedule(
       scheduleTime,

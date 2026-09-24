@@ -26,7 +26,7 @@ export class CrawlerExecutionHealthService implements ICrawlerExecutionHealthSer
       hourCycle: 'h23',
     }).format(now)
 
-    const deadlineTime = process.env.CRAWLER_DEADLINE_TIME ?? '11:00'
+    const deadlineTime = process.env.CRAWLER_DEADLINE_TIME ?? '21:00'
 
     if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(deadlineTime)) {
       throw new Error('Invalid CRAWLER_DEADLINE_TIME')
