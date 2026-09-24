@@ -19,15 +19,20 @@ export class CrawlerExecutionHealthService implements ICrawlerExecutionHealthSer
       day: '2-digit',
     }).format(now)
 
-    const currentHour = Number(
-      new Intl.DateTimeFormat('en-US', {
-        timeZone: 'Asia/Tehran',
-        hour: '2-digit',
-        hourCycle: 'h23',
-      }).format(now),
-    )
+    const currentTime = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Tehran',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).format(now)
 
-    const deadlinePassed = currentHour >= 11
+    const deadlineTime = process.env.CRAWLER_DEADLINE_TIME ?? '11:00'
+
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(deadlineTime)) {
+      throw new Error('Invalid CRAWLER_DEADLINE_TIME')
+    }
+
+    const deadlinePassed = currentTime >= deadlineTime
 
     if (!execution) {
       return {
