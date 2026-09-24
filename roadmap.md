@@ -30,21 +30,12 @@
 
 ### نیازمند تأیید یا تکمیل
 
-<<<<<<< HEAD
-
-- [ ] ثبت کامل `CrawlerExecution` شامل `RUNNING`، `SUCCESS`، `FAILED`، زمان‌ها و خطا در اجرای واقعی.
-      \=======
 - [x] ثبت کامل `CrawlerExecution` شامل `RUNNING`، `SUCCESS`، `FAILED`، زمان‌ها و خطا در اجرای واقعی.
-- [ ] مدیریت اجراهای ناقص و بازیابی Crawler بعد از Restart
-
-> > > > > > > master
-
+- [x] مدیریت اجراهای ناقص و بازیابی Crawler بعد از Restart
 - [ ] `getLatestExecution` و منطق Health Check اجرای روزانه در آخرین Image تولیدی.
 - [ ] استانداردسازی عنوان Squash Merge/PR برای Semantic Release و تست انتشار یک نسخه جدید.
 - [ ] پوشش واقعی تست‌های خودکار و تأیید اجرای کامل چرخه Merge → Release → Deploy.
 - [ ] Providerهای دیگر: در آخرین Bootstrap بررسی‌شده فقط `JobInJaCreator` فعال بود.
-
----
 
 ## فاز ۱ — Production Stability & Security
 

@@ -36,7 +36,13 @@ async function main(): Promise<void> {
 
     process.exitCode = 1
   } finally {
-    await prisma.$disconnect()
+    try {
+      await prisma.$disconnect()
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Prisma disconnect failed:', error)
+      process.exitCode = 1
+    }
   }
 }
 

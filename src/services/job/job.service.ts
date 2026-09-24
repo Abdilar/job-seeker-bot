@@ -17,10 +17,10 @@ export class JobService implements IJobService {
   async saveAll(data: Array<ICrawledJob>): Promise<SaveJobsResultType> {
     const validJobs = data.filter((item) => this.isValid(item))
     // eslint-disable-next-line no-console
-    console.log('Saving jobs started...', { validJobs })
+    console.log('Saving jobs started...', { validJobs: validJobs.length })
     await this.repository.createMany(validJobs)
     // eslint-disable-next-line no-console
-    console.log('Save all verified jobs...', { validJobs })
+    console.log('Save all verified jobs...', { validJobs: validJobs.length })
     const result: SaveJobsResultType = {
       total: data.length,
       saved: validJobs.length || 0,
