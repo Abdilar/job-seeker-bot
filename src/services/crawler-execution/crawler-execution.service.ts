@@ -1,9 +1,9 @@
 import type { ICrawlerExecutionService } from './crawler-execution.model'
-import type { CrawlerExecutionRepository } from '../../repositories'
+import type { ICrawlerExecutionRepository } from '../../repositories'
 import type { ICrawlerExecution } from '../../types'
 
 export class CrawlerExecutionService implements ICrawlerExecutionService {
-  constructor(private readonly repository: CrawlerExecutionRepository) {}
+  constructor(private readonly repository: ICrawlerExecutionRepository) {}
 
   async start(): Promise<string> {
     return this.repository.create()
