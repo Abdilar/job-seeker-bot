@@ -13,9 +13,9 @@
     "start:bot": "node dist/bot.bootstrap.js",
     "start:crawler": "node dist/crawler.bootstrap.js",
     "test": "vitest",
-    "test:run": "dotenv -e .env -- vitest run --exclude '**/*.integration.test.ts",
+    "test:run": "dotenv -e .env -- vitest run --config vitest.config.mjs",
     "test:db:migrate": "dotenv -e .env.test -- prisma migrate deploy",
-    "test:integration": "dotenv -e .env.test -- vitest run '**/*.integration.test.ts' --no-file-parallelism",
+    "test:integration": "dotenv -e .env.test -- vitest run --config vitest-integration.config.mjs",
     "test:coverage": "vitest run --coverage",
     "release": "node scripts/release.script.mjs"
   },
