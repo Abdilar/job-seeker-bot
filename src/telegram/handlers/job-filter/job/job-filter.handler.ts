@@ -1,15 +1,15 @@
 import type { Bot } from 'grammy'
 import type { IJobFilterHandler } from './job-filter.model'
-import type { TelegramContextType } from '../../telegram.model'
+import type { TelegramContextType } from '../../../telegram.model'
 import {
   ContractTypeFilterKeyboard,
   JobFilterKeyboard,
   ProviderFilterKeyboard,
-} from '../../keyboards'
-import type { IJobRenderer } from '../../renders'
-import { ContractTypeFilter } from './contract-type'
-import { ProviderFilter } from './provider'
-import type { EContractType, EProvider } from '../../../types'
+} from '../../../keyboards'
+import type { IJobRenderer } from '../../../renders'
+import { ContractTypeFilter } from '../contract-type'
+import { ProviderFilter } from '../provider'
+import type { EContractType, EProvider } from '../../../../types'
 
 export class JobFilterHandler implements IJobFilterHandler {
   private readonly jobFilterKeyboard = new JobFilterKeyboard()
