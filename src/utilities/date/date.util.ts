@@ -15,3 +15,15 @@ export function convertDaysAgoToJalaliDate(date: string): Date | undefined {
 export function toJalali(date: Date): string {
   return format(date, 'yyyy/MM/dd')
 }
+
+export function isRecent(postedAt?: Date, now = new Date()): boolean {
+  if (!postedAt) return false
+
+  const today = new Date(now)
+  today.setHours(0, 0, 0, 0)
+
+  const date = new Date(postedAt)
+  date.setHours(0, 0, 0, 0)
+
+  return date >= today
+}
