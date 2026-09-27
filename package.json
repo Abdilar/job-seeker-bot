@@ -16,7 +16,7 @@
     "test:run": "dotenv -e .env -- vitest run --config vitest.config.mjs",
     "test:db:migrate": "dotenv -e .env.test -- prisma migrate deploy",
     "test:integration": "dotenv -e .env.test -- vitest run --config vitest-integration.config.mjs",
-    "test:coverage": "vitest run --coverage",
+    "test:coverage": "vitest run --coverage --exclude '**/*.integration.test.ts'",
     "release": "node scripts/release.script.mjs"
   },
   "keywords": [],
