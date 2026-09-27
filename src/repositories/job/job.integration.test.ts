@@ -496,4 +496,53 @@ describe('JobRepository integration', () => {
       expect(await prisma.location.count()).toBe(1)
     })
   })
+
+  describe('findLatestByProvider', () => {
+    it('returns the latest job for the given provider', async () => {
+      await repository.createMany([
+        createCrawledJob({
+          title: 'Old Job',
+          url: 'https://example.com/jobs/jobinja-old',
+          provider: EProvider.JOB_IN_JA,
+          postedAt: new Date('2026-09-25T10:00:00.000Z'),
+        }),
+
+        createCrawledJob({
+          title: 'Latest Job',
+          url: 'https://example.com/jobs/jobinja-latest',
+          provider: EProvider.JOB_IN_JA,
+          postedAt: new Date('2026-09-27T10:00:00.000Z'),
+        }),
+
+        createCrawledJob({
+          title: 'Other Provider Job',
+          url: 'https://example.com/jobs/linkedin',
+          provider: EProvider.LINKED_IN,
+          postedAt: new Date('2026-09-28T10:00:00.000Z'),
+        }),
+      ])
+
+      const result = await repository.findLatestByProvider(EProvider.JOB_IN_JA)
+
+      expect(result).not.toBeNull()
+      expect(result?.title).toBe('Latest Job')
+      expect(result?.url).toBe('https://example.com/jobs/jobinja-latest')
+      expect(result?.postedAt).toEqual(new Date('2026-09-27T10:00:00.000Z'))
+      expect(result?.provider).toBe(EProvider.JOB_IN_JA)
+    })
+
+    it('returns null when the provider has no jobs', async () => {
+      await repository.create(
+        createCrawledJob({
+          title: 'LinkedIn Job',
+          url: 'https://example.com/jobs/linkedin',
+          provider: EProvider.LINKED_IN,
+        }),
+      )
+
+      const result = await repository.findLatestByProvider(EProvider.JOB_IN_JA)
+
+      expect(result).toBeNull()
+    })
+  })
 })
