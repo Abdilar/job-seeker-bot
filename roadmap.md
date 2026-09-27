@@ -32,24 +32,24 @@
 
 - [x] ثبت کامل `CrawlerExecution` شامل `RUNNING`، `SUCCESS`، `FAILED`، زمان‌ها و خطا در اجرای واقعی.
 - [x] مدیریت اجراهای ناقص و بازیابی Crawler بعد از Restart
-- [ ] `getLatestExecution` و منطق Health Check اجرای روزانه در آخرین Image تولیدی.
-- [ ] استانداردسازی عنوان Squash Merge/PR برای Semantic Release و تست انتشار یک نسخه جدید.
-- [ ] پوشش واقعی تست‌های خودکار و تأیید اجرای کامل چرخه Merge → Release → Deploy.
-- [ ] Providerهای دیگر: در آخرین Bootstrap بررسی‌شده فقط `JobInJaCreator` فعال بود.
+- [x] `getLatestExecution` و منطق Health Check اجرای روزانه در آخرین Image تولیدی.
+- [x] استانداردسازی عنوان Squash Merge/PR برای Semantic Release و تست انتشار یک نسخه جدید.
+- [x] پوشش واقعی تست‌های خودکار و تأیید اجرای کامل چرخه Merge → Release → Deploy.
+- [x] Providerهای دیگر: در آخرین Bootstrap بررسی‌شده فقط `JobInJaCreator` فعال بود.
 
 ## فاز ۱ — Production Stability & Security
 
 **هدف:** انتشار قابل اتکا، حفاظت از داده‌ها و امکان تشخیص و بازیابی خطا پیش از توسعه گسترده محصول.
 
-- [ ] استانداردسازی Conventional Commit در عنوان PR و Squash Merge؛ رفع انتشارهای ازدست‌رفته و تست Semantic Release.
-- [ ] تست سرتاسری CI/CD: کیفیت کد، Build، Release، GHCR، Deploy، Migration و Health Check.
+- [x] استانداردسازی Conventional Commit در عنوان PR و Squash Merge؛ رفع انتشارهای ازدست‌رفته و تست Semantic Release.
+- [x] تست سرتاسری CI/CD: کیفیت کد، Build، Release، GHCR، Deploy، Migration و Health Check.
 - [ ] بکاپ خودکار PostgreSQL، نسخه خارج از VPS، سیاست نگهداری و **تست Restore**.
 - [ ] Rollback نسخه Bot/Crawler در Deploy ناموفق؛ بررسی سازگاری و برنامه بازیابی Migration (بازگردانی Image لزوماً Schema را برنمی‌گرداند).
-- [ ] تکمیل CrawlerExecution و تشخیص اجرای ناموفق، انجام‌نشده، طولانی یا `RUNNING` قدیمی؛ هشدار عملیاتی.
-- [ ] بررسی واقعی زنده بودن Bot/Polling و پاسخ‌گویی برنامه؛ تفکیک سلامت Container از موفقیت Crawl.
+- [x] تکمیل CrawlerExecution و تشخیص اجرای ناموفق، انجام‌نشده، طولانی یا `RUNNING` قدیمی؛ هشدار عملیاتی.
+- [x] بررسی واقعی زنده بودن Bot/Polling و پاسخ‌گویی برنامه؛ تفکیک سلامت Container از موفقیت Crawl.
 - [ ] امنیت SSH Host Key، دسترسی محدود Deploy، مدیریت Secrets و جلوگیری از چاپ اطلاعات حساس در Log.
 - [ ] Log Rotation، پایش دیسک، محدودیت RAM/CPU به‌ویژه Chromium و پاک‌سازی امن Imageهای قدیمی.
-- [ ] تست Unit/Integration برای Repository، Service، Scheduler، Parser، Handler و مسیرهای خطا.
+- [x] تست Unit/Integration برای Repository، Service، Scheduler، Parser، Handler و مسیرهای خطا.
 - [ ] سیاست اولیه حریم خصوصی، محدودیت دسترسی به داده‌های کاربران و حداقل‌سازی داده‌های حساس در Log.
 
 **معیار اتمام:** نسخه جدید از PR تا Production منتشر و در صورت شکست بازیابی شود؛ بکاپ واقعاً قابل Restore باشد و خرابی سرویس/اجرای روزانه قابل تشخیص باشد.
