@@ -5,7 +5,7 @@ import { EProvider, type ICrawledJob } from '../../../types'
 import type { JobParser } from '../../parsers'
 import type { IJobService } from '../../../services'
 import { WAIT_UNTIL } from '../../constants'
-import { JOB_IN_JA_URL, MAIN_ELEMENT_SELECTOR } from './job-in-ja.constant'
+import { JOB_IN_JA_TIMEZONE, JOB_IN_JA_URL, MAIN_ELEMENT_SELECTOR } from './job-in-ja.constant'
 import { JobInJaProduct } from './job-in-ja.product'
 
 const { isRecentMock, randomDelayMock } = vi.hoisted(() => ({
@@ -169,9 +169,10 @@ describe('JobInJaProduct', () => {
         return paginationElements
       })
 
-      parserParseMock
-        .mockResolvedValueOnce(createJob('Frontend Developer', recentDate))
-        .mockResolvedValueOnce(createJob('Backend Developer', recentDate))
+      const firstJob = createJob('Frontend Developer', recentDate)
+      const secondJob = createJob('Backend Developer', recentDate)
+
+      parserParseMock.mockResolvedValueOnce(firstJob).mockResolvedValueOnce(secondJob)
 
       const provider = new JobInJaProduct(page, parser, service)
 
@@ -182,47 +183,24 @@ describe('JobInJaProduct', () => {
       expect(jobs).toHaveLength(2)
 
       expect(jobs.map((job) => job.title)).toEqual(['Frontend Developer', 'Backend Developer'])
-    })
-
-    it('should use the latest stored job date as the recent boundary', async () => {
-      const jobElements = {
-        count: vi.fn().mockResolvedValue(1),
-        nth: vi.fn().mockImplementation(() => ({}) as Locator),
-      }
-
-      const mainElement = {
-        locator: vi.fn().mockReturnValue(jobElements),
-      }
-
-      const paginationElements = {
-        count: vi.fn().mockResolvedValue(0),
-      }
-
-      pageLocatorMock.mockImplementation((selector: string) => {
-        if (selector === MAIN_ELEMENT_SELECTOR) {
-          return mainElement
-        }
-
-        return paginationElements
-      })
-
-      const job = createJob('Frontend Developer', recentDate)
-
-      parserParseMock.mockResolvedValueOnce(job)
-
-      const provider = new JobInJaProduct(page, parser, service)
-
-      await provider.initialize()
-
-      await provider.getJobs()
 
       expect(getLatestJobByProviderMock).toHaveBeenCalledOnce()
       expect(getLatestJobByProviderMock).toHaveBeenCalledWith(EProvider.JOB_IN_JA)
 
-      expect(isRecentMock).toHaveBeenCalledWith(job.postedAt, latestStoredDate)
+      expect(isRecentMock).toHaveBeenCalledWith(
+        firstJob.postedAt,
+        latestStoredDate,
+        JOB_IN_JA_TIMEZONE,
+      )
+
+      expect(isRecentMock).toHaveBeenCalledWith(
+        secondJob.postedAt,
+        latestStoredDate,
+        JOB_IN_JA_TIMEZONE,
+      )
     })
 
-    it('should use the default recent boundary when no stored job exists', async () => {
+    it('should use undefined boundary when no stored job exists', async () => {
       getLatestJobByProviderMock.mockResolvedValue(null)
 
       const jobElements = {
@@ -249,16 +227,19 @@ describe('JobInJaProduct', () => {
       const job = createJob('Frontend Developer', recentDate)
 
       parserParseMock.mockResolvedValueOnce(job)
+      isRecentMock.mockReturnValue(true)
 
       const provider = new JobInJaProduct(page, parser, service)
 
       await provider.initialize()
 
-      await provider.getJobs()
+      const jobs = await provider.getJobs()
+
+      expect(jobs).toHaveLength(1)
 
       expect(getLatestJobByProviderMock).toHaveBeenCalledWith(EProvider.JOB_IN_JA)
 
-      expect(isRecentMock).toHaveBeenCalledWith(job.postedAt, undefined)
+      expect(isRecentMock).toHaveBeenCalledWith(job.postedAt, undefined, JOB_IN_JA_TIMEZONE)
     })
 
     it('should filter out jobs older than the latest stored job date', async () => {
@@ -283,10 +264,16 @@ describe('JobInJaProduct', () => {
         return paginationElements
       })
 
+      const recentJob = createJob('Frontend Developer', recentDate)
+
+      const boundaryJob = createJob('Boundary Job', latestStoredDate)
+
+      const oldJob = createJob('Old Developer Job', oldDate)
+
       parserParseMock
-        .mockResolvedValueOnce(createJob('Frontend Developer', recentDate))
-        .mockResolvedValueOnce(createJob('Boundary Job', latestStoredDate))
-        .mockResolvedValueOnce(createJob('Old Developer Job', oldDate))
+        .mockResolvedValueOnce(recentJob)
+        .mockResolvedValueOnce(boundaryJob)
+        .mockResolvedValueOnce(oldJob)
 
       const provider = new JobInJaProduct(page, parser, service)
 
@@ -295,6 +282,24 @@ describe('JobInJaProduct', () => {
       const jobs = await provider.getJobs()
 
       expect(jobs.map((job) => job.title)).toEqual(['Frontend Developer', 'Boundary Job'])
+
+      expect(isRecentMock).toHaveBeenCalledWith(
+        recentJob.postedAt,
+        latestStoredDate,
+        JOB_IN_JA_TIMEZONE,
+      )
+
+      expect(isRecentMock).toHaveBeenCalledWith(
+        boundaryJob.postedAt,
+        latestStoredDate,
+        JOB_IN_JA_TIMEZONE,
+      )
+
+      expect(isRecentMock).toHaveBeenCalledWith(
+        oldJob.postedAt,
+        latestStoredDate,
+        JOB_IN_JA_TIMEZONE,
+      )
     })
 
     it('should navigate to the next page when the last job is recent', async () => {
@@ -352,7 +357,7 @@ describe('JobInJaProduct', () => {
       })
     })
 
-    it('should stop crawling when the last job is older than the latest stored job date', async () => {
+    it('should stop crawling when the last job is older than the boundary', async () => {
       const jobElements = {
         count: vi.fn().mockResolvedValue(3),
         nth: vi.fn().mockImplementation(() => ({}) as Locator),
@@ -387,10 +392,16 @@ describe('JobInJaProduct', () => {
         return {} as Locator
       })
 
+      const recentJob = createJob('Recent Job', recentDate)
+
+      const boundaryJob = createJob('Boundary Job', latestStoredDate)
+
+      const oldJob = createJob('Old Job', oldDate)
+
       parserParseMock
-        .mockResolvedValueOnce(createJob('Recent Job', recentDate))
-        .mockResolvedValueOnce(createJob('Boundary Job', latestStoredDate))
-        .mockResolvedValueOnce(createJob('Old Job', oldDate))
+        .mockResolvedValueOnce(recentJob)
+        .mockResolvedValueOnce(boundaryJob)
+        .mockResolvedValueOnce(oldJob)
 
       const provider = new JobInJaProduct(page, parser, service)
 
@@ -400,13 +411,19 @@ describe('JobInJaProduct', () => {
 
       expect(jobs.map((job) => job.title)).toEqual(['Recent Job', 'Boundary Job'])
 
+      expect(isRecentMock).toHaveBeenCalledWith(
+        oldJob.postedAt,
+        latestStoredDate,
+        JOB_IN_JA_TIMEZONE,
+      )
+
       expect(randomDelayMock).not.toHaveBeenCalled()
 
       // initialize() only
       expect(gotoMock).toHaveBeenCalledTimes(1)
     })
 
-    it('should stop crawling when all jobs are older than the latest stored job date', async () => {
+    it('should stop crawling when all jobs are older than the boundary', async () => {
       const jobElements = {
         count: vi.fn().mockResolvedValue(2),
         nth: vi.fn().mockImplementation(() => ({}) as Locator),
@@ -527,7 +544,7 @@ describe('JobInJaProduct', () => {
       expect(jobs).toEqual([])
       expect(randomDelayMock).not.toHaveBeenCalled()
 
-      // initialize() only — it must not continue to page 2.
+      // initialize() only
       expect(gotoMock).toHaveBeenCalledTimes(1)
     })
   })
