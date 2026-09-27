@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { TODAY } from '../../constants'
-import { convertDaysAgoToJalaliDate, toJalali } from '.'
+import { convertDaysAgoToJalaliDate, isRecent, toJalali } from '.'
 
 describe('convertDaysAgoToJalaliDate', () => {
   const today = new Date(2026, 8, 18, 12)
@@ -37,5 +37,33 @@ describe('toJalali', () => {
     const date = new Date(2026, 8, 18, 12)
 
     expect(toJalali(date)).toBe('1405/06/27')
+  })
+})
+
+describe('isRecent', () => {
+  const now = new Date('2026-09-27T18:00:00')
+
+  it('should return true when postedAt is today', () => {
+    const postedAt = new Date('2026-09-27T01:00:00')
+
+    expect(isRecent(postedAt, now)).toBe(true)
+  })
+
+  it('should return false when postedAt is yesterday', () => {
+    const postedAt = new Date('2026-09-26T23:59:59')
+
+    expect(isRecent(postedAt, now)).toBe(false)
+  })
+
+  it('should return false when postedAt is older than today', () => {
+    const postedAt = new Date('2026-09-20T12:00:00')
+
+    expect(isRecent(postedAt, now)).toBe(false)
+  })
+
+  it('should return true when postedAt is later today', () => {
+    const postedAt = new Date('2026-09-27T23:59:59')
+
+    expect(isRecent(postedAt, now)).toBe(true)
   })
 })

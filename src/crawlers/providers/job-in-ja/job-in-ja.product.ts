@@ -5,7 +5,7 @@ import type { IJobProvider } from '../job.model'
 import type { ICrawledJob } from '../../../types'
 import type { JobParser } from '../../parsers'
 import { JOB_IN_JA_URL, MAIN_ELEMENT_SELECTOR } from './job-in-ja.constant'
-import { randomDelay } from '../../../utilities'
+import { isRecent, randomDelay } from '../../../utilities'
 
 export class JobInJaProduct implements IJobProvider {
   private lastPage: number = 1
@@ -65,12 +65,19 @@ export class JobInJaProduct implements IJobProvider {
         console.info(`Jobinja Provider: Fetching page "${page}"`)
         const items = await this.fetchJobs()
         jobs.push(...items)
+        const isRecentJob = isRecent(items[0].postedAt)
         // eslint-disable-next-line no-console
-        console.info(`Jobinja Provider: Fetch has been done.`, { page, lastPage: this.lastPage })
+        console.info(`Jobinja Provider: Fetch has been done.`, {
+          page,
+          lastPage: this.lastPage,
+          isRecent: isRecentJob,
+        })
 
-        if (page <= this.lastPage) {
+        if (page <= this.lastPage && isRecentJob) {
           await randomDelay(1_000, 3_000)
           await this.goNextPage()
+        } else {
+          break
         }
       } catch (error) {
         // eslint-disable-next-line no-console
