@@ -16,14 +16,32 @@ export function toJalali(date: Date): string {
   return format(date, 'yyyy/MM/dd')
 }
 
-export function isRecent(postedAt?: Date, now = new Date()): boolean {
+export function isRecent(
+  postedAt?: Date,
+  boundary = new Date(),
+  timezone: string = 'UTC',
+): boolean {
   if (!postedAt) return false
 
-  const today = new Date(now)
-  today.setHours(0, 0, 0, 0)
+  const postedDate = getDateParts(postedAt, timezone)
+  const boundaryDate = getDateParts(boundary, timezone)
 
-  const date = new Date(postedAt)
-  date.setHours(0, 0, 0, 0)
+  return postedDate >= boundaryDate
+}
 
-  return date >= today
+function getDateParts(date: Date, timezone: string): number {
+  const formatter = new Intl.DateTimeFormat('en', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+
+  const parts = formatter.formatToParts(date)
+
+  const year = Number(parts.find((part) => part.type === 'year')?.value)
+  const month = Number(parts.find((part) => part.type === 'month')?.value)
+  const day = Number(parts.find((part) => part.type === 'day')?.value)
+
+  return year * 10_000 + month * 100 + day
 }

@@ -2,10 +2,11 @@ import type { Locator, Page } from 'playwright'
 import { WAIT_UNTIL } from '../../constants'
 import { toEnglishDigits } from '../../utilities'
 import type { IJobProvider } from '../job.model'
-import type { ICrawledJob } from '../../../types'
+import { EProvider, type ICrawledJob } from '../../../types'
 import type { JobParser } from '../../parsers'
-import { JOB_IN_JA_URL, MAIN_ELEMENT_SELECTOR } from './job-in-ja.constant'
+import { JOB_IN_JA_TIMEZONE, JOB_IN_JA_URL, MAIN_ELEMENT_SELECTOR } from './job-in-ja.constant'
 import { isRecent, randomDelay } from '../../../utilities'
+import type { IJobService } from '../../../services'
 
 export class JobInJaProduct implements IJobProvider {
   private lastPage: number = 1
@@ -15,6 +16,7 @@ export class JobInJaProduct implements IJobProvider {
   constructor(
     private readonly page: Page,
     private readonly parser: JobParser,
+    private readonly service: IJobService,
   ) {}
 
   async initialize(): Promise<void> {
@@ -58,16 +60,21 @@ export class JobInJaProduct implements IJobProvider {
 
   async getJobs(): Promise<ICrawledJob[]> {
     const jobs: ICrawledJob[] = []
+    const latestJob = await this.service.getLatestJobByProvider(EProvider.JOB_IN_JA)
 
     for (let page = 1; page <= this.lastPage; page++) {
       try {
         // eslint-disable-next-line no-console
         console.info(`Jobinja Provider: Fetching page "${page}"`)
         const items = await this.fetchJobs()
-        const recentJobs = items.filter((item) => isRecent(item.postedAt))
+        const recentJobs = items.filter((item) =>
+          isRecent(item.postedAt, latestJob?.postedAt, JOB_IN_JA_TIMEZONE),
+        )
         jobs.push(...recentJobs)
         const lastJob = items.at(-1)
-        const shouldContinue = lastJob ? isRecent(lastJob.postedAt) : false
+        const shouldContinue = lastJob
+          ? isRecent(lastJob.postedAt, latestJob?.postedAt, JOB_IN_JA_TIMEZONE)
+          : false
         // eslint-disable-next-line no-console
         console.info(`Jobinja Provider: Fetch has been done.`, {
           page,
@@ -75,6 +82,7 @@ export class JobInJaProduct implements IJobProvider {
           fetched: items.length,
           recent: recentJobs.length,
           shouldContinue,
+          isRecent: isRecent(items[0].postedAt, latestJob?.postedAt, JOB_IN_JA_TIMEZONE),
         })
 
         if (!shouldContinue || page === this.lastPage) {

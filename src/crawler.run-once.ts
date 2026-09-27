@@ -6,7 +6,7 @@ import { CrawlJobsTask } from './tasks'
 const repository = new JobRepository()
 const jobService = new JobService(repository)
 
-const providers = [new JobInJaCreator()]
+const providers = [new JobInJaCreator(jobService)]
 
 const crawlJobsTask = new CrawlJobsTask(jobService, providers)
 

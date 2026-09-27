@@ -47,7 +47,7 @@ const {
 
     jobServiceConstructorMock: vi.fn<(repository: unknown) => void>(),
 
-    jobInJaCreatorConstructorMock: vi.fn<() => void>(),
+    jobInJaCreatorConstructorMock: vi.fn<(jobService: unknown) => void>(),
 
     executionRepositoryConstructorMock: vi.fn<() => void>(),
 
@@ -68,8 +68,8 @@ const {
 
 vi.mock('./crawlers', () => ({
   JobInJaCreator: class {
-    constructor() {
-      jobInJaCreatorConstructorMock()
+    constructor(jobService: unknown) {
+      jobInJaCreatorConstructorMock(jobService)
 
       return jobInJaCreatorInstance
     }
@@ -164,6 +164,8 @@ describe('crawler bootstrap', () => {
     expect(jobServiceConstructorMock).toHaveBeenCalledWith(jobRepositoryInstance)
 
     expect(jobInJaCreatorConstructorMock).toHaveBeenCalledOnce()
+
+    expect(jobInJaCreatorConstructorMock).toHaveBeenCalledWith(jobServiceInstance)
 
     expect(executionRepositoryConstructorMock).toHaveBeenCalledOnce()
 

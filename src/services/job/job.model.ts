@@ -1,4 +1,4 @@
-import { ICrawledJob, IJob, IJobFilter } from '../../types'
+import type { EProvider, ICrawledJob, IJob, IJobFilter } from '../../types'
 
 export type SaveJobsResultType = {
   total: number
@@ -12,5 +12,6 @@ export interface IJobService {
   saveAll(data: Array<ICrawledJob>): Promise<SaveJobsResultType>
   getJobs(page: number, limit: number, filter?: IJobFilter): Promise<IJob[]>
   getJob(id: string): Promise<IJob | null>
+  getLatestJobByProvider(provider: EProvider): Promise<IJob | null>
   count(filter?: IJobFilter): Promise<number>
 }

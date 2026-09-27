@@ -188,6 +188,20 @@ export class JobRepository implements IJobRepository {
     return this.convertPrismaJobToIJob(job)
   }
 
+  async findLatestByProvider(provider: EDomainProvider): Promise<IJob | null> {
+    const job = await prisma.job.findFirst({
+      where: {
+        provider: prismaProviderMap[provider],
+      },
+      orderBy: [{ postedAt: 'desc' }, { id: 'desc' }],
+      include: { company: true, location: true },
+    })
+
+    if (!job) return null
+
+    return this.convertPrismaJobToIJob(job)
+  }
+
   async findAll(): Promise<IJob[]> {
     const jobs = await prisma.job.findMany({
       orderBy: [{ postedAt: 'desc' }, { id: 'desc' }],
