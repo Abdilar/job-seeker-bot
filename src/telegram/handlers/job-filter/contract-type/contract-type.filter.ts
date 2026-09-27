@@ -1,8 +1,8 @@
-import { EContractType, IJobFilter } from '../../../types'
-import { ContractTypeFilterKeyboard } from '../../keyboards'
-import { IJobRenderer } from '../../renders'
-import { TelegramContextType } from '../../telegram.model'
-import { IJobFilterStrategy } from './job-filter.model'
+import type { EContractType, IJobFilter } from '../../../../types'
+import type { ContractTypeFilterKeyboard } from '../../../keyboards'
+import type { IJobRenderer } from '../../../renders'
+import type { TelegramContextType } from '../../../telegram.model'
+import type { IJobFilterStrategy } from '../job-filter.model'
 
 export class ContractTypeFilter implements IJobFilterStrategy<EContractType> {
   key: keyof IJobFilter = 'contractType'
