@@ -8,7 +8,7 @@ import {
 } from '../../keyboards'
 import type { IJobRenderer } from '../../renders'
 import { ContractTypeFilter } from './contract-type'
-import { ProviderFilter } from './provider.filter'
+import { ProviderFilter } from './provider'
 import type { EContractType, EProvider } from '../../../types'
 
 export class JobFilterHandler implements IJobFilterHandler {
