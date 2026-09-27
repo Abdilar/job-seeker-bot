@@ -1,10 +1,10 @@
-import { IJobService } from '../../../services'
+import type { IJobService } from '../../../services'
 import { isEmptyObject } from '../../../utilities'
 import { CONTRACT_TYPE_MAP, PAGINATION_LIMIT, PROVIDER_MAP } from '../../constants'
 import { JobFormatter } from '../../formatters'
 import { JobFilterKeyboard, JobListKeyboard, PaginationKeyboard } from '../../keyboards'
-import { TelegramContextType } from '../../telegram.model'
-import { IJobRenderer } from './job.model'
+import type { TelegramContextType } from '../../telegram.model'
+import type { IJobRenderer } from './job.model'
 
 export class JobRenderer implements IJobRenderer {
   private readonly paginationKeyboard = new PaginationKeyboard()
@@ -16,13 +16,12 @@ export class JobRenderer implements IJobRenderer {
 
   async render(context: TelegramContextType, page: number = 1, edit = false): Promise<void> {
     const jobs = await this.jobService.getJobs(page, PAGINATION_LIMIT, context.session.jobFilter)
-    const totalJobs = await this.jobService.count(context.session.jobFilter)
 
     if (!jobs.length) {
       await context.reply('متاسفانه شغلی یافت نشد!')
       return
     }
-
+    const totalJobs = await this.jobService.count(context.session.jobFilter)
     const totalPages = Math.ceil(totalJobs / PAGINATION_LIMIT)
 
     const keyboard = this.jobFilterKeyboard.create(page)

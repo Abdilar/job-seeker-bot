@@ -8,7 +8,7 @@ export class JobService implements IJobService {
   async save(data: ICrawledJob): Promise<IJob> {
     try {
       this.validate(data)
-      return this.repository.create(data)
+      return await this.repository.create(data)
     } catch {
       throw new Error('Failed saving job operation!')
     }

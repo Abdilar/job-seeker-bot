@@ -1,6 +1,6 @@
-import { Bot } from 'grammy'
-import { TelegramContextType } from '../../telegram.model'
-import { IJobFilter } from '../../../types'
+import type { Bot } from 'grammy'
+import type { TelegramContextType } from '../../../telegram.model'
+import type { IJobFilter } from '../../../../types'
 
 export interface IJobFilterHandler {
   register(bot: Bot<TelegramContextType>): void

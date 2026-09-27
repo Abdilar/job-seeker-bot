@@ -2,14 +2,14 @@ import cron from 'node-cron'
 import type { ICrawlJobsTask } from '../../tasks'
 import type { ICrawlerScheduler } from './crawler.model'
 import { randomDelay } from '../../utilities'
-import type { CrawlerExecutionService } from '../../services'
+import type { ICrawlerExecutionService } from '../../services'
 
 export class CrawlerScheduler implements ICrawlerScheduler {
   private isRunning = false
 
   constructor(
     private readonly crawlJobs: ICrawlJobsTask,
-    private readonly executionService: CrawlerExecutionService,
+    private readonly executionService: ICrawlerExecutionService,
   ) {}
 
   start(): void {
