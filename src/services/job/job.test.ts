@@ -25,6 +25,8 @@ const createJob = (overrides: Partial<IJob> = {}): IJob => ({
   ...overrides,
 })
 
+const findLatestByProviderMock = vi.fn<IJobRepository['findLatestByProvider']>()
+
 describe('JobService', () => {
   const createMock = vi.fn<IJobRepository['create']>()
   const createManyMock = vi.fn<IJobRepository['createMany']>()
@@ -42,6 +44,7 @@ describe('JobService', () => {
     delete: deleteMock,
     findById: findByIdMock,
     findByUrl: findByUrlMock,
+    findLatestByProvider: findLatestByProviderMock,
     findAll: findAllMock,
     findPaginated: findPaginatedMock,
     exists: existsMock,
@@ -181,6 +184,29 @@ describe('JobService', () => {
       findByIdMock.mockResolvedValue(null)
       const result = await service.getJob('missing-job')
 
+      expect(result).toBeNull()
+    })
+  })
+
+  describe('getLatestJobByProvider', () => {
+    it('returns the latest job from repository', async () => {
+      const job = createJob()
+
+      findLatestByProviderMock.mockResolvedValue(job)
+
+      const result = await service.getLatestJobByProvider(EProvider.JOB_IN_JA)
+
+      expect(findLatestByProviderMock).toHaveBeenCalledOnce()
+      expect(findLatestByProviderMock).toHaveBeenCalledWith(EProvider.JOB_IN_JA)
+      expect(result).toBe(job)
+    })
+
+    it('returns null when repository returns null', async () => {
+      findLatestByProviderMock.mockResolvedValue(null)
+
+      const result = await service.getLatestJobByProvider(EProvider.JOB_IN_JA)
+
+      expect(findLatestByProviderMock).toHaveBeenCalledWith(EProvider.JOB_IN_JA)
       expect(result).toBeNull()
     })
   })

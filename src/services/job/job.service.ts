@@ -1,4 +1,4 @@
-import type { ICrawledJob, IJob, IJobFilter } from '../../types'
+import type { EProvider, ICrawledJob, IJob, IJobFilter } from '../../types'
 import type { IJobService, SaveJobsResultType } from './job.model'
 import type { IJobRepository } from '../../repositories/job'
 
@@ -36,6 +36,10 @@ export class JobService implements IJobService {
 
   getJob(id: string): Promise<IJob | null> {
     return this.repository.findById(id)
+  }
+
+  getLatestJobByProvider(provider: EProvider): Promise<IJob | null> {
+    return this.repository.findLatestByProvider(provider)
   }
 
   isValid(data: ICrawledJob): boolean {
