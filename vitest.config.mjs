@@ -16,6 +16,12 @@ export default defineConfig({
         'src/**/*.d.ts',
       ],
       reporter: ['text', 'html'],
+      thresholds: {
+        statements: 80,
+        lines: 80,
+        functions: 75,
+        branches: 65,
+      },
     },
   },
 })
