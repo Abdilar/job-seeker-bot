@@ -1,8 +1,8 @@
-import { EProvider, IJobFilter } from '../../../types'
-import { ProviderFilterKeyboard } from '../../keyboards'
-import { IJobRenderer } from '../../renders'
-import { TelegramContextType } from '../../telegram.model'
-import { IJobFilterStrategy } from './job-filter.model'
+import type { EProvider, IJobFilter } from '../../../../types'
+import type { ProviderFilterKeyboard } from '../../../keyboards'
+import type { IJobRenderer } from '../../../renders'
+import type { TelegramContextType } from '../../../telegram.model'
+import type { IJobFilterStrategy } from '../job'
 
 export class ProviderFilter implements IJobFilterStrategy<EProvider> {
   key: keyof IJobFilter = 'provider'

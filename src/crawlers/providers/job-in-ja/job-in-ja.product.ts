@@ -67,15 +67,14 @@ export class JobInJaProduct implements IJobProvider {
         jobs.push(...items)
         // eslint-disable-next-line no-console
         console.info(`Jobinja Provider: Fetch has been done.`, { page, lastPage: this.lastPage })
-
-        if (page <= this.lastPage) {
-          await randomDelay(1_000, 3_000)
-          await this.goNextPage()
-        }
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error(error)
-        continue
+      }
+
+      if (page < this.lastPage) {
+        await randomDelay(1_000, 3_000)
+        await this.goNextPage()
       }
     }
 

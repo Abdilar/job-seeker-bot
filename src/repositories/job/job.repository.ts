@@ -190,7 +190,7 @@ export class JobRepository implements IJobRepository {
 
   async findAll(): Promise<IJob[]> {
     const jobs = await prisma.job.findMany({
-      orderBy: { postedAt: 'desc' },
+      orderBy: [{ postedAt: 'desc' }, { id: 'desc' }],
       include: { company: true, location: true },
     })
 
@@ -203,7 +203,7 @@ export class JobRepository implements IJobRepository {
       where: this.toWhereInput(filter),
       skip: offset,
       take: limit,
-      orderBy: { postedAt: 'desc' },
+      orderBy: [{ postedAt: 'desc' }, { id: 'desc' }],
       include: {
         company: true,
         location: true,

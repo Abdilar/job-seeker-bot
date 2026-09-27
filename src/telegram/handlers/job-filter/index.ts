@@ -1,1 +1,1 @@
-export { JobFilterHandler } from './job-filter.handler'
+export { JobFilterHandler } from './job/job-filter.handler'
