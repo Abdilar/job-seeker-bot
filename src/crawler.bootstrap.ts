@@ -8,7 +8,7 @@ async function bootstrap(): Promise<void> {
   const repository = new JobRepository()
   const jobService = new JobService(repository)
 
-  const providers = [new JobInJaCreator()]
+  const providers = [new JobInJaCreator(jobService)]
 
   const executionRepository = new CrawlerExecutionRepository()
   const executionService = new CrawlerExecutionService(executionRepository)
