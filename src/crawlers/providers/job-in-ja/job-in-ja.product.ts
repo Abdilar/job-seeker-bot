@@ -73,10 +73,9 @@ export class JobInJaProduct implements IJobProvider {
         )
         jobs.push(...recentJobs)
         const lastJob = items.at(-1)
-        const shouldContinue =
-          !lastJob ||
-          !lastJob.postedAt ||
-          isRecent(lastJob.postedAt, latestJob?.postedAt, JOB_IN_JA_TIMEZONE)
+        const shouldContinue = lastJob
+          ? !lastJob.postedAt || isRecent(lastJob.postedAt, latestJob?.postedAt, JOB_IN_JA_TIMEZONE)
+          : false
         // eslint-disable-next-line no-console
         console.info(`Jobinja Provider: Fetch has been done.`, {
           page,
