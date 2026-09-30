@@ -30,6 +30,25 @@ enum ECrawlerStatus {
   FAILED
 }
 
+enum EWorkMode {
+  ONSITE
+  REMOTE
+  HYBRID
+}
+
+enum EVisaSponsorship {
+  AVAILABLE
+  NOT_AVAILABLE
+}
+
+enum EEducationLevel {
+  HIGH_SCHOOL
+  ASSOCIATE
+  BACHELOR
+  MASTER
+  PHD
+}
+
 model Job {
   id           String    @id @default(cuid())
   title        String
@@ -44,6 +63,7 @@ model Job {
   location     Location  @relation(fields: [locationId], references: [id])
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+  details      JobDetails?
 }
 
 model Company {
@@ -73,4 +93,34 @@ model CrawlerExecution {
 
   @@index([startedAt])
   @@index([status, startedAt])
+}
+
+model JobDetails {
+  id                        String            @id @default(cuid())
+  description               String?
+  responsibilities          String[]
+  requirements              String[]
+  preferredQualifications   String[]
+  benefits                  String[]
+  skills                    String[]
+  experience                Experience?
+  education                 EEducationLevel?
+  workMode                  EWorkMode?
+  visaSponsorship           EVisaSponsorship?
+  applicationUrl            String?
+
+  jobId                     String            @unique
+  job                       Job               @relation(fields: [jobId], reference: [id], onDelete: Cascade)
+  createdAt                 DateTime          @default(now())
+  updatedAt                 DateTime          @updatedAt
+}
+
+model Experience {
+  id                        String            @id @default(cuid())
+  raw                       String?
+  min                       Int?
+  max                       Int?
+
+  jobDetailsId              String            @unique
+  jobDetails                JobDetails        @relation(fields: [jobDetailsId], references: [id], onDelete: Cascade)
 }
