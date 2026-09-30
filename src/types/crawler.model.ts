@@ -1,3 +1,5 @@
+import type { EProvider } from '@prisma/client'
+
 export enum ECrawlerStatus {
   FAILED = 'failed',
   SUCCESS = 'success',
@@ -12,3 +14,10 @@ export interface ICrawlerExecution {
   error?: string
   createdAt: Date
 }
+
+export type CrawlerFullArgumentsType =
+  | {
+      providers?: EProvider[]
+      company?: string
+    }
+  | Record<string, never>

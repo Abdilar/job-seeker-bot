@@ -11,10 +11,15 @@ export class CrawlJobsTask implements ICrawlJobsTask {
   async run(): Promise<void> {
     for (const provider of this.providers) {
       try {
+        const providerName = provider.constructor.name.replaceAll('Creator', '')
+        // eslint-disable-next-line no-console
+        console.log(`Start crawling ${providerName} jobs...`)
         const jobs = await provider.crawlJobs()
+        // eslint-disable-next-line no-console
+        console.log(`Finish crawling ${providerName} and Start saving ${jobs.length} jobs`)
         await this.jobService.saveAll(jobs)
         // eslint-disable-next-line no-console
-        console.log(`Crawler saved ${jobs.length} jobs`)
+        console.log(`All ${providerName} jobs saved successfully`)
       } finally {
         await provider.closeBrowser()
         // eslint-disable-next-line no-console

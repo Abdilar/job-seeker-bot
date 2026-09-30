@@ -3,6 +3,7 @@
   "version": "1.3.9",
   "main": "index.js",
   "scripts": {
+    "crawl:full": "tsc & node dist/crawler.full.js --providers=job_in_ja --company=snapp",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
