@@ -1,9 +1,8 @@
 import type { Locator, Page } from 'playwright'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
 import { ECrawlMode } from '../../../constants'
 import type { IJobService } from '../../../services'
-import { EProvider, type ICrawledJob, type IJob } from '../../../types'
+import { EProvider, type ICrawledJob } from '../../../types'
 import type { JobParser } from '../../parsers'
 import { JOB_IN_JA_TIMEZONE, JOB_IN_JA_URL, MAIN_ELEMENT_SELECTOR } from './job-in-ja.constant'
 import { JobInJaProduct } from './job-in-ja.product'
