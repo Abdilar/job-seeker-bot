@@ -1,3 +1,4 @@
+import { ECrawlMode } from './constants'
 import type { JobProvider } from './crawlers'
 import { JobInJaCreator } from './crawlers'
 import { JobRepository } from './repositories'
@@ -20,12 +21,13 @@ async function run() {
 
   const repository = new JobRepository()
   const jobService = new JobService(repository)
+  const crawlMode: ECrawlMode = crawlArgs.mode ?? ECrawlMode.INCREMENTAL
 
   if (crawlArgs?.providers) {
     for (const provider of Object.values(EProvider)) {
       switch (provider) {
         case EProvider.JOB_IN_JA:
-          providers.push(new JobInJaCreator(jobService))
+          providers.push(new JobInJaCreator(jobService, crawlMode))
           break
         default:
           break
