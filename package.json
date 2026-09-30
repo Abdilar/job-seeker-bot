@@ -1,6 +1,6 @@
 {
   "name": "job-seeker-telegram-bot",
-  "version": "1.3.9",
+  "version": "1.4.0",
   "main": "index.js",
   "scripts": {
     "crawl:full": "tsc & node dist/crawler-full.bootstrap.js --mode=full --providers=job_in_ja",
