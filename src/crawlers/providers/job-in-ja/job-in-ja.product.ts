@@ -64,6 +64,8 @@ export class JobInJaProduct implements IJobProvider {
 
     for (let page = 1; page <= this.lastPage; page++) {
       try {
+        // eslint-disable-next-line no-console
+        console.info(`Jobinja Provider: Fetching page "${page}"`)
         const items = await this.fetchJobs()
         jobs.push(...items)
 
@@ -71,6 +73,12 @@ export class JobInJaProduct implements IJobProvider {
           break
         }
 
+        // eslint-disable-next-line no-console
+        console.info(`Jobinja Provider: Fetch has been done.`, {
+          page,
+          lastPage: this.lastPage,
+          fetched: items.length,
+        })
         await randomDelay(1_000, 3_000)
         await this.goNextPage()
       } catch (error) {
