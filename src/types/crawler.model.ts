@@ -19,7 +19,6 @@ export interface ICrawlerExecution {
 export type CrawlerFullArgumentsType =
   | {
       providers?: EProvider[]
-      company?: string
       mode?: ECrawlMode
     }
   | Record<string, never>

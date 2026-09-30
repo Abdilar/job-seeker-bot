@@ -153,7 +153,7 @@ describe('crawler bootstrap', () => {
   })
 
   it('creates crawler dependencies and starts scheduler', async () => {
-    await import('./crawler.bootstrap.js')
+    await import('./crawler-incremental.bootstrap.js')
 
     await vi.waitFor(() => {
       expect(schedulerStartMock).toHaveBeenCalledOnce()
@@ -204,7 +204,7 @@ describe('crawler bootstrap', () => {
       executionOrder.push('start')
     })
 
-    await import('./crawler.bootstrap.js')
+    await import('./crawler-incremental.bootstrap.js')
 
     await vi.waitFor(() => {
       expect(schedulerStartMock).toHaveBeenCalledOnce()
@@ -218,7 +218,7 @@ describe('crawler bootstrap', () => {
 
     recoverInterruptedExecutionsMock.mockRejectedValue(error)
 
-    await import('./crawler.bootstrap.js')
+    await import('./crawler-incremental.bootstrap.js')
 
     await vi.waitFor(() => {
       expect(process.exitCode).toBe(1)

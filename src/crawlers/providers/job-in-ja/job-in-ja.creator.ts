@@ -4,12 +4,12 @@ import { JobProvider } from '../job.provider'
 import { JobInJaProduct } from './job-in-ja.product'
 import { JobInJaParser, JobParser } from '../../parsers'
 import type { IJobService } from '../../../services'
-import type { ECrawlMode } from '../../../constants'
+import { ECrawlMode } from '../../../constants'
 
 export class JobInJaCreator extends JobProvider {
   constructor(
     private readonly service: IJobService,
-    protected readonly mode: ECrawlMode,
+    protected readonly mode: ECrawlMode = ECrawlMode.INCREMENTAL,
   ) {
     super()
   }
