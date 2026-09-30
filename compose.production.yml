@@ -47,7 +47,7 @@ services:
     container_name: job-crawler
     env_file:
       - .env.production
-    command: node dist/crawler.bootstrap.js
+    command: node dist/crawler-incremental.bootstrap.js
     restart: unless-stopped
     depends_on:
       migrate:

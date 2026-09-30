@@ -3,6 +3,7 @@
   "version": "1.3.9",
   "main": "index.js",
   "scripts": {
+    "crawl:full": "tsc & node dist/crawler-full.bootstrap.js --mode=full --providers=job_in_ja",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
@@ -11,7 +12,8 @@
     "lint:fix": "oxlint src --fix",
     "commit": "cz",
     "start:bot": "node dist/bot.bootstrap.js",
-    "start:crawler": "node dist/crawler.bootstrap.js",
+    "start:crawler-incremental": "node dist/crawler-incremental.bootstrap.js",
+    "start:crawler-full": "node dist/crawler-full.bootstrap.js",
     "test": "vitest",
     "test:run": "dotenv -e .env -- vitest run --config vitest.config.mjs",
     "test:db:migrate": "dotenv -e .env.test -- prisma migrate deploy",

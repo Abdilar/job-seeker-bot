@@ -7,6 +7,7 @@ import type { JobParser } from '../../parsers'
 import { JOB_IN_JA_TIMEZONE, JOB_IN_JA_URL, MAIN_ELEMENT_SELECTOR } from './job-in-ja.constant'
 import { isRecent, randomDelay } from '../../../utilities'
 import type { IJobService } from '../../../services'
+import { ECrawlMode } from '../../../constants'
 
 export class JobInJaProduct implements IJobProvider {
   private lastPage: number = 1
@@ -17,6 +18,7 @@ export class JobInJaProduct implements IJobProvider {
     private readonly page: Page,
     private readonly parser: JobParser,
     private readonly service: IJobService,
+    private readonly mode: ECrawlMode,
   ) {}
 
   async initialize(): Promise<void> {
@@ -28,7 +30,6 @@ export class JobInJaProduct implements IJobProvider {
 
   private async getElement(selector: string): Promise<Locator> {
     const element = this.page.locator(selector)
-    // await element.waitFor({ state: "visible" });
     return element
   }
 
@@ -58,11 +59,44 @@ export class JobInJaProduct implements IJobProvider {
     }
   }
 
-  async getJobs(): Promise<ICrawledJob[]> {
+  private async getFullJobs(): Promise<ICrawledJob[]> {
+    const jobs: ICrawledJob[] = []
+
+    for (let page = 1; page <= this.lastPage; page++) {
+      try {
+        // eslint-disable-next-line no-console
+        console.info(`Jobinja Provider: Fetching page "${page}"`)
+        const items = await this.fetchJobs()
+        jobs.push(...items)
+
+        if (page === this.lastPage) {
+          break
+        }
+
+        // eslint-disable-next-line no-console
+        console.info(`Jobinja Provider: Fetch has been done.`, {
+          page,
+          lastPage: this.lastPage,
+          fetched: items.length,
+        })
+        await randomDelay(1_000, 3_000)
+        await this.goNextPage()
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(error)
+        break
+      }
+    }
+
+    return jobs
+  }
+
+  private async getIncrementalJobs(): Promise<ICrawledJob[]> {
     const jobs: ICrawledJob[] = []
     const latestJob = await this.service.getLatestJobByProvider(EProvider.JOB_IN_JA)
 
-    for (let page = 1; page <= this.lastPage; page++) {
+    let shouldContinue = true
+    for (let page = 1; shouldContinue && page <= this.lastPage; page++) {
       try {
         // eslint-disable-next-line no-console
         console.info(`Jobinja Provider: Fetching page "${page}"`)
@@ -73,7 +107,7 @@ export class JobInJaProduct implements IJobProvider {
         )
         jobs.push(...recentJobs)
         const lastJob = items.at(-1)
-        const shouldContinue = lastJob
+        shouldContinue = lastJob
           ? !lastJob.postedAt || isRecent(lastJob.postedAt, latestJob?.postedAt, JOB_IN_JA_TIMEZONE)
           : false
         // eslint-disable-next-line no-console
@@ -83,12 +117,7 @@ export class JobInJaProduct implements IJobProvider {
           fetched: items.length,
           recent: recentJobs.length,
           shouldContinue,
-          isRecent: isRecent(items[0].postedAt, latestJob?.postedAt, JOB_IN_JA_TIMEZONE),
         })
-
-        if (!shouldContinue || page === this.lastPage) {
-          break
-        }
 
         await randomDelay(1_000, 3_000)
         await this.goNextPage()
@@ -100,6 +129,10 @@ export class JobInJaProduct implements IJobProvider {
     }
 
     return jobs
+  }
+
+  async getJobs(): Promise<ICrawledJob[]> {
+    return this.mode === ECrawlMode.FULL ? this.getFullJobs() : this.getIncrementalJobs()
   }
 
   private async fetchJobs(): Promise<ICrawledJob[]> {
@@ -117,14 +150,13 @@ export class JobInJaProduct implements IJobProvider {
     for (let index = 0; index < jobCount; index++) {
       const job = await this.parser.parse(jobElements.nth(index))
       if (!job) {
-        const jobIndex = (index + 1) * this.lastPage
         // eslint-disable-next-line no-console
-        console.error(`Couldn't parse a job: ${jobIndex}`)
+        console.error(`Couldn't parse a job: `, { page: this.currentPage, index: index + 1 })
         continue
       }
       jobs.push(job)
     }
 
-    return Promise.resolve(jobs)
+    return jobs
   }
 }

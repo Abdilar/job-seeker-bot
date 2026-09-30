@@ -4,16 +4,20 @@ import { JobProvider } from '../job.provider'
 import { JobInJaProduct } from './job-in-ja.product'
 import { JobInJaParser, JobParser } from '../../parsers'
 import type { IJobService } from '../../../services'
+import { ECrawlMode } from '../../../constants'
 
 export class JobInJaCreator extends JobProvider {
-  constructor(private readonly service: IJobService) {
+  constructor(
+    private readonly service: IJobService,
+    protected readonly mode: ECrawlMode = ECrawlMode.INCREMENTAL,
+  ) {
     super()
   }
 
   protected async createProvider(page: Page): Promise<IJobProvider> {
     const jobInJaParser = new JobInJaParser()
     const jobParser = new JobParser(jobInJaParser)
-    const provider = new JobInJaProduct(page, jobParser, this.service)
+    const provider = new JobInJaProduct(page, jobParser, this.service, this.mode)
     await provider.initialize()
     return provider
   }
