@@ -49,12 +49,16 @@ enum EEducationLevel {
   PHD
 }
 
+enum EGender {
+  MAN
+  WOMAN
+}
+
 model Job {
   id           String    @id @default(cuid())
   title        String
   url          String    @unique
   contractType String
-  salary       String?
   postedAt     DateTime?
   provider     EProvider
   companyId    String
@@ -98,11 +102,14 @@ model CrawlerExecution {
 model JobDetails {
   id                        String            @id @default(cuid())
   description               String?
+  category                  String?
+  salary                    String?
   responsibilities          String[]
   requirements              String[]
   preferredQualifications   String[]
   benefits                  String[]
   skills                    String[]
+  gender                    EGender?
   experience                Experience?
   education                 EEducationLevel?
   workMode                  EWorkMode?

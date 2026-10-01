@@ -41,7 +41,6 @@ export class JobRepository implements IJobRepository {
   private convertICrawledJobToJobCreateInput(data: ICrawledJob): Prisma.JobCreateInput {
     return {
       ...data,
-      salary: data.salary ?? null,
       postedAt: data.postedAt ?? null,
       provider: prismaProviderMap[data.provider],
       company: {
@@ -81,7 +80,6 @@ export class JobRepository implements IJobRepository {
       provider: domainProviderMap[data.provider],
       createdAt: data.createdAt ? new Date(data.createdAt) : undefined,
       updatedAt: data.updatedAt ? new Date(data.updatedAt) : undefined,
-      salary: data.salary ?? undefined,
       company: {
         ...data.company,
         englishName: data.company.englishName ?? undefined,
@@ -97,7 +95,6 @@ export class JobRepository implements IJobRepository {
       update: {
         title: data.title,
         contractType: data.contractType,
-        salary: data.salary,
         postedAt: data.postedAt,
       },
       include: {
@@ -133,7 +130,6 @@ export class JobRepository implements IJobRepository {
             update: {
               title: job.title,
               contractType: job.contractType,
-              salary: job.salary,
               postedAt: job.postedAt,
             },
           }),

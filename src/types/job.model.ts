@@ -7,7 +7,6 @@ interface IBaseJob {
   title: string
   url: string
   contractType: EContractType
-  salary?: string
   postedAt?: Date
   provider: EProvider
 }
@@ -19,8 +18,6 @@ export interface ICrawledJob extends IBaseJob {
 
 export interface IJob extends ICrawledJob {
   id: string
-  // locationId: string
-  // companyId: string
   createdAt?: Date
   updatedAt?: Date
 }
@@ -30,8 +27,11 @@ export interface IJobFilter {
   provider?: EProvider
 }
 
-export interface IJobDetails {
+export interface ICrawledJobDetails {
   description?: string
+  category?: string
+  salary?: string
+  gender?: EGender
   responsibilities?: string[]
   requirements?: string[]
   preferredQualifications?: string[]
@@ -42,6 +42,10 @@ export interface IJobDetails {
   workMode?: EWorkMode
   visaSponsorship?: EVisaSponsorship
   applicationUrl?: string
+}
+
+export interface IJobDetails extends ICrawledJobDetails {
+  id: string
 }
 
 export interface IJobExperience {
@@ -67,4 +71,9 @@ export enum EEducationLevel {
   BACHELOR = 'BACHELOR',
   MASTER = 'MASTER',
   PHD = 'PHD',
+}
+
+export enum EGender {
+  MAN = 'MAN',
+  WOMAN = 'WOMAN',
 }

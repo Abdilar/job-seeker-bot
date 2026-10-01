@@ -1,7 +1,7 @@
-import { IJob } from '../../../types'
+import type { IJob } from '../../../types'
 import { toJalali } from '../../../utilities'
 import { CONTRACT_TYPE_MAP, PAGINATION_LIMIT, PROVIDER_MAP } from '../../constants'
-import { IJobFormatter } from './job.model'
+import type { IJobFormatter } from './job.model'
 
 export class JobFormatter implements IJobFormatter {
   formatList(jobs: Array<IJob>, page: number, totalPages: number): string {
@@ -30,8 +30,6 @@ ${CONTRACT_TYPE_MAP[job.contractType]}
 📍 موقعیت: <b>${job.location.country}, ${job.location.province}</b>
 
 📄 نوع قرارداد: <b>${CONTRACT_TYPE_MAP[job.contractType]}</b>
-
-💰 حقوق: <b>${job.salary || 'نامشخص'}</b>
 
 📅 تاریخ انتشار: <b>${toJalali(job.postedAt ?? new Date())}</b>
 
