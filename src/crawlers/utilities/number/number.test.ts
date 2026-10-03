@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
-
-import { toEnglishDigits } from '.'
+import { toEnglishDigits, persianNumbersToDigits } from '.'
 
 describe('toEnglishDigits', () => {
   it('should convert all Persian digits to English digits', () => {
@@ -33,5 +32,57 @@ describe('toEnglishDigits', () => {
 
   it('should preserve Arabic-Indic digits', () => {
     expect(toEnglishDigits('١٢٣٤٥٦٧٨٩٠')).toBe('١٢٣٤٥٦٧٨٩٠')
+  })
+})
+
+describe('persianNumbersToDigits', () => {
+  it('should convert single Persian number words', () => {
+    expect(persianNumbersToDigits('صفر')).toBe(0)
+    expect(persianNumbersToDigits('یک')).toBe(1)
+    expect(persianNumbersToDigits('دو')).toBe(2)
+    expect(persianNumbersToDigits('نوزده')).toBe(19)
+    expect(persianNumbersToDigits('بیست')).toBe(20)
+    expect(persianNumbersToDigits('نود')).toBe(90)
+  })
+
+  it('should convert compound Persian numbers with normal spaces', () => {
+    expect(persianNumbersToDigits('بیست و یک')).toBe(21)
+    expect(persianNumbersToDigits('بیست و دو')).toBe(22)
+    expect(persianNumbersToDigits('سی و پنج')).toBe(35)
+    expect(persianNumbersToDigits('نود و نه')).toBe(99)
+  })
+
+  it('should handle multiple spaces around "و"', () => {
+    expect(persianNumbersToDigits('بیست   و   دو')).toBe(22)
+    expect(persianNumbersToDigits('چهل    و    سه')).toBe(43)
+  })
+
+  it('should handle half-space around "و"', () => {
+    expect(persianNumbersToDigits('بیست‌و‌دو')).toBe(22)
+    expect(persianNumbersToDigits('سی‌و‌پنج')).toBe(35)
+    expect(persianNumbersToDigits('نود‌و‌نه')).toBe(99)
+  })
+
+  it('should trim leading and trailing spaces', () => {
+    expect(persianNumbersToDigits('  بیست و دو  ')).toBe(22)
+    expect(persianNumbersToDigits('  نوزده  ')).toBe(19)
+  })
+
+  it('should return undefined for an unknown number', () => {
+    expect(persianNumbersToDigits('صد')).toBeUndefined()
+  })
+
+  it('should return undefined when one part of compound number is unknown', () => {
+    expect(persianNumbersToDigits('بیست و صد')).toBeUndefined()
+    expect(persianNumbersToDigits('صد و دو')).toBeUndefined()
+  })
+
+  it('should return undefined when there are more than two number parts', () => {
+    expect(persianNumbersToDigits('بیست و سه و چهار')).toBeUndefined()
+  })
+
+  it('should return undefined for empty input', () => {
+    expect(persianNumbersToDigits('')).toBeUndefined()
+    expect(persianNumbersToDigits('   ')).toBeUndefined()
   })
 })
