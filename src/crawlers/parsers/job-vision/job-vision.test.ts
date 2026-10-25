@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { EContractType, EProvider } from '../../../types'
 import { JobVisionParser } from './job-vision.parser'
 import {
-  CITY_SELECTOR,
   COMPANY_SELECTOR,
+  LOCATION_SELECTOR,
   PART_TIME_SELECTOR,
   PASSED_DAYS_SELECTOR,
   SALARY_CURRENCY,
@@ -237,7 +237,7 @@ function createJobLocator(data: JobLocatorData): Locator {
         return data.multiMatch ? strictLocator(data.company) : textLocator(data.company)
       }
 
-      if (selector === CITY_SELECTOR) {
+      if (selector === LOCATION_SELECTOR) {
         return data.multiMatch ? strictLocator(data.city) : textLocator(data.city)
       }
 

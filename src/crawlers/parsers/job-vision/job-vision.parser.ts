@@ -3,11 +3,11 @@ import { EContractType, EProvider } from '../../../types'
 import type { ICompany, ICrawledJob, ILocation } from '../../../types'
 import { TODAY } from '../../../constants'
 import {
-  CITY_SELECTOR,
   COMPANY_SELECTOR,
   JOB_ID_PATTERN,
   JOB_VISION_ORIGIN,
   LOCATION_COUNTRY,
+  LOCATION_SELECTOR,
   PART_TIME_SELECTOR,
   PASSED_DAYS_SELECTOR,
   SALARY_CURRENCY,
@@ -32,8 +32,8 @@ export class JobVisionParser implements IJobParserStrategy {
       const postedAt = convertDaysAgoToJalaliDate(this.parsePassedDays(passedDateAttribute))
       const companyAttribute = await this.getText(content.locator(COMPANY_SELECTOR))
       const company: ICompany = this.parseCompany(companyAttribute)
-      const cityAttribute = await this.getText(content.locator(CITY_SELECTOR))
-      const location: ILocation = this.parseLocation(cityAttribute)
+      const locationAttribute = await this.getText(content.locator(LOCATION_SELECTOR))
+      const location: ILocation = this.parseLocation(locationAttribute)
       const isPartTime = (await content.locator(PART_TIME_SELECTOR).count()) > 0
       const salary = await this.getText(
         content.locator(SALARY_SELECTOR, { hasText: SALARY_CURRENCY }),
@@ -88,6 +88,7 @@ export class JobVisionParser implements IJobParserStrategy {
     }
   }
 
+  // `Location` has no city column, so the card's city text lands in `province`; Jobinja fills the same field with a province.
   private parseLocation(city: string): ILocation {
     return {
       country: LOCATION_COUNTRY,
