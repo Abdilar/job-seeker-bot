@@ -5,8 +5,20 @@ export const TOTAL_JOBS_SELECTOR = '.seo-title'
 export const CLEAR_CACHED_JOBS_SCRIPT = 'sessionStorage.clear()'
 export const JOB_VISION_PAGE_SIZE = 30
 export const JOB_VISION_TIMEZONE = 'Asia/Tehran'
+export const JOB_VISION_RENDER_TIMEOUT = 15_000
 
-export const ARABIC_DIGIT_MAP: Record<string, string> = {
+// `.seo-title` renders its count with Arabic-Indic digits (٠-٩), which the shared `toEnglishDigits` does not cover.
+export const NON_ENGLISH_DIGIT_MAP: Record<string, string> = {
+  '۰': '0',
+  '۱': '1',
+  '۲': '2',
+  '۳': '3',
+  '۴': '4',
+  '۵': '5',
+  '۶': '6',
+  '۷': '7',
+  '۸': '8',
+  '۹': '9',
   '٠': '0',
   '١': '1',
   '٢': '2',

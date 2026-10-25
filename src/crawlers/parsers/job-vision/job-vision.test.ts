@@ -7,6 +7,8 @@ import {
   COMPANY_SELECTOR,
   PART_TIME_SELECTOR,
   PASSED_DAYS_SELECTOR,
+  SALARY_CURRENCY,
+  SALARY_SELECTOR,
   TITLE_SELECTOR,
 } from './job-vision.constant'
 
@@ -51,6 +53,15 @@ describe('JobVisionParser', () => {
         fullName: 'آوین تجارت پرتو',
       },
     })
+  })
+
+  it('reads the first element when a selector matches several', async () => {
+    const content = createJobLocator({ ...completeJob, multiMatch: true })
+
+    const result = await parser.parse(content)
+
+    expect(result?.title).toBe('سرپرست کنترل کیفیت')
+    expect(result?.salary).toBe('45 - 60 میلیون تومان')
   })
 
   it('keeps the same url for the same job across different searches', async () => {
@@ -173,6 +184,7 @@ interface JobLocatorData {
   city: string | null
   isPartTime: boolean
   salary: string | null
+  multiMatch?: boolean
 }
 
 const completeJob: JobLocatorData = {
@@ -185,38 +197,60 @@ const completeJob: JobLocatorData = {
   salary: '45 - 60 میلیون تومان',
 }
 
-function createJobLocator(data: JobLocatorData): Locator {
-  const textLocator = (value: string | null) =>
-    ({
-      count: vi.fn().mockResolvedValue(value === null ? 0 : 1),
-      textContent: vi.fn().mockResolvedValue(value),
-    }) as unknown as Locator
+function textLocator(value: string | null) {
+  const locator = {
+    count: vi.fn().mockResolvedValue(value === null ? 0 : 1),
+    textContent: vi.fn().mockResolvedValue(value),
+    first: vi.fn(),
+  }
 
+  locator.first.mockReturnValue(locator)
+
+  return locator
+}
+
+function strictLocator(value: string | null) {
+  const collection = textLocator(value)
+
+  collection.textContent = vi.fn().mockImplementation(async () => {
+    throw new Error('strict mode violation: locator resolved to 2 elements')
+  })
+
+  collection.first.mockReturnValue(textLocator(value))
+
+  return collection
+}
+
+function createJobLocator(data: JobLocatorData): Locator {
   return {
     getAttribute: vi.fn().mockResolvedValue(data.href),
-    locator: vi.fn((selector: string) => {
+    locator: vi.fn((selector: string, options?: { hasText?: string }) => {
       if (selector === TITLE_SELECTOR) {
-        return textLocator(data.title)
+        return data.multiMatch ? strictLocator(data.title) : textLocator(data.title)
       }
 
       if (selector === PASSED_DAYS_SELECTOR) {
-        return textLocator(data.passedDays)
+        return data.multiMatch ? strictLocator(data.passedDays) : textLocator(data.passedDays)
       }
 
       if (selector === COMPANY_SELECTOR) {
-        return textLocator(data.company)
+        return data.multiMatch ? strictLocator(data.company) : textLocator(data.company)
       }
 
       if (selector === CITY_SELECTOR) {
-        return textLocator(data.city)
+        return data.multiMatch ? strictLocator(data.city) : textLocator(data.city)
       }
 
       if (selector === PART_TIME_SELECTOR) {
         return textLocator(data.isPartTime ? 'پاره وقت' : null)
       }
 
-      if (selector === 'span') {
-        return textLocator(data.salary)
+      if (selector === SALARY_SELECTOR) {
+        if (options?.hasText !== SALARY_CURRENCY) {
+          return textLocator(null)
+        }
+
+        return data.multiMatch ? strictLocator(data.salary) : textLocator(data.salary)
       }
 
       throw new Error(`Unexpected selector: ${selector}`)

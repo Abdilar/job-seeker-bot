@@ -4,13 +4,14 @@ import type { IJobProvider } from '../job.model'
 import { EProvider, type ICrawledJob } from '../../../types'
 import type { JobParser } from '../../parsers'
 import {
-  ARABIC_DIGIT_MAP,
   CLEAR_CACHED_JOBS_SCRIPT,
   JOB_ELEMENT_SELECTOR,
   JOB_VISION_PAGE_SIZE,
+  JOB_VISION_RENDER_TIMEOUT,
   JOB_VISION_TIMEZONE,
   JOB_VISION_URL,
   MAIN_ELEMENT_SELECTOR,
+  NON_ENGLISH_DIGIT_MAP,
   TOTAL_JOBS_SELECTOR,
 } from './job-vision.constant'
 import { isRecent, randomDelay } from '../../../utilities'
@@ -30,6 +31,7 @@ export class JobVisionProduct implements IJobProvider {
   ) {}
 
   async initialize(): Promise<void> {
+    // The list is cached in sessionStorage, so `?page=` is ignored unless the cache is cleared on every navigation.
     await this.page.addInitScript(CLEAR_CACHED_JOBS_SCRIPT)
     await this.page.goto(JOB_VISION_URL, { waitUntil: WAIT_UNTIL })
     await this.waitForJobs()
@@ -44,24 +46,39 @@ export class JobVisionProduct implements IJobProvider {
   }
 
   private async waitForJobs(): Promise<void> {
-    await this.page.locator(JOB_ELEMENT_SELECTOR).first().waitFor()
+    try {
+      // Cards hydrate after the document is ready, so a successful navigation alone does not mean they exist.
+      await this.page
+        .locator(JOB_ELEMENT_SELECTOR)
+        .first()
+        .waitFor({ state: 'visible', timeout: JOB_VISION_RENDER_TIMEOUT })
+    } catch {
+      throw new Error(`Jobvision Provider: Job cards have not been rendered.`)
+    }
   }
 
   private async getLastPage() {
-    const totalJobsElement = await this.getElement(TOTAL_JOBS_SELECTOR)
+    const totalJobsElement = (await this.getElement(TOTAL_JOBS_SELECTOR)).first()
 
     if (!(await totalJobsElement.count())) {
       return 1
     }
 
-    const totalJobsAr = (await totalJobsElement.textContent()) ?? ''
-    const totalJobs = Number(this.arabicToEnglishDigits(totalJobsAr).replaceAll(/\D/g, ''))
+    const totalJobsText = (await totalJobsElement.textContent()) ?? ''
+    const totalJobs = Number(this.nonEnglishToEnglishDigits(totalJobsText).replaceAll(/\D/g, ''))
 
-    return Math.ceil(totalJobs / JOB_VISION_PAGE_SIZE) || 1
+    if (!totalJobs) {
+      // eslint-disable-next-line no-console
+      console.error(`Jobvision Provider: Couldn't count the total jobs: `, { totalJobsText })
+
+      return 1
+    }
+
+    return Math.ceil(totalJobs / JOB_VISION_PAGE_SIZE)
   }
 
-  private arabicToEnglishDigits(value: string): string {
-    return value.replace(/[٠-٩]/g, (d) => ARABIC_DIGIT_MAP[d])
+  private nonEnglishToEnglishDigits(value: string): string {
+    return value.replace(/[۰-۹٠-٩]/g, (digit) => NON_ENGLISH_DIGIT_MAP[digit])
   }
 
   private async goNextPage() {

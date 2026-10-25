@@ -7,6 +7,7 @@ import type { JobParser } from '../../parsers'
 import {
   CLEAR_CACHED_JOBS_SCRIPT,
   JOB_ELEMENT_SELECTOR,
+  JOB_VISION_RENDER_TIMEOUT,
   JOB_VISION_TIMEZONE,
   JOB_VISION_URL,
   MAIN_ELEMENT_SELECTOR,
@@ -93,10 +94,17 @@ describe('JobVisionProduct', () => {
   const createProvider = (mode: ECrawlMode = ECrawlMode.INCREMENTAL): JobVisionProduct =>
     new JobVisionProduct(page, parser, service, mode)
 
-  const mockTotalJobs = (totalJobs?: string) => ({
-    count: vi.fn().mockResolvedValue(totalJobs ? 1 : 0),
-    textContent: vi.fn().mockResolvedValue(totalJobs ?? null),
-  })
+  const mockTotalJobs = (totalJobs?: string) => {
+    const element = {
+      count: vi.fn().mockResolvedValue(totalJobs ? 1 : 0),
+      textContent: vi.fn().mockResolvedValue(totalJobs ?? null),
+      first: vi.fn(),
+    }
+
+    element.first.mockReturnValue(element)
+
+    return element
+  }
 
   const mockJobElements = (count: number) => ({
     count: vi.fn().mockResolvedValue(count),
@@ -167,7 +175,49 @@ describe('JobVisionProduct', () => {
       })
 
       expect(pageLocatorMock).toHaveBeenCalledWith(MAIN_ELEMENT_SELECTOR)
-      expect(waitForMock).toHaveBeenCalledOnce()
+
+      expect(waitForMock).toHaveBeenCalledExactlyOnceWith({
+        state: 'visible',
+        timeout: JOB_VISION_RENDER_TIMEOUT,
+      })
+    })
+
+    it('should reject the initialization when no job card is rendered', async () => {
+      setupPage(1)
+
+      waitForMock.mockRejectedValueOnce(new Error('Timeout 15000ms exceeded'))
+
+      const provider = createProvider()
+
+      await expect(provider.initialize()).rejects.toThrow(
+        'Jobvision Provider: Job cards have not been rendered.',
+      )
+    })
+
+    it('should use page 1 when the total jobs does not contain a number', async () => {
+      const consoleErrorMock = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+      setupPage(1, 'آگهی استخدام')
+
+      parserParseMock.mockResolvedValueOnce(createJob('Only Job', recentDate))
+
+      const provider = createProvider(ECrawlMode.FULL)
+
+      await provider.initialize()
+
+      const jobs = await provider.getJobs()
+
+      expect(jobs).toHaveLength(1)
+      expect(gotoMock).toHaveBeenCalledExactlyOnceWith(JOB_VISION_URL, {
+        waitUntil: WAIT_UNTIL,
+      })
+
+      expect(consoleErrorMock).toHaveBeenCalledWith(
+        "Jobvision Provider: Couldn't count the total jobs: ",
+        { totalJobsText: 'آگهی استخدام' },
+      )
+
+      consoleErrorMock.mockRestore()
     })
 
     it('should use page 1 when total jobs does not exist', async () => {
@@ -235,6 +285,57 @@ describe('JobVisionProduct', () => {
       expect(getLatestJobByProviderMock).not.toHaveBeenCalled()
       expect(isRecentMock).not.toHaveBeenCalled()
     })
+
+    it('should calculate the last page from total jobs in Persian digits', async () => {
+      setupPage(1, '۶۰ آگهی استخدام')
+
+      parserParseMock
+        .mockResolvedValueOnce(createJob('Page 1 Job', oldDate))
+        .mockResolvedValueOnce(createJob('Page 2 Job', oldDate))
+
+      const provider = createProvider(ECrawlMode.FULL)
+
+      await provider.initialize()
+
+      const jobs = await provider.getJobs()
+
+      expect(jobs).toHaveLength(2)
+      expect(gotoMock).toHaveBeenLastCalledWith(`${JOB_VISION_URL}&page=2`, {
+        waitUntil: WAIT_UNTIL,
+      })
+    })
+
+    it('should skip a job when parser cannot parse it', async () => {
+      setupPage(2)
+
+      parserParseMock
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce(createJob('Valid Job', oldDate))
+
+      const provider = createProvider(ECrawlMode.FULL)
+
+      await provider.initialize()
+
+      const jobs = await provider.getJobs()
+
+      expect(jobs.map((job) => job.title)).toEqual(['Valid Job'])
+    })
+
+    it('should stop crawling when no job elements are found', async () => {
+      setupPage(0, '٣٠٠ آگهی استخدام')
+
+      const provider = createProvider(ECrawlMode.FULL)
+
+      await provider.initialize()
+
+      const jobs = await provider.getJobs()
+
+      expect(jobs).toEqual([])
+      expect(randomDelayMock).not.toHaveBeenCalled()
+
+      // initialize() navigation only
+      expect(gotoMock).toHaveBeenCalledOnce()
+    })
   })
 
   describe('INCREMENTAL mode', () => {
@@ -290,6 +391,91 @@ describe('JobVisionProduct', () => {
 
       expect(jobs.map((job) => job.title)).toEqual(['Recent Job'])
       expect(parserParseMock).toHaveBeenCalledTimes(2)
+    })
+
+    it('should keep jobs with unknown postedAt', async () => {
+      setupPage(2)
+
+      parserParseMock
+        .mockResolvedValueOnce(createJob('Unknown Date Job'))
+        .mockResolvedValueOnce(createJob('Recent Job', recentDate))
+
+      const provider = createProvider(ECrawlMode.INCREMENTAL)
+
+      await provider.initialize()
+
+      const jobs = await provider.getJobs()
+
+      expect(jobs.map((job) => job.title)).toEqual(['Unknown Date Job', 'Recent Job'])
+
+      // !item.postedAt short-circuits isRecent(), so the undated job is kept as is.
+      expect(isRecentMock).toHaveBeenCalledWith(recentDate, boundaryDate, JOB_VISION_TIMEZONE)
+    })
+
+    it('should use null latest job as the incremental boundary fallback', async () => {
+      setupPage(1)
+
+      getLatestJobByProviderMock.mockResolvedValue(null)
+
+      parserParseMock.mockResolvedValueOnce(createJob('Recent Job', recentDate))
+
+      const provider = createProvider(ECrawlMode.INCREMENTAL)
+
+      await provider.initialize()
+
+      await provider.getJobs()
+
+      expect(isRecentMock).toHaveBeenCalledWith(recentDate, undefined, JOB_VISION_TIMEZONE)
+    })
+
+    it('should stop fetching after the last page', async () => {
+      setupPage(1, '٦٠ آگهی استخدام')
+
+      parserParseMock
+        .mockResolvedValueOnce(createJob('Page 1 Job', recentDate))
+        .mockResolvedValueOnce(createJob('Page 2 Job', recentDate))
+
+      const provider = createProvider(ECrawlMode.INCREMENTAL)
+
+      await provider.initialize()
+
+      const jobs = await provider.getJobs()
+
+      expect(jobs).toHaveLength(2)
+      expect(parserParseMock).toHaveBeenCalledTimes(2)
+      expect(gotoMock).toHaveBeenCalledTimes(2)
+    })
+
+    it('should skip a job when parser cannot parse it', async () => {
+      setupPage(2)
+
+      parserParseMock
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce(createJob('Valid Job', recentDate))
+
+      const provider = createProvider(ECrawlMode.INCREMENTAL)
+
+      await provider.initialize()
+
+      const jobs = await provider.getJobs()
+
+      expect(jobs.map((job) => job.title)).toEqual(['Valid Job'])
+    })
+
+    it('should stop crawling when no job elements are found', async () => {
+      setupPage(0, '٣٠٠ آگهی استخدام')
+
+      const provider = createProvider(ECrawlMode.INCREMENTAL)
+
+      await provider.initialize()
+
+      const jobs = await provider.getJobs()
+
+      expect(jobs).toEqual([])
+      expect(randomDelayMock).not.toHaveBeenCalled()
+
+      // initialize() navigation only
+      expect(gotoMock).toHaveBeenCalledOnce()
     })
   })
 })

@@ -11,6 +11,7 @@ import {
   PART_TIME_SELECTOR,
   PASSED_DAYS_SELECTOR,
   SALARY_CURRENCY,
+  SALARY_SELECTOR,
   TITLE_SELECTOR,
   YESTERDAY,
 } from './job-vision.constant'
@@ -34,7 +35,9 @@ export class JobVisionParser implements IJobParserStrategy {
       const cityAttribute = await this.getText(content.locator(CITY_SELECTOR))
       const location: ILocation = this.parseLocation(cityAttribute)
       const isPartTime = (await content.locator(PART_TIME_SELECTOR).count()) > 0
-      const salary = await this.getText(content.locator('span', { hasText: SALARY_CURRENCY }))
+      const salary = await this.getText(
+        content.locator(SALARY_SELECTOR, { hasText: SALARY_CURRENCY }),
+      )
 
       return {
         title: title.trim(),
@@ -54,7 +57,10 @@ export class JobVisionParser implements IJobParserStrategy {
   }
 
   private async getText(locator: Locator): Promise<string> {
-    return (await locator.count()) ? (await locator.textContent()) || '' : ''
+    // Card selectors such as `div.label-01` can resolve to several nodes, and a multi-match read fails strict mode.
+    const firstMatch = locator.first()
+
+    return (await firstMatch.count()) ? (await firstMatch.textContent()) || '' : ''
   }
 
   private parseUrl(href: string): string {
