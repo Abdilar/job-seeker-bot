@@ -3,6 +3,8 @@
   "version": "1.4.0",
   "main": "index.js",
   "scripts": {
+    "crawl:job-summery": "tsc & node dist/crawl-job.bootstrap.js --mode=summery --provider=job_in_ja",
+    "crawl:job-detail": "tsc & node dist/crawl-job.bootstrap.js --mode=detail --provider=job_in_ja",
     "crawl:full": "tsc & node dist/crawler-full.bootstrap.js --mode=full --providers=job_in_ja",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
