@@ -33,14 +33,13 @@ export class JobVisionProduct implements IJobProvider {
     await this.page.addInitScript('sessionStorage.clear()')
     await this.page.goto(JOB_VISION_URL, { waitUntil: WAIT_UNTIL })
     await this.waitForJobs()
-    this.mainElement = await this.getElement(MAIN_ELEMENT_SELECTOR)
+    this.mainElement = this.getElement(MAIN_ELEMENT_SELECTOR)
 
     this.lastPage = await this.getLastPage()
   }
 
-  private async getElement(selector: string): Promise<Locator> {
-    const element = this.page.locator(selector)
-    return element
+  private getElement(selector: string): Locator {
+    return this.page.locator(selector)
   }
 
   private async waitForJobs(): Promise<void> {
@@ -56,7 +55,7 @@ export class JobVisionProduct implements IJobProvider {
   }
 
   private async getLastPage() {
-    const totalJobsElement = (await this.getElement('.seo-title')).first()
+    const totalJobsElement = this.getElement('.seo-title').first()
 
     if (!(await totalJobsElement.count())) {
       return 1
@@ -86,7 +85,7 @@ export class JobVisionProduct implements IJobProvider {
         waitUntil: WAIT_UNTIL,
       })
       await this.waitForJobs()
-      this.mainElement = await this.getElement(MAIN_ELEMENT_SELECTOR)
+      this.mainElement = this.getElement(MAIN_ELEMENT_SELECTOR)
     }
   }
 
