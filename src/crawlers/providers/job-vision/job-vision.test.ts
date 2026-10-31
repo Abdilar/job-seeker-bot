@@ -333,7 +333,7 @@ describe('JobVisionProduct', () => {
       expect(jobs).toEqual([])
       expect(randomDelayMock).not.toHaveBeenCalled()
 
-      // initialize() navigation only
+      // NOTE: Only initialize() navigates; an empty first page must not walk further.
       expect(gotoMock).toHaveBeenCalledOnce()
     })
   })
@@ -408,7 +408,7 @@ describe('JobVisionProduct', () => {
 
       expect(jobs.map((job) => job.title)).toEqual(['Unknown Date Job', 'Recent Job'])
 
-      // !item.postedAt short-circuits isRecent(), so the undated job is kept as is.
+      // NOTE: `!item.postedAt` short-circuits `isRecent()`, so the undated job is kept as is.
       expect(isRecentMock).toHaveBeenCalledWith(recentDate, boundaryDate, JOB_VISION_TIMEZONE)
     })
 
@@ -474,7 +474,7 @@ describe('JobVisionProduct', () => {
       expect(jobs).toEqual([])
       expect(randomDelayMock).not.toHaveBeenCalled()
 
-      // initialize() navigation only
+      // NOTE: Only initialize() navigates; an empty first page must not walk further.
       expect(gotoMock).toHaveBeenCalledOnce()
     })
   })

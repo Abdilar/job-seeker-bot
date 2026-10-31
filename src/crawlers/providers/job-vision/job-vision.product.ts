@@ -31,7 +31,7 @@ export class JobVisionProduct implements IJobProvider {
   ) {}
 
   async initialize(): Promise<void> {
-    // The list is cached in sessionStorage, so `?page=` is ignored unless the cache is cleared on every navigation.
+    // NOTE: The list is cached in sessionStorage, so `?page=` is ignored unless the cache is cleared on every navigation.
     await this.page.addInitScript(CLEAR_CACHED_JOBS_SCRIPT)
     await this.page.goto(JOB_VISION_URL, { waitUntil: WAIT_UNTIL })
     await this.waitForJobs()
@@ -47,7 +47,7 @@ export class JobVisionProduct implements IJobProvider {
 
   private async waitForJobs(): Promise<void> {
     try {
-      // Cards hydrate after the document is ready, so a successful navigation alone does not mean they exist.
+      // NOTE: Cards hydrate after the document is ready, so a successful navigation alone does not mean they exist.
       await this.page
         .locator(JOB_ELEMENT_SELECTOR)
         .first()

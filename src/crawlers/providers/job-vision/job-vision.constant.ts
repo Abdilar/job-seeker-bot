@@ -7,7 +7,7 @@ export const JOB_VISION_PAGE_SIZE = 30
 export const JOB_VISION_TIMEZONE = 'Asia/Tehran'
 export const JOB_VISION_RENDER_TIMEOUT = 15_000
 
-// `.seo-title` renders its count with Arabic-Indic digits (٠-٩), which the shared `toEnglishDigits` does not cover.
+// INFO: `.seo-title` renders its count with Arabic-Indic digits (٠-٩), which the shared `toEnglishDigits` does not cover.
 export const NON_ENGLISH_DIGIT_MAP: Record<string, string> = {
   '۰': '0',
   '۱': '1',

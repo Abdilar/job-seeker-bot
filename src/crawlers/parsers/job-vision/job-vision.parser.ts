@@ -57,7 +57,7 @@ export class JobVisionParser implements IJobParserStrategy {
   }
 
   private async getText(locator: Locator): Promise<string> {
-    // Card selectors such as `div.label-01` can resolve to several nodes, and a multi-match read fails strict mode.
+    // NOTE: Card selectors such as `div.label-01` can resolve to several nodes, and a multi-match read fails strict mode.
     const firstMatch = locator.first()
 
     return (await firstMatch.count()) ? (await firstMatch.textContent()) || '' : ''
@@ -88,7 +88,7 @@ export class JobVisionParser implements IJobParserStrategy {
     }
   }
 
-  // `Location` has no city column, so the card's city text lands in `province`; Jobinja fills the same field with a province.
+  // INFO: `Location` has no city column, so the card's city text lands in `province`; Jobinja fills the same field with a province.
   private parseLocation(city: string): ILocation {
     return {
       country: LOCATION_COUNTRY,

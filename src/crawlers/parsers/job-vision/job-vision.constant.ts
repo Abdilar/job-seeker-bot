@@ -6,7 +6,7 @@ export const SALARY_CURRENCY = 'تومان'
 
 export const TITLE_SELECTOR = '.job-card-title'
 export const COMPANY_SELECTOR = 'a[href^="/companies"]'
-// Jobvision puts the place link under `/jobs/category/`; its text is a city (e.g. `فردیس کرج`), while Jobinja yields a province.
+// NOTE: Jobvision puts the place link under `/jobs/category/`; its text is a city (e.g. `فردیس کرج`), while Jobinja yields a province.
 export const LOCATION_SELECTOR = 'a[href^="/jobs/category/"]'
 export const PASSED_DAYS_SELECTOR = 'div.label-01'
 export const PART_TIME_SELECTOR = 'a[href="/jobs/type/part-time"]'
