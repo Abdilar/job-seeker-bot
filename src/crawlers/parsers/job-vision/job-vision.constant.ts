@@ -10,4 +10,5 @@ export const COMPANY_SELECTOR = 'a[href^="/companies"]'
 export const LOCATION_SELECTOR = 'a[href^="/jobs/category/"]'
 export const PASSED_DAYS_SELECTOR = 'div.label-01'
 export const PART_TIME_SELECTOR = 'a[href="/jobs/type/part-time"]'
-export const SALARY_SELECTOR = 'span'
+// NOTE: In the card's meta row the location and ` | ` spans are classed; the salary is the only bare child span.
+export const SALARY_SELECTOR = 'div.jvt-whitespace-nowrap > span:not([class])'
