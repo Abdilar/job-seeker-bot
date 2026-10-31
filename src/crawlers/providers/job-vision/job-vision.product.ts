@@ -4,7 +4,6 @@ import type { IJobProvider } from '../job.model'
 import { EProvider, type ICrawledJob } from '../../../types'
 import type { JobParser } from '../../parsers'
 import {
-  CLEAR_CACHED_JOBS_SCRIPT,
   JOB_ELEMENT_SELECTOR,
   JOB_VISION_PAGE_SIZE,
   JOB_VISION_RENDER_TIMEOUT,
@@ -12,7 +11,6 @@ import {
   JOB_VISION_URL,
   MAIN_ELEMENT_SELECTOR,
   NON_ENGLISH_DIGIT_MAP,
-  TOTAL_JOBS_SELECTOR,
 } from './job-vision.constant'
 import { isRecent, randomDelay } from '../../../utilities'
 import type { IJobService } from '../../../services'
@@ -32,7 +30,7 @@ export class JobVisionProduct implements IJobProvider {
 
   async initialize(): Promise<void> {
     // NOTE: The list is cached in sessionStorage, so `?page=` is ignored unless the cache is cleared on every navigation.
-    await this.page.addInitScript(CLEAR_CACHED_JOBS_SCRIPT)
+    await this.page.addInitScript('sessionStorage.clear()')
     await this.page.goto(JOB_VISION_URL, { waitUntil: WAIT_UNTIL })
     await this.waitForJobs()
     this.mainElement = await this.getElement(MAIN_ELEMENT_SELECTOR)
@@ -58,7 +56,7 @@ export class JobVisionProduct implements IJobProvider {
   }
 
   private async getLastPage() {
-    const totalJobsElement = (await this.getElement(TOTAL_JOBS_SELECTOR)).first()
+    const totalJobsElement = (await this.getElement('.seo-title')).first()
 
     if (!(await totalJobsElement.count())) {
       return 1

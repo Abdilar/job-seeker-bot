@@ -5,13 +5,11 @@ import type { IJobService } from '../../../services'
 import { EProvider, type ICrawledJob } from '../../../types'
 import type { JobParser } from '../../parsers'
 import {
-  CLEAR_CACHED_JOBS_SCRIPT,
   JOB_ELEMENT_SELECTOR,
   JOB_VISION_RENDER_TIMEOUT,
   JOB_VISION_TIMEZONE,
   JOB_VISION_URL,
   MAIN_ELEMENT_SELECTOR,
-  TOTAL_JOBS_SELECTOR,
 } from './job-vision.constant'
 import { JobVisionProduct } from './job-vision.product'
 import { WAIT_UNTIL } from '../../constants'
@@ -133,7 +131,7 @@ describe('JobVisionProduct', () => {
         return firstJobElement
       }
 
-      if (selector === TOTAL_JOBS_SELECTOR) {
+      if (selector === '.seo-title') {
         return totalJobsElement
       }
 
@@ -155,7 +153,7 @@ describe('JobVisionProduct', () => {
 
       await provider.initialize()
 
-      expect(addInitScriptMock).toHaveBeenCalledExactlyOnceWith(CLEAR_CACHED_JOBS_SCRIPT)
+      expect(addInitScriptMock).toHaveBeenCalledExactlyOnceWith('sessionStorage.clear()')
 
       const addInitScriptOrder = addInitScriptMock.mock.invocationCallOrder[0]
       const gotoOrder = gotoMock.mock.invocationCallOrder[0]
