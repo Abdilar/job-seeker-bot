@@ -4,6 +4,7 @@ const {
   jobRepositoryInstance,
   jobServiceInstance,
   jobInJaCreatorInstance,
+  jobVisionCreatorInstance,
   executionRepositoryInstance,
   executionServiceInstance,
   crawlJobsTaskInstance,
@@ -11,6 +12,7 @@ const {
   jobRepositoryConstructorMock,
   jobServiceConstructorMock,
   jobInJaCreatorConstructorMock,
+  jobVisionCreatorConstructorMock,
   executionRepositoryConstructorMock,
   executionServiceConstructorMock,
   crawlJobsTaskConstructorMock,
@@ -24,6 +26,7 @@ const {
   const jobRepositoryMockInstance = {}
   const jobServiceMockInstance = {}
   const jobInJaCreatorMockInstance = {}
+  const jobVisionCreatorMockInstance = {}
   const executionRepositoryMockInstance = {}
 
   const recoverMock = vi.fn<() => Promise<number>>()
@@ -39,6 +42,7 @@ const {
     jobRepositoryInstance: jobRepositoryMockInstance,
     jobServiceInstance: jobServiceMockInstance,
     jobInJaCreatorInstance: jobInJaCreatorMockInstance,
+    jobVisionCreatorInstance: jobVisionCreatorMockInstance,
     executionRepositoryInstance: executionRepositoryMockInstance,
     executionServiceInstance: executionServiceMockInstance,
     crawlJobsTaskInstance: crawlJobsTaskMockInstance,
@@ -48,6 +52,8 @@ const {
     jobServiceConstructorMock: vi.fn<(repository: unknown) => void>(),
 
     jobInJaCreatorConstructorMock: vi.fn<(jobService: unknown) => void>(),
+
+    jobVisionCreatorConstructorMock: vi.fn<(jobService: unknown) => void>(),
 
     executionRepositoryConstructorMock: vi.fn<() => void>(),
 
@@ -72,6 +78,14 @@ vi.mock('./crawlers', () => ({
       jobInJaCreatorConstructorMock(jobService)
 
       return jobInJaCreatorInstance
+    }
+  },
+
+  JobVisionCreator: class {
+    constructor(jobService: unknown) {
+      jobVisionCreatorConstructorMock(jobService)
+
+      return jobVisionCreatorInstance
     }
   },
 }))
@@ -167,12 +181,17 @@ describe('crawler bootstrap', () => {
 
     expect(jobInJaCreatorConstructorMock).toHaveBeenCalledWith(jobServiceInstance)
 
+    expect(jobVisionCreatorConstructorMock).toHaveBeenCalledOnce()
+
+    expect(jobVisionCreatorConstructorMock).toHaveBeenCalledWith(jobServiceInstance)
+
     expect(executionRepositoryConstructorMock).toHaveBeenCalledOnce()
 
     expect(executionServiceConstructorMock).toHaveBeenCalledWith(executionRepositoryInstance)
 
     expect(crawlJobsTaskConstructorMock).toHaveBeenCalledWith(jobServiceInstance, [
       jobInJaCreatorInstance,
+      jobVisionCreatorInstance,
     ])
 
     expect(schedulerConstructorMock).toHaveBeenCalledWith(

@@ -1,10 +1,10 @@
 import type { Locator, Page } from 'playwright'
-import { WAIT_UNTIL } from '../../constants'
+import { JOB_POSTING_TIMEZONE, WAIT_UNTIL } from '../../constants'
 import { toEnglishDigits } from '../../utilities'
 import type { IJobProvider } from '../job.model'
 import { EProvider, type ICrawledJob } from '../../../types'
 import type { JobParser } from '../../parsers'
-import { JOB_IN_JA_TIMEZONE, JOB_IN_JA_URL, MAIN_ELEMENT_SELECTOR } from './job-in-ja.constant'
+import { JOB_IN_JA_URL, MAIN_ELEMENT_SELECTOR } from './job-in-ja.constant'
 import { isRecent, randomDelay } from '../../../utilities'
 import type { IJobService } from '../../../services'
 import { ECrawlMode } from '../../../constants'
@@ -103,12 +103,13 @@ export class JobInJaProduct implements IJobProvider {
         const items = await this.fetchJobs()
         const recentJobs = items.filter(
           (item) =>
-            !item.postedAt || isRecent(item.postedAt, latestJob?.postedAt, JOB_IN_JA_TIMEZONE),
+            !item.postedAt || isRecent(item.postedAt, latestJob?.postedAt, JOB_POSTING_TIMEZONE),
         )
         jobs.push(...recentJobs)
         const lastJob = items.at(-1)
         shouldContinue = lastJob
-          ? !lastJob.postedAt || isRecent(lastJob.postedAt, latestJob?.postedAt, JOB_IN_JA_TIMEZONE)
+          ? !lastJob.postedAt ||
+            isRecent(lastJob.postedAt, latestJob?.postedAt, JOB_POSTING_TIMEZONE)
           : false
         // eslint-disable-next-line no-console
         console.info(`Jobinja Provider: Fetch has been done.`, {

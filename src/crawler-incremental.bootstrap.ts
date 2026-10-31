@@ -1,4 +1,4 @@
-import { JobInJaCreator } from './crawlers'
+import { JobInJaCreator, JobVisionCreator } from './crawlers'
 import { CrawlerExecutionRepository, JobRepository } from './repositories'
 import { CrawlerScheduler } from './scheduler'
 import { CrawlerExecutionService, JobService } from './services'
@@ -8,7 +8,7 @@ async function bootstrap(): Promise<void> {
   const repository = new JobRepository()
   const jobService = new JobService(repository)
 
-  const providers = [new JobInJaCreator(jobService)]
+  const providers = [new JobInJaCreator(jobService), new JobVisionCreator(jobService)]
 
   const executionRepository = new CrawlerExecutionRepository()
   const executionService = new CrawlerExecutionService(executionRepository)
