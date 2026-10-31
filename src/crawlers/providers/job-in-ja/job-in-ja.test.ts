@@ -4,9 +4,9 @@ import { ECrawlMode } from '../../../constants'
 import type { IJobService } from '../../../services'
 import { EProvider, type ICrawledJob } from '../../../types'
 import type { JobParser } from '../../parsers'
-import { JOB_IN_JA_TIMEZONE, JOB_IN_JA_URL, MAIN_ELEMENT_SELECTOR } from './job-in-ja.constant'
+import { JOB_IN_JA_URL, MAIN_ELEMENT_SELECTOR } from './job-in-ja.constant'
 import { JobInJaProduct } from './job-in-ja.product'
-import { WAIT_UNTIL } from '../../constants'
+import { JOB_POSTING_TIMEZONE, WAIT_UNTIL } from '../../constants'
 
 const { isRecentMock, randomDelayMock } = vi.hoisted(() => ({
   isRecentMock: vi.fn<(postedAt?: Date, boundary?: Date, timezone?: string) => boolean>(),
@@ -323,7 +323,7 @@ describe('JobInJaProduct', () => {
 
       expect(jobs.map((job) => job.title)).toEqual(['Frontend Developer', 'Backend Developer'])
 
-      expect(isRecentMock).toHaveBeenCalledWith(recentDate, boundaryDate, JOB_IN_JA_TIMEZONE)
+      expect(isRecentMock).toHaveBeenCalledWith(recentDate, boundaryDate, JOB_POSTING_TIMEZONE)
     })
 
     it('should filter out old jobs', async () => {
@@ -344,7 +344,7 @@ describe('JobInJaProduct', () => {
 
       expect(jobs.map((job) => job.title)).toEqual(['Frontend Developer', 'Backend Developer'])
 
-      expect(isRecentMock).toHaveBeenCalledWith(oldDate, boundaryDate, JOB_IN_JA_TIMEZONE)
+      expect(isRecentMock).toHaveBeenCalledWith(oldDate, boundaryDate, JOB_POSTING_TIMEZONE)
     })
 
     it('should keep jobs with unknown postedAt', async () => {
@@ -369,7 +369,7 @@ describe('JobInJaProduct', () => {
        *
        * short-circuits when postedAt is undefined.
        */
-      expect(isRecentMock).toHaveBeenCalledWith(recentDate, boundaryDate, JOB_IN_JA_TIMEZONE)
+      expect(isRecentMock).toHaveBeenCalledWith(recentDate, boundaryDate, JOB_POSTING_TIMEZONE)
     })
 
     it('should use null latest job as the incremental boundary fallback', async () => {
@@ -385,7 +385,7 @@ describe('JobInJaProduct', () => {
 
       await provider.getJobs()
 
-      expect(isRecentMock).toHaveBeenCalledWith(recentDate, undefined, JOB_IN_JA_TIMEZONE)
+      expect(isRecentMock).toHaveBeenCalledWith(recentDate, undefined, JOB_POSTING_TIMEZONE)
     })
 
     it('should navigate to the next page when the last job is recent', async () => {

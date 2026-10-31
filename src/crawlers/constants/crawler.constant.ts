@@ -1,1 +1,1 @@
-export const CRAWLER_TIMEZONE = 'Asia/Tehran'
+export const JOB_POSTING_TIMEZONE = 'Asia/Tehran'

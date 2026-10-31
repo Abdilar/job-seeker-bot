@@ -1,5 +1,5 @@
 import type { Locator, Page } from 'playwright'
-import { WAIT_UNTIL } from '../../constants'
+import { JOB_POSTING_TIMEZONE, WAIT_UNTIL } from '../../constants'
 import type { IJobProvider } from '../job.model'
 import { EProvider, type ICrawledJob } from '../../../types'
 import type { JobParser } from '../../parsers'
@@ -7,7 +7,6 @@ import {
   JOB_ELEMENT_SELECTOR,
   JOB_VISION_PAGE_SIZE,
   JOB_VISION_RENDER_TIMEOUT,
-  JOB_VISION_TIMEZONE,
   JOB_VISION_URL,
   MAIN_ELEMENT_SELECTOR,
 } from './job-vision.constant'
@@ -130,13 +129,13 @@ export class JobVisionProduct implements IJobProvider {
         const items = await this.fetchJobs()
         const recentJobs = items.filter(
           (item) =>
-            !item.postedAt || isRecent(item.postedAt, latestJob?.postedAt, JOB_VISION_TIMEZONE),
+            !item.postedAt || isRecent(item.postedAt, latestJob?.postedAt, JOB_POSTING_TIMEZONE),
         )
         jobs.push(...recentJobs)
         const lastJob = items.at(-1)
         shouldContinue = lastJob
           ? !lastJob.postedAt ||
-            isRecent(lastJob.postedAt, latestJob?.postedAt, JOB_VISION_TIMEZONE)
+            isRecent(lastJob.postedAt, latestJob?.postedAt, JOB_POSTING_TIMEZONE)
           : false
         // eslint-disable-next-line no-console
         console.info(`Jobvision Provider: Fetch has been done.`, {

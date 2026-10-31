@@ -7,12 +7,11 @@ import type { JobParser } from '../../parsers'
 import {
   JOB_ELEMENT_SELECTOR,
   JOB_VISION_RENDER_TIMEOUT,
-  JOB_VISION_TIMEZONE,
   JOB_VISION_URL,
   MAIN_ELEMENT_SELECTOR,
 } from './job-vision.constant'
 import { JobVisionProduct } from './job-vision.product'
-import { WAIT_UNTIL } from '../../constants'
+import { JOB_POSTING_TIMEZONE, WAIT_UNTIL } from '../../constants'
 
 const { isRecentMock, randomDelayMock } = vi.hoisted(() => ({
   isRecentMock: vi.fn<(postedAt?: Date, boundary?: Date, timezone?: string) => boolean>(),
@@ -371,7 +370,7 @@ describe('JobVisionProduct', () => {
 
       expect(jobs.map((job) => job.title)).toEqual(['Recent Job'])
 
-      expect(isRecentMock).toHaveBeenCalledWith(oldDate, boundaryDate, JOB_VISION_TIMEZONE)
+      expect(isRecentMock).toHaveBeenCalledWith(oldDate, boundaryDate, JOB_POSTING_TIMEZONE)
     })
 
     it('should stop crawling when the last job is not recent', async () => {
@@ -407,7 +406,7 @@ describe('JobVisionProduct', () => {
       expect(jobs.map((job) => job.title)).toEqual(['Unknown Date Job', 'Recent Job'])
 
       // NOTE: `!item.postedAt` short-circuits `isRecent()`, so the undated job is kept as is.
-      expect(isRecentMock).toHaveBeenCalledWith(recentDate, boundaryDate, JOB_VISION_TIMEZONE)
+      expect(isRecentMock).toHaveBeenCalledWith(recentDate, boundaryDate, JOB_POSTING_TIMEZONE)
     })
 
     it('should use null latest job as the incremental boundary fallback', async () => {
@@ -423,7 +422,7 @@ describe('JobVisionProduct', () => {
 
       await provider.getJobs()
 
-      expect(isRecentMock).toHaveBeenCalledWith(recentDate, undefined, JOB_VISION_TIMEZONE)
+      expect(isRecentMock).toHaveBeenCalledWith(recentDate, undefined, JOB_POSTING_TIMEZONE)
     })
 
     it('should stop fetching after the last page', async () => {
