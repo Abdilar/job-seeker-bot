@@ -10,9 +10,9 @@ import {
   JOB_VISION_TIMEZONE,
   JOB_VISION_URL,
   MAIN_ELEMENT_SELECTOR,
-  NON_ENGLISH_DIGIT_MAP,
 } from './job-vision.constant'
 import { isRecent, randomDelay } from '../../../utilities'
+import { toEnglishDigits } from '../../utilities'
 import type { IJobService } from '../../../services'
 import { ECrawlMode } from '../../../constants'
 
@@ -62,7 +62,8 @@ export class JobVisionProduct implements IJobProvider {
     }
 
     const totalJobsText = (await totalJobsElement.textContent()) ?? ''
-    const totalJobs = Number(this.nonEnglishToEnglishDigits(totalJobsText).replaceAll(/\D/g, ''))
+    // NOTE: `\D` treats Arabic-Indic digits as non-digits, so `.seo-title` must convert before the count is stripped.
+    const totalJobs = Number(toEnglishDigits(totalJobsText).replaceAll(/\D/g, ''))
 
     if (!totalJobs) {
       // eslint-disable-next-line no-console
@@ -72,10 +73,6 @@ export class JobVisionProduct implements IJobProvider {
     }
 
     return Math.ceil(totalJobs / JOB_VISION_PAGE_SIZE)
-  }
-
-  private nonEnglishToEnglishDigits(value: string): string {
-    return value.replace(/[۰-۹٠-٩]/g, (digit) => NON_ENGLISH_DIGIT_MAP[digit])
   }
 
   private async goNextPage() {

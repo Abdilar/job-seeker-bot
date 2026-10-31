@@ -31,7 +31,15 @@ describe('toEnglishDigits', () => {
     expect(toEnglishDigits('۱۲3۴۵6۷۸9۰')).toBe('1234567890')
   })
 
-  it('should preserve Arabic-Indic digits', () => {
-    expect(toEnglishDigits('١٢٣٤٥٦٧٨٩٠')).toBe('١٢٣٤٥٦٧٨٩٠')
+  it('should convert Arabic-Indic digits to English digits', () => {
+    expect(toEnglishDigits('١٢٣٤٥٦٧٨٩٠')).toBe('1234567890')
+  })
+
+  it('should convert Arabic-Indic digits in a mixed string', () => {
+    expect(toEnglishDigits('٦١ آگهی استخدام')).toBe('61 آگهی استخدام')
+  })
+
+  it('should convert mixed Persian and Arabic-Indic digits', () => {
+    expect(toEnglishDigits('۶۰ و ٣٠٠')).toBe('60 و 300')
   })
 })
