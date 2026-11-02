@@ -5,6 +5,7 @@ const {
   jobServiceInstance,
   jobInJaCreatorInstance,
   jobVisionCreatorInstance,
+  iranTalentCreatorInstance,
   executionRepositoryInstance,
   executionServiceInstance,
   crawlJobsTaskInstance,
@@ -13,6 +14,7 @@ const {
   jobServiceConstructorMock,
   jobInJaCreatorConstructorMock,
   jobVisionCreatorConstructorMock,
+  iranTalentCreatorConstructorMock,
   executionRepositoryConstructorMock,
   executionServiceConstructorMock,
   crawlJobsTaskConstructorMock,
@@ -27,6 +29,7 @@ const {
   const jobServiceMockInstance = {}
   const jobInJaCreatorMockInstance = {}
   const jobVisionCreatorMockInstance = {}
+  const iranTalentCreatorMockInstance = {}
   const executionRepositoryMockInstance = {}
 
   const recoverMock = vi.fn<() => Promise<number>>()
@@ -43,6 +46,7 @@ const {
     jobServiceInstance: jobServiceMockInstance,
     jobInJaCreatorInstance: jobInJaCreatorMockInstance,
     jobVisionCreatorInstance: jobVisionCreatorMockInstance,
+    iranTalentCreatorInstance: iranTalentCreatorMockInstance,
     executionRepositoryInstance: executionRepositoryMockInstance,
     executionServiceInstance: executionServiceMockInstance,
     crawlJobsTaskInstance: crawlJobsTaskMockInstance,
@@ -54,6 +58,8 @@ const {
     jobInJaCreatorConstructorMock: vi.fn<(jobService: unknown) => void>(),
 
     jobVisionCreatorConstructorMock: vi.fn<(jobService: unknown) => void>(),
+
+    iranTalentCreatorConstructorMock: vi.fn<(jobService: unknown) => void>(),
 
     executionRepositoryConstructorMock: vi.fn<() => void>(),
 
@@ -86,6 +92,14 @@ vi.mock('./crawlers', () => ({
       jobVisionCreatorConstructorMock(jobService)
 
       return jobVisionCreatorInstance
+    }
+  },
+
+  IranTalentCreator: class {
+    constructor(jobService: unknown) {
+      iranTalentCreatorConstructorMock(jobService)
+
+      return iranTalentCreatorInstance
     }
   },
 }))
@@ -185,6 +199,10 @@ describe('crawler bootstrap', () => {
 
     expect(jobVisionCreatorConstructorMock).toHaveBeenCalledWith(jobServiceInstance)
 
+    expect(iranTalentCreatorConstructorMock).toHaveBeenCalledOnce()
+
+    expect(iranTalentCreatorConstructorMock).toHaveBeenCalledWith(jobServiceInstance)
+
     expect(executionRepositoryConstructorMock).toHaveBeenCalledOnce()
 
     expect(executionServiceConstructorMock).toHaveBeenCalledWith(executionRepositoryInstance)
@@ -192,6 +210,7 @@ describe('crawler bootstrap', () => {
     expect(crawlJobsTaskConstructorMock).toHaveBeenCalledWith(jobServiceInstance, [
       jobInJaCreatorInstance,
       jobVisionCreatorInstance,
+      iranTalentCreatorInstance,
     ])
 
     expect(schedulerConstructorMock).toHaveBeenCalledWith(

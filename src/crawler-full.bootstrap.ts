@@ -1,6 +1,6 @@
 import { ECrawlMode } from './constants'
 import type { JobProvider } from './crawlers'
-import { JobInJaCreator, JobVisionCreator } from './crawlers'
+import { IranTalentCreator, JobInJaCreator, JobVisionCreator } from './crawlers'
 import { JobRepository } from './repositories'
 import { JobService } from './services'
 import { CrawlJobsTask } from './tasks'
@@ -31,6 +31,9 @@ async function run() {
           break
         case EProvider.JOB_VISION:
           providers.push(new JobVisionCreator(jobService, crawlMode))
+          break
+        case EProvider.IRAN_TALENT:
+          providers.push(new IranTalentCreator(jobService, crawlMode))
           break
         default:
           break
