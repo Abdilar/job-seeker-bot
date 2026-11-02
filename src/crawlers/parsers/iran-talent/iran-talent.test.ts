@@ -31,10 +31,12 @@ const completeJob = {
 
 describe('IranTalentParser', () => {
   let parser: IranTalentParser
+  let consoleWarnMock: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
     // NOTE: The parser caches the search state per page url, so every test needs its own instance.
     parser = new IranTalentParser()
+    consoleWarnMock = vi.spyOn(console, 'warn').mockImplementation(() => {})
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-09-27T10:00:00.000Z'))
   })
@@ -195,15 +197,20 @@ describe('IranTalentParser', () => {
     const result = await parser.parse(content)
 
     expect(result?.contractType).toBe(EContractType.FULL_TIME)
+    expect(consoleWarnMock).not.toHaveBeenCalled()
   })
 
   it('falls back to full time when the page has no search state', async () => {
-    const { page } = createStatePage({ state: null })
+    const { page, url } = createStatePage({ state: null })
     const content = createJobLocator(completeJob, page)
 
     const result = await parser.parse(content)
 
     expect(result?.contractType).toBe(EContractType.FULL_TIME)
+    expect(consoleWarnMock).toHaveBeenCalledWith(
+      'IranTalent Parser: The search state is missing, so the jobs of this page are stored as full time.',
+      { url },
+    )
   })
 
   it('falls back to full time when the search state is not valid JSON', async () => {
@@ -213,6 +220,10 @@ describe('IranTalentParser', () => {
     const result = await parser.parse(content)
 
     expect(result?.contractType).toBe(EContractType.FULL_TIME)
+    expect(consoleWarnMock).toHaveBeenCalledWith(
+      'IranTalent Parser: The search state is unreadable, so the jobs of this page are stored as full time.',
+      expect.anything(),
+    )
   })
 
   it('falls back to full time when the search state script is empty', async () => {
@@ -222,6 +233,7 @@ describe('IranTalentParser', () => {
     const result = await parser.parse(content)
 
     expect(result?.contractType).toBe(EContractType.FULL_TIME)
+    expect(consoleWarnMock).toHaveBeenCalledTimes(1)
   })
 
   it('falls back to full time for a job the search state does not describe', async () => {

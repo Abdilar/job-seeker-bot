@@ -88,6 +88,14 @@ export class IranTalentParser implements IJobParserStrategy {
     const stateElement = page.locator('script#ng-state').first()
 
     if (!(await stateElement.count())) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `IranTalent Parser: The search state is missing, so the jobs of this page are stored as full time.`,
+        {
+          url: page.url(),
+        },
+      )
+
       return contractTypes
     }
 
@@ -113,7 +121,15 @@ export class IranTalentParser implements IJobParserStrategy {
         )
       }
     } catch {
-      // NOTE: A malformed payload must not cost the page its jobs, so the parser keeps answering with the card-level default.
+      // NOTE: A malformed payload must not cost the page its jobs, but it must not pass unnoticed either.
+      // eslint-disable-next-line no-console
+      console.warn(
+        `IranTalent Parser: The search state is unreadable, so the jobs of this page are stored as full time.`,
+        {
+          url: page.url(),
+        },
+      )
+
       return new Map()
     }
 
