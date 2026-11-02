@@ -1,4 +1,4 @@
-import type { Locator } from 'playwright'
+import type { Locator, Page } from 'playwright'
 import { EContractType, EProvider } from '../../../types'
 import type { ICompany, ICrawledJob, ILocation } from '../../../types'
 import { TODAY } from '../../../constants'
@@ -14,17 +14,33 @@ import {
   TITLE_SELECTOR,
 } from './iran-talent.constant'
 import type { IJobParserStrategy } from '../job.model'
-import { toEnglishDigits } from '../../utilities'
+import { convertPersianContractTypeToEContractType, toEnglishDigits } from '../../utilities'
 import { convertDaysAgoToJalaliDate } from '../../../utilities'
 
+interface IIranTalentPosition {
+  id?: number
+  employment_type?: { title_farsi?: string }
+}
+
+interface IIranTalentSearchState {
+  serverSideSearchResult?: {
+    data?: { data?: IIranTalentPosition[] }
+    boosted_positions?: IIranTalentPosition[]
+  }
+}
+
 export class IranTalentParser implements IJobParserStrategy {
+  // NOTE: IranTalent prerenders `script#ng-state` only for non-browser user agents, so a headed run gets the client-rendered shell and every job keeps the card-level default.
+  private contractTypes: Map<string, EContractType> = new Map()
+  private contractTypesUrl: string = ''
+
   async parse(content: Locator): Promise<ICrawledJob | undefined> {
     try {
       const href = await content.getAttribute('href')
       if (!href) {
         throw new Error('Url not found...')
       }
-      const url = this.parseUrl(href)
+      const { url, id } = this.parseUrl(href)
       const title = await this.getText(content.locator(TITLE_SELECTOR))
       const passedDateAttribute = await this.getText(content.locator(PASSED_DAYS_SELECTOR))
       const postedAt = convertDaysAgoToJalaliDate(this.parsePassedDays(passedDateAttribute))
@@ -39,8 +55,7 @@ export class IranTalentParser implements IJobParserStrategy {
         url,
         provider: EProvider.IRAN_TALENT,
         postedAt,
-        // INFO: The card only shows the workplace ( حضوری ), never the employment type, so the list cannot tell a part-time job.
-        contractType: EContractType.FULL_TIME,
+        contractType: await this.getContractType(id, content.page()),
         salary: salary.trim(),
         location,
         company,
@@ -59,7 +74,53 @@ export class IranTalentParser implements IJobParserStrategy {
     return (await firstMatch.count()) ? (await firstMatch.textContent()) || '' : ''
   }
 
-  private parseUrl(href: string): string {
+  private async getContractType(jobId: string, page: Page): Promise<EContractType> {
+    if (this.contractTypesUrl !== page.url()) {
+      this.contractTypesUrl = page.url()
+      this.contractTypes = await this.readContractTypes(page)
+    }
+
+    return this.contractTypes.get(jobId) ?? EContractType.FULL_TIME
+  }
+
+  private async readContractTypes(page: Page): Promise<Map<string, EContractType>> {
+    const contractTypes = new Map<string, EContractType>()
+    const stateElement = page.locator('script#ng-state').first()
+
+    if (!(await stateElement.count())) {
+      return contractTypes
+    }
+
+    const state = await stateElement.textContent()
+
+    try {
+      const { serverSideSearchResult } = JSON.parse(state ?? '') as IIranTalentSearchState
+      const positions = [
+        ...(serverSideSearchResult?.data?.data ?? []),
+        ...(serverSideSearchResult?.boosted_positions ?? []),
+      ]
+
+      for (const position of positions) {
+        const employmentType = position.employment_type?.title_farsi
+
+        if (!position.id || !employmentType) {
+          continue
+        }
+
+        contractTypes.set(
+          String(position.id),
+          convertPersianContractTypeToEContractType(employmentType),
+        )
+      }
+    } catch {
+      // NOTE: A malformed payload must not cost the page its jobs, so the parser keeps answering with the card-level default.
+      return new Map()
+    }
+
+    return contractTypes
+  }
+
+  private parseUrl(href: string): { url: string; id: string } {
     const { origin, pathname } = new URL(href, IRAN_TALENT_ORIGIN)
     const [, jobId] = pathname.match(JOB_ID_PATTERN) ?? []
 
@@ -67,7 +128,7 @@ export class IranTalentParser implements IJobParserStrategy {
       throw new Error('Job id not found...')
     }
 
-    return `${origin}${pathname}`
+    return { url: `${origin}${pathname}`, id: jobId }
   }
 
   private parsePassedDays(passedDays: string): string {

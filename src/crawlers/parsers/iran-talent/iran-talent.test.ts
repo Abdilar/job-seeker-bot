@@ -1,4 +1,4 @@
-import type { Locator } from 'playwright'
+import type { Locator, Page } from 'playwright'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { EContractType, EProvider } from '../../../types'
 import { IranTalentParser } from './iran-talent.parser'
@@ -30,9 +30,11 @@ const completeJob = {
 }
 
 describe('IranTalentParser', () => {
-  const parser = new IranTalentParser()
+  let parser: IranTalentParser
 
   beforeEach(() => {
+    // NOTE: The parser caches the search state per page url, so every test needs its own instance.
+    parser = new IranTalentParser()
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-09-27T10:00:00.000Z'))
   })
@@ -161,6 +163,130 @@ describe('IranTalentParser', () => {
 
     consoleErrorMock.mockRestore()
   })
+
+  it('reads the contract type of the job from the server rendered search state', async () => {
+    const { page } = createStatePage({
+      state: searchState([{ id: 186192, titleFarsi: 'نیمه وقت' }]),
+    })
+    const content = createJobLocator(completeJob, page)
+
+    const result = await parser.parse(content)
+
+    expect(result?.contractType).toBe(EContractType.PART_TIME)
+  })
+
+  it('reads the contract type of a boosted job', async () => {
+    const { page } = createStatePage({
+      state: searchState([], [{ id: 186192, titleFarsi: 'فریلنس' }]),
+    })
+    const content = createJobLocator(completeJob, page)
+
+    const result = await parser.parse(content)
+
+    expect(result?.contractType).toBe(EContractType.PART_TIME)
+  })
+
+  it('keeps a full time job full time', async () => {
+    const { page } = createStatePage({
+      state: searchState([{ id: 186192, titleFarsi: 'تمام وقت' }]),
+    })
+    const content = createJobLocator(completeJob, page)
+
+    const result = await parser.parse(content)
+
+    expect(result?.contractType).toBe(EContractType.FULL_TIME)
+  })
+
+  it('falls back to full time when the page has no search state', async () => {
+    const { page } = createStatePage({ state: null })
+    const content = createJobLocator(completeJob, page)
+
+    const result = await parser.parse(content)
+
+    expect(result?.contractType).toBe(EContractType.FULL_TIME)
+  })
+
+  it('falls back to full time when the search state is not valid JSON', async () => {
+    const { page } = createStatePage({ state: '{ this is not json' })
+    const content = createJobLocator(completeJob, page)
+
+    const result = await parser.parse(content)
+
+    expect(result?.contractType).toBe(EContractType.FULL_TIME)
+  })
+
+  it('falls back to full time when the search state script is empty', async () => {
+    const { page } = createStatePage({ state: '' })
+    const content = createJobLocator(completeJob, page)
+
+    const result = await parser.parse(content)
+
+    expect(result?.contractType).toBe(EContractType.FULL_TIME)
+  })
+
+  it('falls back to full time for a job the search state does not describe', async () => {
+    const { page } = createStatePage({
+      state: searchState([{ id: 999999, titleFarsi: 'نیمه وقت' }]),
+    })
+    const content = createJobLocator(completeJob, page)
+
+    const result = await parser.parse(content)
+
+    expect(result?.contractType).toBe(EContractType.FULL_TIME)
+  })
+
+  it('falls back to full time when the record has no employment type', async () => {
+    const { page } = createStatePage({ state: searchState([{ id: 186192 }]) })
+    const content = createJobLocator(completeJob, page)
+
+    const result = await parser.parse(content)
+
+    expect(result?.contractType).toBe(EContractType.FULL_TIME)
+  })
+
+  it('reads the contract type of a job whose page also holds a record without an employment type', async () => {
+    const { page } = createStatePage({
+      state: searchState([{ id: 186193 }, { id: 186192, titleFarsi: 'نیمه وقت' }]),
+    })
+    const content = createJobLocator(completeJob, page)
+
+    const result = await parser.parse(content)
+
+    expect(result?.contractType).toBe(EContractType.PART_TIME)
+  })
+
+  it('reads the search state once for every card of the same page', async () => {
+    const { page, textContentMock } = createStatePage({
+      state: searchState([
+        { id: 186192, titleFarsi: 'نیمه وقت' },
+        { id: 186193, titleFarsi: 'تمام وقت' },
+      ]),
+    })
+
+    await parser.parse(createJobLocator(completeJob, page))
+    await parser.parse(
+      createJobLocator({ ...completeJob, href: '/job/graphic-designer/186193' }, page),
+    )
+
+    expect(textContentMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('reads the search state again after the crawler moves to another page', async () => {
+    const firstPage = createStatePage({
+      url: 'https://www.irantalent.com/jobs?sortBy=lived_at',
+      state: searchState([{ id: 186192, titleFarsi: 'نیمه وقت' }]),
+    })
+    const secondPage = createStatePage({
+      url: 'https://www.irantalent.com/jobs?sortBy=lived_at&page=2',
+      state: searchState([{ id: 186192, titleFarsi: 'تمام وقت' }]),
+    })
+
+    const firstResult = await parser.parse(createJobLocator(completeJob, firstPage.page))
+    const secondResult = await parser.parse(createJobLocator(completeJob, secondPage.page))
+
+    expect(firstResult?.contractType).toBe(EContractType.PART_TIME)
+    expect(secondResult?.contractType).toBe(EContractType.FULL_TIME)
+  })
 })
 
 function textLocator(value: string | null) {
@@ -187,9 +313,10 @@ function strictLocator(value: string | null) {
   return collection
 }
 
-function createJobLocator(data: JobLocatorData): Locator {
+function createJobLocator(data: JobLocatorData, page?: Page): Locator {
   return {
     getAttribute: vi.fn().mockResolvedValue(data.href),
+    page: vi.fn().mockReturnValue(page ?? createStatePage().page),
     locator: vi.fn((selector: string) => {
       if (selector === TITLE_SELECTOR) {
         return data.multiMatch ? strictLocator(data.title) : textLocator(data.title)
@@ -214,4 +341,47 @@ function createJobLocator(data: JobLocatorData): Locator {
       throw new Error(`Unexpected selector: ${selector}`)
     }),
   } as unknown as Locator
+}
+
+interface SearchStatePosition {
+  id: number
+  titleFarsi?: string
+}
+
+function searchState(
+  positions: SearchStatePosition[],
+  boosted: SearchStatePosition[] = [],
+): string {
+  const toRecord = ({ id, titleFarsi }: SearchStatePosition) => ({
+    id,
+    ...(titleFarsi ? { employment_type: { title_farsi: titleFarsi } } : {}),
+  })
+
+  return JSON.stringify({
+    serverSideSearchResult: {
+      data: { data: positions.map(toRecord) },
+      boosted_positions: boosted.map(toRecord),
+    },
+  })
+}
+
+function createStatePage(options: { url?: string; state?: string | null } = {}): {
+  page: Page
+  url: string
+  textContentMock: ReturnType<typeof vi.fn>
+} {
+  const { url = 'https://www.irantalent.com/jobs?sortBy=lived_at', state = null } = options
+
+  const textContentMock = vi.fn().mockResolvedValue(state)
+  const scriptLocator = {
+    count: vi.fn().mockResolvedValue(state === null ? 0 : 1),
+    textContent: textContentMock,
+  }
+
+  const page = {
+    url: vi.fn().mockReturnValue(url),
+    locator: vi.fn(() => ({ first: vi.fn().mockReturnValue(scriptLocator) })),
+  } as unknown as Page
+
+  return { page, url, textContentMock }
 }
