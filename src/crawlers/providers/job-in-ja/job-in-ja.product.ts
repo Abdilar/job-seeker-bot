@@ -4,7 +4,7 @@ import { toEnglishDigits } from '../../utilities'
 import type { IJobProvider } from '../job.model'
 import { EProvider, type ICrawledJob } from '../../../types'
 import type { JobParser } from '../../parsers'
-import { JOB_IN_JA_TIMEZONE, JOB_IN_JA_URL, MAIN_ELEMENT_SELECTOR } from './job-in-ja.constant'
+import { JOB_IN_JA_TIMEZONE, JOB_IN_JA_URL, SUMMERY_ELEMENT_SELECTOR } from './job-in-ja.constant'
 import { isRecent, randomDelay } from '../../../utilities'
 import type { IJobService } from '../../../services'
 import { ECrawlMode } from '../../../constants'
@@ -12,7 +12,7 @@ import { ECrawlMode } from '../../../constants'
 export class JobInJaProduct implements IJobProvider {
   private lastPage: number = 1
   private currentPage: number = 1
-  private mainElement?: Locator
+  private mainSummeryElement?: Locator
 
   constructor(
     private readonly page: Page,
@@ -23,7 +23,7 @@ export class JobInJaProduct implements IJobProvider {
 
   async initialize(): Promise<void> {
     await this.page.goto(JOB_IN_JA_URL, { waitUntil: WAIT_UNTIL })
-    this.mainElement = await this.getElement(MAIN_ELEMENT_SELECTOR)
+    this.mainSummeryElement = await this.getElement(SUMMERY_ELEMENT_SELECTOR)
 
     this.lastPage = await this.getLastPage()
   }
@@ -55,7 +55,7 @@ export class JobInJaProduct implements IJobProvider {
       await this.page.goto(`${JOB_IN_JA_URL}&page=${this.currentPage}`, {
         waitUntil: WAIT_UNTIL,
       })
-      this.mainElement = await this.getElement(MAIN_ELEMENT_SELECTOR)
+      this.mainSummeryElement = await this.getElement(SUMMERY_ELEMENT_SELECTOR)
     }
   }
 
@@ -135,12 +135,16 @@ export class JobInJaProduct implements IJobProvider {
     return this.mode === ECrawlMode.FULL ? this.getFullJobs() : this.getIncrementalJobs()
   }
 
-  private async fetchJobs(): Promise<ICrawledJob[]> {
-    if (!this.mainElement) {
-      throw new Error(`mainElement is required: ${this.mainElement}`)
+  async getJobsByCount(count: number): Promise<ICrawledJob[]> {
+    return await this.fetchJobs(count)
+  }
+
+  private async fetchJobs(count?: number): Promise<ICrawledJob[]> {
+    if (!this.mainSummeryElement) {
+      throw new Error(`mainElement is required: ${this.mainSummeryElement}`)
     }
-    const jobElements = this.mainElement.locator('.c-jobListView__item')
-    const jobCount = await jobElements.count()
+    const jobElements = this.mainSummeryElement.locator('.c-jobListView__item')
+    const jobCount = count ?? (await jobElements.count())
 
     if (!jobCount) {
       throw new Error('No job elements found.')
@@ -148,7 +152,7 @@ export class JobInJaProduct implements IJobProvider {
     const jobs: Array<ICrawledJob> = []
 
     for (let index = 0; index < jobCount; index++) {
-      const job = await this.parser.parse(jobElements.nth(index))
+      const job = await this.parser.parseSummary(jobElements.nth(index))
       if (!job) {
         // eslint-disable-next-line no-console
         console.error(`Couldn't parse a job: `, { page: this.currentPage, index: index + 1 })
