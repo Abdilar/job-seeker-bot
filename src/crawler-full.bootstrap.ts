@@ -1,11 +1,11 @@
 import { ECrawlMode } from './constants'
 import type { JobProvider } from './crawlers'
-import { JobInJaCreator } from './crawlers'
 import { JobRepository } from './repositories'
 import { JobService } from './services'
 import { CrawlJobsTask } from './tasks'
 import type { CrawlerFullArgumentsType } from './types'
 import { EProvider } from './types'
+import { providerCreator } from './utilities'
 
 async function run() {
   const args: Partial<CrawlerFullArgumentsType>[] = process.argv
@@ -25,13 +25,7 @@ async function run() {
 
   if (crawlArgs?.providers) {
     for (const provider of Object.values(EProvider)) {
-      switch (provider) {
-        case EProvider.JOB_IN_JA:
-          providers.push(new JobInJaCreator(jobService, crawlMode))
-          break
-        default:
-          break
-      }
+      return providerCreator(provider, jobService, crawlMode)
     }
   }
 
