@@ -1,5 +1,5 @@
-import type { EProvider } from '@prisma/client'
-import type { ECrawlMode } from '../constants'
+import type { ECrawlJobMode, ECrawlMode } from '../constants'
+import type { EProvider } from './provider.model'
 
 export enum ECrawlerStatus {
   FAILED = 'failed',
@@ -20,5 +20,12 @@ export type CrawlerFullArgumentsType =
   | {
       providers?: EProvider[]
       mode?: ECrawlMode
+    }
+  | Record<string, never>
+
+export type CrawlerJobArgumentsType =
+  | {
+      provider?: EProvider
+      mode?: ECrawlJobMode
     }
   | Record<string, never>
