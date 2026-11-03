@@ -1,8 +1,9 @@
-import { Locator } from 'playwright'
-import { ICrawledJob } from '../../types'
+import type { Locator } from 'playwright'
+import type { ICrawledJob, ICrawledJobDetails } from '../../types'
 
 export interface IJobParserStrategy {
-  parse(content: Locator): Promise<ICrawledJob | undefined>
+  parseSummary(content: Locator): Promise<ICrawledJob | undefined>
+  parseDetail(content: Locator): Promise<ICrawledJobDetails | undefined>
 }
 
 export interface IJobParser extends IJobParserStrategy {
