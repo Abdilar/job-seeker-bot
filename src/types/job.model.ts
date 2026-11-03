@@ -44,7 +44,7 @@ export interface ICrawledJobDetail {
   applicationUrl?: string //
 }
 
-export interface IJobDetails extends ICrawledJobDetails {
+export interface IJobDetails extends ICrawledJobDetail {
   id: string
 }
 
