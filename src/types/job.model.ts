@@ -27,7 +27,7 @@ export interface IJobFilter {
   provider?: EProvider
 }
 
-export interface ICrawledJobDetails {
+export interface ICrawledJobDetail {
   description?: string
   category?: string //
   salary?: string //
