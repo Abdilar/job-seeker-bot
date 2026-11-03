@@ -2,7 +2,7 @@ import type { Prisma } from '@prisma/client'
 import { EProvider as EPrismaProvider } from '@prisma/client'
 import type { IJobRepository, PrismaJobType } from './job.model'
 import { prisma } from '../../database/prisma'
-import type { IJob, ICrawledJob, IJobFilter } from '../../types'
+import type { IJob, ICrawledJob, IJobFilter, ICrawledJobDetail } from '../../types'
 import { EProvider as EDomainProvider, EContractType } from '../../types'
 import { chunk } from '../../utilities'
 
@@ -124,9 +124,7 @@ export class JobRepository implements IJobRepository {
         const prismaData = chunkItem.map((job) =>
           prisma.job.upsert({
             where: { url: job.url },
-
             create: this.convertICrawledJobToJobCreateInput(job),
-
             update: {
               title: job.title,
               contractType: job.contractType,
@@ -150,10 +148,31 @@ export class JobRepository implements IJobRepository {
     console.log('all chunks completed')
   }
 
+  async updateDetail(id: string, data: ICrawledJobDetail): Promise<IJob> {
+    const result = await prisma.job.update({
+      where: { id },
+      data: {
+        detail: {
+          upsert: {
+            create: data,
+            update: data,
+          },
+        },
+      },
+      include: {
+        company: true,
+        location: true,
+        detail: true,
+      },
+    })
+
+    return this.convertPrismaJobToIJob(result)
+  }
+
   async delete(id: string): Promise<IJob> {
     const result = await prisma.job.delete({
       where: { id },
-      include: { company: true, location: true },
+      include: { company: true, location: true, detail: true },
     })
     return this.convertPrismaJobToIJob(result)
   }
@@ -161,7 +180,7 @@ export class JobRepository implements IJobRepository {
   async findById(id: string): Promise<IJob | null> {
     const job = await prisma.job.findUnique({
       where: { id },
-      include: { company: true, location: true },
+      include: { company: true, location: true, detail: true },
     })
 
     if (!job) {
@@ -174,7 +193,7 @@ export class JobRepository implements IJobRepository {
   async findByUrl(url: string): Promise<IJob | null> {
     const job = await prisma.job.findUnique({
       where: { url },
-      include: { company: true, location: true },
+      include: { company: true, location: true, detail: true },
     })
 
     if (!job) {
@@ -190,7 +209,7 @@ export class JobRepository implements IJobRepository {
         provider: prismaProviderMap[provider],
       },
       orderBy: [{ postedAt: 'desc' }, { id: 'desc' }],
-      include: { company: true, location: true },
+      include: { company: true, location: true, detail: true },
     })
 
     if (!job) return null
@@ -201,7 +220,7 @@ export class JobRepository implements IJobRepository {
   async findAll(): Promise<IJob[]> {
     const jobs = await prisma.job.findMany({
       orderBy: [{ postedAt: 'desc' }, { id: 'desc' }],
-      include: { company: true, location: true },
+      include: { company: true, location: true, detail: true },
     })
 
     return jobs.map((job) => this.convertPrismaJobToIJob(job))
@@ -217,6 +236,7 @@ export class JobRepository implements IJobRepository {
       include: {
         company: true,
         location: true,
+        detail: true,
       },
     })
 

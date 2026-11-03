@@ -31,17 +31,17 @@ export interface IJobFilter {
 
 export interface ICrawledJobDetail {
   description?: string
-  category?: string
-  salary?: string
-  gender?: EGender
+  category?: string //
+  salary?: string //
+  gender?: EGender //
   responsibilities?: string[]
   requirements?: string[]
   preferredQualifications?: string[]
   benefits?: string[]
-  skills?: string[]
-  experience?: IJobExperience
-  education?: EEducationLevel
-  workMode?: EWorkMode
+  skills?: string[] //
+  experience?: IJobExperience //
+  education?: EEducationLevel //
+  workMode?: EWorkMode //
   visaSponsorship?: EVisaSponsorship
   applicationUrl?: string
 }

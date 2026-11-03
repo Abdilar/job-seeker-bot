@@ -104,11 +104,11 @@ model JobDetail {
   description               String?
   category                  String?
   salary                    String?
-  responsibilities          String[]
-  requirements              String[]
-  preferredQualifications   String[]
-  benefits                  String[]
-  skills                    String[]
+  responsibilities          String[]?
+  requirements              String[]?
+  preferredQualifications   String[]?
+  benefits                  String[]?
+  skills                    String[]?
   gender                    EGender?
   experience                Experience?
   education                 EEducationLevel?
@@ -117,7 +117,7 @@ model JobDetail {
   applicationUrl            String?
 
   jobId                     String            @unique
-  job                       Job               @relation(fields: [jobId], reference: [id], onDelete: Cascade)
+  job                       Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
   createdAt                 DateTime          @default(now())
   updatedAt                 DateTime          @updatedAt
 }
@@ -128,6 +128,6 @@ model Experience {
   min                       Int?
   max                       Int?
 
-  jobDetailsId              String            @unique
-  jobDetail                 JobDetail         @relation(fields: [jobDetailsId], references: [id], onDelete: Cascade)
+  jobDetailId               String            @unique
+  jobDetail                 JobDetail         @relation(fields: [jobDetailId], references: [id], onDelete: Cascade)
 }
