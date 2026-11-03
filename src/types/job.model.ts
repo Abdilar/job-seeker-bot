@@ -14,12 +14,14 @@ interface IBaseJob {
 export interface ICrawledJob extends IBaseJob {
   company: ICompany
   location: ILocation
+  detail?: ICrawledJobDetail
 }
 
 export interface IJob extends ICrawledJob {
   id: string
   createdAt?: Date
   updatedAt?: Date
+  detail?: IJobDetail
 }
 
 export interface IJobFilter {
@@ -29,22 +31,22 @@ export interface IJobFilter {
 
 export interface ICrawledJobDetail {
   description?: string
-  category?: string //
-  salary?: string //
-  gender?: EGender //
+  category?: string
+  salary?: string
+  gender?: EGender
   responsibilities?: string[]
   requirements?: string[]
   preferredQualifications?: string[]
   benefits?: string[]
-  skills?: string[] //
-  experience?: IJobExperience //
-  education?: EEducationLevel //
-  workMode?: EWorkMode //
+  skills?: string[]
+  experience?: IJobExperience
+  education?: EEducationLevel
+  workMode?: EWorkMode
   visaSponsorship?: EVisaSponsorship
-  applicationUrl?: string //
+  applicationUrl?: string
 }
 
-export interface IJobDetails extends ICrawledJobDetail {
+export interface IJobDetail extends ICrawledJobDetail {
   id: string
 }
 

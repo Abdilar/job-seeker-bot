@@ -67,7 +67,7 @@ model Job {
   location     Location  @relation(fields: [locationId], references: [id])
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
-  details      JobDetails?
+  detail       JobDetail?
 }
 
 model Company {
@@ -99,7 +99,7 @@ model CrawlerExecution {
   @@index([status, startedAt])
 }
 
-model JobDetails {
+model JobDetail {
   id                        String            @id @default(cuid())
   description               String?
   category                  String?
@@ -129,5 +129,5 @@ model Experience {
   max                       Int?
 
   jobDetailsId              String            @unique
-  jobDetails                JobDetails        @relation(fields: [jobDetailsId], references: [id], onDelete: Cascade)
+  jobDetail                 JobDetail         @relation(fields: [jobDetailsId], references: [id], onDelete: Cascade)
 }
