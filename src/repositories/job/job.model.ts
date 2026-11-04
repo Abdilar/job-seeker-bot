@@ -1,5 +1,5 @@
 import type { Company, Job, Location } from '@prisma/client'
-import type { EProvider, ICrawledJob, IJob, IJobFilter } from '../../types'
+import type { EProvider, ICrawledJob, ICrawledJobDetail, IJob, IJobFilter } from '../../types'
 
 export type PrismaJobType = Job & {
   company: Company
@@ -9,6 +9,7 @@ export type PrismaJobType = Job & {
 export interface IJobRepository {
   create(data: ICrawledJob): Promise<IJob>
   createMany(data: Array<ICrawledJob>): Promise<void>
+  updateDetail(id: string, data: ICrawledJobDetail): Promise<IJob>
   delete(id: string): Promise<IJob>
   findById(id: string): Promise<IJob | null>
   findByUrl(url: string): Promise<IJob | null>
