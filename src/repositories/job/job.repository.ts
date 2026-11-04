@@ -100,6 +100,7 @@ export class JobRepository implements IJobRepository {
       include: {
         company: true,
         location: true,
+        detail: true,
       },
     })
 
