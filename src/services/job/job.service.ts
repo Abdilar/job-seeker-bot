@@ -1,4 +1,4 @@
-import type { EProvider, ICrawledJob, IJob, IJobFilter } from '../../types'
+import type { EProvider, ICrawledJob, ICrawledJobDetail, IJob, IJobFilter } from '../../types'
 import type { IJobService, SaveJobsResultType } from './job.model'
 import type { IJobRepository } from '../../repositories/job'
 
@@ -28,6 +28,19 @@ export class JobService implements IJobService {
     }
 
     return result
+  }
+
+  async saveJobDetail(id: string, data: ICrawledJobDetail): Promise<IJob> {
+    try {
+      // eslint-disable-next-line no-console
+      console.log('Saving job detail started...', { jobId: id, data })
+      const result = await this.repository.updateDetail(id, data)
+      // eslint-disable-next-line no-console
+      console.log('Save job detail...', { jobId: id, job: result })
+      return result
+    } catch {
+      throw new Error('Failed updating job detail operation!')
+    }
   }
 
   getJobs(page: number, limit: number, filter?: IJobFilter): Promise<IJob[]> {
@@ -70,6 +83,10 @@ export class JobService implements IJobService {
 
     if (!data.provider) {
       throw new Error('The provider is required!')
+    }
+
+    if (data === undefined) {
+      throw new Error('The job detail is not undefined!')
     }
 
     try {
