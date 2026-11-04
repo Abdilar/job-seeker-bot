@@ -1,9 +1,9 @@
 import type { Locator, Page } from 'playwright'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ECrawlMode } from '../../../constants'
 import type { IJobService } from '../../../services'
-import { EProvider, type ICrawledJob } from '../../../types'
-import type { JobParser } from '../../parsers'
+import { EContractType, EProvider, type ICrawledJob } from '../../../types'
+import { IranTalentParser, type JobParser } from '../../parsers'
 import {
   IRAN_TALENT_RENDER_TIMEOUT,
   IRAN_TALENT_URL,
@@ -29,6 +29,7 @@ vi.mock('../../../utilities', async (importOriginal) => {
 })
 
 describe('IranTalentProduct', () => {
+  const PAGE_URL = 'https://www.irantalent.com/jobs?sortBy=lived_at'
   const boundaryDate = new Date('2026-09-26T10:00:00')
   const recentDate = new Date('2026-09-27T10:00:00')
   const oldDate = new Date('2026-09-25T10:00:00')
@@ -52,6 +53,7 @@ describe('IranTalentProduct', () => {
   let waitForMock: ReturnType<typeof vi.fn>
   let pageLocatorMock: ReturnType<typeof vi.fn>
   let parserParseMock: ReturnType<typeof vi.fn>
+  let setParserMock: ReturnType<typeof vi.fn>
   let getLatestJobByProviderMock: ReturnType<typeof vi.fn>
 
   let page: Page
@@ -69,15 +71,18 @@ describe('IranTalentProduct', () => {
     waitForMock = vi.fn().mockResolvedValue(undefined)
     pageLocatorMock = vi.fn()
     parserParseMock = vi.fn()
+    setParserMock = vi.fn()
     getLatestJobByProviderMock = vi.fn()
 
     page = {
       goto: gotoMock,
       locator: pageLocatorMock,
+      url: vi.fn().mockReturnValue(PAGE_URL),
     } as unknown as Page
 
     parser = {
       parse: parserParseMock,
+      setParser: setParserMock,
     } as unknown as JobParser
 
     service = {
@@ -98,7 +103,11 @@ describe('IranTalentProduct', () => {
     nth: vi.fn().mockImplementation(() => ({}) as Locator),
   })
 
-  const setupPage = (jobCount: number, pageLabels: string[] = ['1']) => {
+  const setupPage = (
+    jobCount: number,
+    pageLabels: string[] = ['1'],
+    state: string | null = searchState([]),
+  ) => {
     const jobElements = mockJobElements(jobCount)
 
     const mainElement = {
@@ -110,6 +119,15 @@ describe('IranTalentProduct', () => {
     }
 
     const pagination = mockPagination(pageLabels)
+
+    const stateScript = {
+      count: vi.fn().mockResolvedValue(state === null ? 0 : 1),
+      textContent: vi.fn().mockResolvedValue(state),
+    }
+
+    const stateElement = {
+      first: vi.fn().mockReturnValue(stateScript),
+    }
 
     pageLocatorMock.mockImplementation((selector: string) => {
       if (selector === MAIN_ELEMENT_SELECTOR) {
@@ -124,11 +142,22 @@ describe('IranTalentProduct', () => {
         return pagination
       }
 
+      if (selector === 'script#ng-state') {
+        return stateElement
+      }
+
       return {} as Locator
     })
 
-    return { jobElements, mainElement, pagination }
+    return { jobElements, mainElement, pagination, stateScript }
   }
+
+  // INFO: The provider hands a fresh strategy to the parser before reading the cards, so parsing one card through that strategy proves the page state reached the job.
+  const strategyAt = (index: number): IranTalentParser =>
+    setParserMock.mock.calls.at(index)?.[0] as IranTalentParser
+
+  const parseContractType = async (href: string, index = -1): Promise<EContractType | undefined> =>
+    (await strategyAt(index).parse(createCardLocator(href)))?.contractType
 
   describe('initialize', () => {
     it('should navigate to IranTalent and wait for the job elements', async () => {
@@ -442,4 +471,202 @@ describe('IranTalentProduct', () => {
       expect(gotoMock).toHaveBeenCalledOnce()
     })
   })
+
+  describe('search state', () => {
+    let consoleWarnMock: ReturnType<typeof vi.spyOn>
+
+    beforeEach(() => {
+      consoleWarnMock = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    })
+
+    afterEach(() => {
+      vi.restoreAllMocks()
+    })
+
+    it('hands the parser a strategy that reads the contract type of the page', async () => {
+      setupPage(1, ['1'], searchState([{ id: 186192, titleFarsi: 'نیمه وقت' }]))
+
+      parserParseMock.mockResolvedValue(createJob('Job', oldDate))
+
+      const provider = createProvider(ECrawlMode.FULL)
+
+      await provider.initialize()
+      await provider.getJobs()
+
+      expect(strategyAt(-1)).toBeInstanceOf(IranTalentParser)
+      expect(await parseContractType('/job/graphic-designer/186192')).toBe(EContractType.PART_TIME)
+      expect(consoleWarnMock).not.toHaveBeenCalled()
+    })
+
+    it('reads a boosted job from the search state too', async () => {
+      setupPage(1, ['1'], searchState([], [{ id: 186192, titleFarsi: 'فریلنس' }]))
+
+      parserParseMock.mockResolvedValue(createJob('Job', oldDate))
+
+      const provider = createProvider(ECrawlMode.FULL)
+
+      await provider.initialize()
+      await provider.getJobs()
+
+      expect(await parseContractType('/job/graphic-designer/186192')).toBe(EContractType.PART_TIME)
+    })
+
+    it('keeps a record without an employment type as full time', async () => {
+      setupPage(1, ['1'], searchState([{ id: 186192 }]))
+
+      parserParseMock.mockResolvedValue(createJob('Job', oldDate))
+
+      const provider = createProvider(ECrawlMode.FULL)
+
+      await provider.initialize()
+      await provider.getJobs()
+
+      expect(await parseContractType('/job/graphic-designer/186192')).toBe(EContractType.FULL_TIME)
+      expect(consoleWarnMock).not.toHaveBeenCalled()
+    })
+
+    it('replaces the strategy before parsing a card of the page', async () => {
+      setupPage(2)
+
+      const calls: string[] = []
+
+      setParserMock.mockImplementation(() => {
+        calls.push('setParser')
+      })
+
+      parserParseMock.mockImplementation(() => {
+        calls.push('parse')
+
+        return createJob('Job', oldDate)
+      })
+
+      const provider = createProvider(ECrawlMode.FULL)
+
+      await provider.initialize()
+      await provider.getJobs()
+
+      expect(calls).toEqual(['setParser', 'parse', 'parse'])
+    })
+
+    it('reads the search state once for every card of the page', async () => {
+      const { stateScript } = setupPage(3)
+
+      parserParseMock.mockResolvedValue(createJob('Job', oldDate))
+
+      const provider = createProvider(ECrawlMode.FULL)
+
+      await provider.initialize()
+      await provider.getJobs()
+
+      expect(stateScript.textContent).toHaveBeenCalledOnce()
+    })
+
+    it('reads the search state again after moving to the next page', async () => {
+      const { stateScript } = setupPage(1, ['1', '2'])
+
+      stateScript.textContent
+        .mockResolvedValueOnce(searchState([{ id: 186192, titleFarsi: 'نیمه وقت' }]))
+        .mockResolvedValueOnce(searchState([{ id: 186192, titleFarsi: 'تمام وقت' }]))
+
+      parserParseMock.mockResolvedValue(createJob('Job', oldDate))
+
+      const provider = createProvider(ECrawlMode.FULL)
+
+      await provider.initialize()
+      await provider.getJobs()
+
+      expect(stateScript.textContent).toHaveBeenCalledTimes(2)
+      expect(await parseContractType('/job/graphic-designer/186192', 0)).toBe(
+        EContractType.PART_TIME,
+      )
+      expect(await parseContractType('/job/graphic-designer/186192', 1)).toBe(
+        EContractType.FULL_TIME,
+      )
+    })
+
+    it('warns and stores the page as full time when the search state is missing', async () => {
+      setupPage(1, ['1'], null)
+
+      parserParseMock.mockResolvedValue(createJob('Job', oldDate))
+
+      const provider = createProvider(ECrawlMode.FULL)
+
+      await provider.initialize()
+      await provider.getJobs()
+
+      expect(consoleWarnMock).toHaveBeenCalledWith(
+        'IranTalent Provider: The search state is missing, so the jobs of this page are stored as full time.',
+        { url: PAGE_URL },
+      )
+      expect(await parseContractType('/job/graphic-designer/186192')).toBe(EContractType.FULL_TIME)
+    })
+
+    it('warns and stores the page as full time when the search state is not valid JSON', async () => {
+      setupPage(1, ['1'], '{ this is not json')
+
+      parserParseMock.mockResolvedValue(createJob('Job', oldDate))
+
+      const provider = createProvider(ECrawlMode.FULL)
+
+      await provider.initialize()
+      await provider.getJobs()
+
+      expect(consoleWarnMock).toHaveBeenCalledWith(
+        'IranTalent Provider: The search state is unreadable, so the jobs of this page are stored as full time.',
+        { url: PAGE_URL },
+      )
+      expect(await parseContractType('/job/graphic-designer/186192')).toBe(EContractType.FULL_TIME)
+    })
+
+    it('warns and stores the page as full time when the search state script is empty', async () => {
+      setupPage(1, ['1'], '')
+
+      parserParseMock.mockResolvedValue(createJob('Job', oldDate))
+
+      const provider = createProvider(ECrawlMode.FULL)
+
+      await provider.initialize()
+      await provider.getJobs()
+
+      expect(consoleWarnMock).toHaveBeenCalledTimes(1)
+    })
+  })
 })
+
+interface SearchStatePosition {
+  id: number
+  titleFarsi?: string
+}
+
+function searchState(
+  positions: SearchStatePosition[],
+  boosted: SearchStatePosition[] = [],
+): string {
+  const toRecord = ({ id, titleFarsi }: SearchStatePosition) => ({
+    id,
+    ...(titleFarsi ? { employment_type: { title_farsi: titleFarsi } } : {}),
+  })
+
+  return JSON.stringify({
+    serverSideSearchResult: {
+      data: { data: positions.map(toRecord) },
+      boosted_positions: boosted.map(toRecord),
+    },
+  })
+}
+
+// NOTE: A card locator without a `page()` method, so a strategy that still reached the Playwright page would fail these tests.
+function createCardLocator(href: string): Locator {
+  const textElement = {
+    count: vi.fn().mockResolvedValue(1),
+    textContent: vi.fn().mockResolvedValue('متن'),
+    first: vi.fn(),
+  }
+
+  textElement.first.mockReturnValue(textElement)
+
+  return {
+    getAttribute: vi.fn().mockResolvedValue(href),
+    locator: vi.fn().mockReturnValue(textElement),
+  } as unknown as Locator
+}

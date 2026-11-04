@@ -1,4 +1,4 @@
-import type { Locator, Page } from 'playwright'
+import type { Locator } from 'playwright'
 import { EContractType, EProvider } from '../../../types'
 import type { ICompany, ICrawledJob, ILocation } from '../../../types'
 import { TODAY } from '../../../constants'
@@ -14,25 +14,12 @@ import {
   TITLE_SELECTOR,
 } from './iran-talent.constant'
 import type { IJobParserStrategy } from '../job.model'
-import { convertPersianContractTypeToEContractType, toEnglishDigits } from '../../utilities'
+import { toEnglishDigits } from '../../utilities'
 import { convertDaysAgoToJalaliDate } from '../../../utilities'
 
-interface IIranTalentPosition {
-  id?: number
-  employment_type?: { title_farsi?: string }
-}
-
-interface IIranTalentSearchState {
-  serverSideSearchResult?: {
-    data?: { data?: IIranTalentPosition[] }
-    boosted_positions?: IIranTalentPosition[]
-  }
-}
-
 export class IranTalentParser implements IJobParserStrategy {
-  // NOTE: IranTalent prerenders `script#ng-state` only for non-browser user agents, so a headed run gets the client-rendered shell and every job keeps the card-level default.
-  private contractTypes: Map<string, EContractType> = new Map()
-  private contractTypesUrl: string = ''
+  // NOTE: The provider reads the contract types once per page, so this strategy answers from the map alone and never touches the Playwright page.
+  constructor(private readonly contractTypes: Map<string, EContractType>) {}
 
   async parse(content: Locator): Promise<ICrawledJob | undefined> {
     try {
@@ -55,7 +42,7 @@ export class IranTalentParser implements IJobParserStrategy {
         url,
         provider: EProvider.IRAN_TALENT,
         postedAt,
-        contractType: await this.getContractType(id, content.page()),
+        contractType: this.getContractType(id),
         salary: salary.trim(),
         location,
         company,
@@ -74,66 +61,9 @@ export class IranTalentParser implements IJobParserStrategy {
     return (await firstMatch.count()) ? (await firstMatch.textContent()) || '' : ''
   }
 
-  private async getContractType(jobId: string, page: Page): Promise<EContractType> {
-    if (this.contractTypesUrl !== page.url()) {
-      this.contractTypesUrl = page.url()
-      this.contractTypes = await this.readContractTypes(page)
-    }
-
+  // INFO: Only a page whose whole search state is unusable is reported by the provider; a single record without an employment type is ordinary IranTalent data and keeps the card-level default.
+  private getContractType(jobId: string): EContractType {
     return this.contractTypes.get(jobId) ?? EContractType.FULL_TIME
-  }
-
-  private async readContractTypes(page: Page): Promise<Map<string, EContractType>> {
-    const contractTypes = new Map<string, EContractType>()
-    const stateElement = page.locator('script#ng-state').first()
-
-    if (!(await stateElement.count())) {
-      // eslint-disable-next-line no-console
-      console.warn(
-        `IranTalent Parser: The search state is missing, so the jobs of this page are stored as full time.`,
-        {
-          url: page.url(),
-        },
-      )
-
-      return contractTypes
-    }
-
-    const state = await stateElement.textContent()
-
-    try {
-      const { serverSideSearchResult } = JSON.parse(state ?? '') as IIranTalentSearchState
-      const positions = [
-        ...(serverSideSearchResult?.data?.data ?? []),
-        ...(serverSideSearchResult?.boosted_positions ?? []),
-      ]
-
-      for (const position of positions) {
-        const employmentType = position.employment_type?.title_farsi
-
-        if (!position.id || !employmentType) {
-          continue
-        }
-
-        contractTypes.set(
-          String(position.id),
-          convertPersianContractTypeToEContractType(employmentType),
-        )
-      }
-    } catch {
-      // NOTE: A malformed payload must not cost the page its jobs, but it must not pass unnoticed either.
-      // eslint-disable-next-line no-console
-      console.warn(
-        `IranTalent Parser: The search state is unreadable, so the jobs of this page are stored as full time.`,
-        {
-          url: page.url(),
-        },
-      )
-
-      return new Map()
-    }
-
-    return contractTypes
   }
 
   private parseUrl(href: string): { url: string; id: string } {

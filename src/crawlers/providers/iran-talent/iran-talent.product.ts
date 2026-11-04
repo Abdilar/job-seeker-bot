@@ -1,8 +1,9 @@
 import type { Locator, Page } from 'playwright'
 import { JOB_POSTING_TIMEZONE, WAIT_UNTIL } from '../../constants'
 import type { IJobProvider } from '../job.model'
-import { EProvider, type ICrawledJob } from '../../../types'
-import type { JobParser } from '../../parsers'
+import { EContractType, EProvider, type ICrawledJob } from '../../../types'
+import { type JobParser, IranTalentParser } from '../../parsers'
+import { convertPersianContractTypeToEContractType, toEnglishDigits } from '../../utilities'
 import {
   IRAN_TALENT_RENDER_TIMEOUT,
   IRAN_TALENT_URL,
@@ -10,9 +11,20 @@ import {
   MAIN_ELEMENT_SELECTOR,
 } from './iran-talent.constant'
 import { isRecent, randomDelay } from '../../../utilities'
-import { toEnglishDigits } from '../../utilities'
 import type { IJobService } from '../../../services'
 import { ECrawlMode } from '../../../constants'
+
+interface IIranTalentPosition {
+  id?: number
+  employment_type?: { title_farsi?: string }
+}
+
+interface IIranTalentSearchState {
+  serverSideSearchResult?: {
+    data?: { data?: IIranTalentPosition[] }
+    boosted_positions?: IIranTalentPosition[]
+  }
+}
 
 export class IranTalentProduct implements IJobProvider {
   private lastPage: number = 1
@@ -167,6 +179,10 @@ export class IranTalentProduct implements IJobProvider {
     if (!this.mainElement) {
       throw new Error(`mainElement is required: ${this.mainElement}`)
     }
+
+    // NOTE: `fetchJobs()` runs once per navigated page, so the search state is read once per page here instead of being cached per parser.
+    this.parser.setParser(new IranTalentParser(await this.readContractTypes()))
+
     const jobElements = this.mainElement.locator(JOB_ELEMENT_SELECTOR)
     const jobCount = await jobElements.count()
 
@@ -186,5 +202,55 @@ export class IranTalentProduct implements IJobProvider {
     }
 
     return jobs
+  }
+
+  // NOTE: IranTalent prerenders `script#ng-state` only for non-browser user agents, so a headed run gets the client-rendered shell and every job of the page falls back to the card-level default.
+  private async readContractTypes(): Promise<Map<string, EContractType>> {
+    const contractTypes = new Map<string, EContractType>()
+    const stateElement = this.getElement('script#ng-state').first()
+
+    if (!(await stateElement.count())) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `IranTalent Provider: The search state is missing, so the jobs of this page are stored as full time.`,
+        { url: this.page.url() },
+      )
+
+      return contractTypes
+    }
+
+    const state = await stateElement.textContent()
+
+    try {
+      const { serverSideSearchResult } = JSON.parse(state ?? '') as IIranTalentSearchState
+      const positions = [
+        ...(serverSideSearchResult?.data?.data ?? []),
+        ...(serverSideSearchResult?.boosted_positions ?? []),
+      ]
+
+      for (const position of positions) {
+        const employmentType = position.employment_type?.title_farsi
+
+        if (!position.id || !employmentType) {
+          continue
+        }
+
+        contractTypes.set(
+          String(position.id),
+          convertPersianContractTypeToEContractType(employmentType),
+        )
+      }
+    } catch {
+      // NOTE: A malformed payload must not cost the page its jobs, but it must not pass unnoticed either.
+      // eslint-disable-next-line no-console
+      console.warn(
+        `IranTalent Provider: The search state is unreadable, so the jobs of this page are stored as full time.`,
+        { url: this.page.url() },
+      )
+
+      return new Map()
+    }
+
+    return contractTypes
   }
 }
