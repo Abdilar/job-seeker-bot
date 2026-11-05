@@ -23,21 +23,20 @@ async function run() {
   const jobService = new JobService(repository)
   const crawlMode: ECrawlMode = crawlArgs.mode ?? ECrawlMode.INCREMENTAL
 
-  if (crawlArgs?.providers) {
-    for (const provider of Object.values(EProvider)) {
-      switch (provider) {
-        case EProvider.JOB_IN_JA:
-          providers.push(new JobInJaCreator(jobService, crawlMode))
-          break
-        case EProvider.JOB_VISION:
-          providers.push(new JobVisionCreator(jobService, crawlMode))
-          break
-        case EProvider.IRAN_TALENT:
-          providers.push(new IranTalentCreator(jobService, crawlMode))
-          break
-        default:
-          break
-      }
+  // NOTE: The list itself, not only its presence, selects the providers, so `--providers=job_in_ja` no longer crawls every provider as well.
+  for (const provider of (crawlArgs.providers ?? []) as EProvider[]) {
+    switch (provider) {
+      case EProvider.JOB_IN_JA:
+        providers.push(new JobInJaCreator(jobService, crawlMode))
+        break
+      case EProvider.JOB_VISION:
+        providers.push(new JobVisionCreator(jobService, crawlMode))
+        break
+      case EProvider.IRAN_TALENT:
+        providers.push(new IranTalentCreator(jobService, crawlMode))
+        break
+      default:
+        break
     }
   }
 
