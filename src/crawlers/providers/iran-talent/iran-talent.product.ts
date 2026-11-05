@@ -13,18 +13,7 @@ import {
 import { isRecent, randomDelay } from '../../../utilities'
 import type { IJobService } from '../../../services'
 import { ECrawlMode } from '../../../constants'
-
-interface IIranTalentPosition {
-  id?: number
-  employment_type?: { title_farsi?: string }
-}
-
-interface IIranTalentSearchState {
-  serverSideSearchResult?: {
-    data?: { data?: IIranTalentPosition[] }
-    boosted_positions?: IIranTalentPosition[]
-  }
-}
+import type { IIranTalentSearchState } from './iran-talent.model'
 
 export class IranTalentProduct implements IJobProvider {
   private lastPage: number = 1
