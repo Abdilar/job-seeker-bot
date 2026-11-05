@@ -35,7 +35,7 @@
 - [x] `getLatestExecution` و منطق Health Check اجرای روزانه در آخرین Image تولیدی.
 - [x] استانداردسازی عنوان Squash Merge/PR برای Semantic Release و تست انتشار یک نسخه جدید.
 - [x] پوشش واقعی تست‌های خودکار و تأیید اجرای کامل چرخه Merge → Release → Deploy.
-- [x] Providerهای دیگر: در آخرین Bootstrap بررسی‌شده فقط `JobInJaCreator` فعال بود.
+- [x] Providerهای دیگر: هر دو Bootstrap، `JobVisionCreator` و `IranTalentCreator` را کنار `JobInJaCreator` ثبت می‌کنند؛ در Bootstrap کامل، `--providers` همان لیست را انتخاب می‌کند.
 
 ## فاز ۱ — Production Stability & Security
 
