@@ -18,8 +18,8 @@ import { toEnglishDigits } from '../../utilities'
 import { convertDaysAgoToJalaliDate } from '../../../utilities'
 
 export class IranTalentParser implements IJobParserStrategy {
-  // NOTE: The provider reads the contract types once per page, so this strategy answers from the map alone and never touches the Playwright page.
-  constructor(private readonly contractTypes: Map<string, EContractType>) {}
+  // NOTE: The provider reads the contract types once per page and hands them to a new strategy, so this one answers from its map alone and never touches the Playwright page.
+  constructor(private readonly contractTypes: Map<string, EContractType> = new Map()) {}
 
   async parse(content: Locator): Promise<ICrawledJob | undefined> {
     try {

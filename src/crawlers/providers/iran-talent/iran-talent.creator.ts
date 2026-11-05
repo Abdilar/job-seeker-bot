@@ -15,8 +15,8 @@ export class IranTalentCreator extends JobProvider {
   }
 
   protected async createProvider(page: Page): Promise<IJobProvider> {
-    // NOTE: The product replaces this strategy with one carrying each page's search state before it parses a card, so the map starts empty.
-    const jobParser = new JobParser(new IranTalentParser(new Map()))
+    // NOTE: `JobParser` needs a strategy at construction; the product replaces this one with a page's search state before it parses any card.
+    const jobParser = new JobParser(new IranTalentParser())
     const provider = new IranTalentProduct(page, jobParser, this.service, this.mode)
     await provider.initialize()
     return provider
