@@ -1,4 +1,3 @@
-export const LOCATION_COUNTRY = 'ایران'
 export const JOB_VISION_ORIGIN = 'https://jobvision.ir'
 export const JOB_ID_PATTERN = /^\/jobs\/(\d+)/
 export const YESTERDAY = 'دیروز'

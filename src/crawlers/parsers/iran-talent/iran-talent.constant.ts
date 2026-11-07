@@ -1,6 +1,5 @@
 import { TODAY } from '../../../constants'
 
-export const LOCATION_COUNTRY = 'ایران'
 export const IRAN_TALENT_ORIGIN = 'https://www.irantalent.com'
 export const JOB_ID_PATTERN = /^\/job\/[^/]+\/(\d+)/
 

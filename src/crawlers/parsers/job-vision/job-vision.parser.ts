@@ -2,11 +2,11 @@ import type { Locator } from 'playwright'
 import { EContractType, EProvider } from '../../../types'
 import type { ICompany, ICrawledJob, ILocation } from '../../../types'
 import { TODAY } from '../../../constants'
+import { LOCATION_COUNTRY } from '../../constants'
 import {
   COMPANY_SELECTOR,
   JOB_ID_PATTERN,
   JOB_VISION_ORIGIN,
-  LOCATION_COUNTRY,
   LOCATION_SELECTOR,
   PART_TIME_SELECTOR,
   PASSED_DAYS_SELECTOR,
