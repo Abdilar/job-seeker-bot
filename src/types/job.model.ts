@@ -19,8 +19,8 @@ export interface ICrawledJob extends IBaseJob {
 
 export interface IJob extends ICrawledJob {
   id: string
-  createdAt?: Date
-  updatedAt?: Date
+  createdAt: Date
+  updatedAt: Date
   detail?: IJobDetail
 }
 
@@ -43,11 +43,16 @@ export interface ICrawledJobDetail {
   education?: EEducationLevel //
   workMode?: EWorkMode //
   visaSponsorship?: EVisaSponsorship
-  applicationUrl?: string
+  applicationUrl: string
 }
 
 export interface IJobDetail extends ICrawledJobDetail {
   id: string
+  responsibilities: string[]
+  requirements: string[]
+  preferredQualifications: string[]
+  benefits: string[]
+  skills: string[]
 }
 
 export interface IJobExperience {
