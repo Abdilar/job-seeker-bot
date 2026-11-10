@@ -284,7 +284,7 @@ export class JobRepository implements IJobRepository {
     return jobs.map((job) => this.convertPrismaJobToIJob(job))
   }
 
-  async findNoDetailJobs(): Promise<IJob[]> {
+  async findJobsWithoutDetails(): Promise<IJob[]> {
     const jobs = await prisma.job.findMany({
       where: {
         detail: {

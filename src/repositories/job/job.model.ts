@@ -15,6 +15,7 @@ export interface IJobRepository {
   findByUrl(url: string): Promise<IJob | null>
   findLatestByProvider(provider: EProvider): Promise<IJob | null>
   findAll(): Promise<IJob[]>
+  findJobsWithoutDetails(): Promise<IJob[]>
   findPaginated(page: number, limit: number, filter?: IJobFilter): Promise<IJob[]>
   exists(url: string): Promise<boolean>
   count(filter?: IJobFilter): Promise<number>
