@@ -1,5 +1,11 @@
 import type { Prisma } from '@prisma/client'
-import { EProvider as EPrismaProvider } from '@prisma/client'
+import {
+  EProvider as EPrismaProvider,
+  EGender as EPrismaGender,
+  EEducationLevel as EPrismaEducationLevel,
+  EWorkMode as EPrismaWorkMode,
+  EVisaSponsorship as EPrismaVisaSponsorship,
+} from '@prisma/client'
 import type { IJobRepository, PrismaJobType } from './job.model'
 import { prisma } from '../../database/prisma'
 import type { IJob, ICrawledJob, IJobFilter, ICrawledJobDetail } from '../../types'
@@ -39,10 +45,14 @@ const contractTypeMap: Record<string, EContractType> = {
 
 export class JobRepository implements IJobRepository {
   private convertICrawledJobToJobCreateInput(data: ICrawledJob): Prisma.JobCreateInput {
+    const { provider } = data
+
     return {
-      ...data,
+      title: data.title,
+      url: data.url,
+      contractType: data.contractType,
       postedAt: data.postedAt ?? null,
-      provider: prismaProviderMap[data.provider],
+      provider: prismaProviderMap[provider],
       company: {
         connectOrCreate: {
           where: {
@@ -78,8 +88,8 @@ export class JobRepository implements IJobRepository {
       contractType: contractTypeMap[data.contractType],
       postedAt: data.postedAt ? new Date(data.postedAt) : undefined,
       provider: domainProviderMap[data.provider],
-      createdAt: data.createdAt ? new Date(data.createdAt) : undefined,
-      updatedAt: data.updatedAt ? new Date(data.updatedAt) : undefined,
+      // createdAt: data.createdAt ? new Date(data.createdAt) : undefined,
+      // updatedAt: data.updatedAt ? new Date(data.updatedAt) : undefined,
       company: {
         ...data.company,
         englishName: data.company.englishName ?? undefined,
@@ -150,20 +160,67 @@ export class JobRepository implements IJobRepository {
   }
 
   async updateDetail(id: string, data: ICrawledJobDetail): Promise<IJob> {
+    const fields = {
+      description: data.description,
+      category: data.category,
+      salary: data.salary,
+      gender: data.gender ? EPrismaGender[data.gender] : undefined,
+      responsibilities: data.responsibilities,
+      requirements: data.requirements,
+      preferredQualifications: data.preferredQualifications,
+      benefits: data.benefits,
+      skills: data.skills,
+      education: data.education ? EPrismaEducationLevel[data.education] : undefined,
+      workMode: data.workMode ? EPrismaWorkMode[data.workMode] : undefined,
+      visaSponsorship: data.visaSponsorship
+        ? EPrismaVisaSponsorship[data.visaSponsorship]
+        : undefined,
+      applicationUrl: data.applicationUrl,
+    }
+
+    const experience = data.experience
+      ? {
+          raw: data.experience.raw,
+          minYears: data.experience.minYears,
+          maxYears: data.experience.maxYears,
+        }
+      : undefined
+
     const result = await prisma.job.update({
       where: { id },
       data: {
         detail: {
           upsert: {
-            create: data,
-            update: data,
+            create: {
+              ...fields,
+              ...(experience && {
+                experience: {
+                  create: experience,
+                },
+              }),
+            },
+            update: {
+              ...fields,
+              ...(experience && {
+                experience: {
+                  upsert: {
+                    create: experience,
+                    update: experience,
+                  },
+                },
+              }),
+            },
           },
         },
       },
       include: {
         company: true,
         location: true,
-        detail: true,
+        detail: {
+          include: {
+            experience: true,
+          },
+        },
       },
     })
 
@@ -222,6 +279,24 @@ export class JobRepository implements IJobRepository {
     const jobs = await prisma.job.findMany({
       orderBy: [{ postedAt: 'desc' }, { id: 'desc' }],
       include: { company: true, location: true, detail: true },
+    })
+
+    return jobs.map((job) => this.convertPrismaJobToIJob(job))
+  }
+
+  async findNoDetailJobs(): Promise<IJob[]> {
+    const jobs = await prisma.job.findMany({
+      where: {
+        detail: {
+          is: null,
+        },
+      },
+      orderBy: [{ postedAt: 'desc' }, { id: 'desc' }],
+      include: {
+        company: true,
+        location: true,
+        detail: false,
+      },
     })
 
     return jobs.map((job) => this.convertPrismaJobToIJob(job))
