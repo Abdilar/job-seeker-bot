@@ -104,30 +104,28 @@ model JobDetail {
   description               String?
   category                  String?
   salary                    String?
-  responsibilities          String[]?
-  requirements              String[]?
-  preferredQualifications   String[]?
-  benefits                  String[]?
-  skills                    String[]?
+  responsibilities          String[]          @default([])
+  requirements              String[]          @default([])
+  preferredQualifications   String[]          @default([])
+  benefits                  String[]          @default([])
+  skills                    String[]          @default([])
   gender                    EGender?
   experience                Experience?
   education                 EEducationLevel?
   workMode                  EWorkMode?
   visaSponsorship           EVisaSponsorship?
-  applicationUrl            String?
+  applicationUrl            String            @unique
 
   jobId                     String            @unique
   job                       Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  createdAt                 DateTime          @default(now())
-  updatedAt                 DateTime          @updatedAt
 }
 
 model Experience {
   id                        String            @id @default(cuid())
   raw                       String?
-  min                       Int?
-  max                       Int?
+  minYears                  Int?
+  maxYears                  Int?
 
-  jobDetailId               String            @unique
-  jobDetail                 JobDetail         @relation(fields: [jobDetailId], references: [id], onDelete: Cascade)
+  detailId               String            @unique
+  detail                 JobDetail         @relation(fields: [detailId], references: [id], onDelete: Cascade)
 }
