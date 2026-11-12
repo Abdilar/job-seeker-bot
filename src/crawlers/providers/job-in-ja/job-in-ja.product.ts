@@ -21,13 +21,6 @@ export class JobInJaProduct implements IJobProvider {
     private readonly mode: ECrawlMode,
   ) {}
 
-  async initialize(): Promise<void> {
-    await this.page.goto(JOB_IN_JA_URL, { waitUntil: WAIT_UNTIL })
-    this.mainSummeryElement = await this.getElement(SUMMERY_ELEMENT_SELECTOR)
-
-    this.lastPage = await this.getLastPage()
-  }
-
   private async getElement(selector: string): Promise<Locator> {
     const element = this.page.locator(selector)
     return element
@@ -131,14 +124,6 @@ export class JobInJaProduct implements IJobProvider {
     return jobs
   }
 
-  async getJobs(): Promise<ICrawledJob[]> {
-    return this.mode === ECrawlMode.FULL ? this.getFullJobs() : this.getIncrementalJobs()
-  }
-
-  async getJobsByCount(count: number): Promise<ICrawledJob[]> {
-    return await this.fetchJobs(count)
-  }
-
   private async fetchJobs(count?: number): Promise<ICrawledJob[]> {
     if (!this.mainSummeryElement) {
       throw new Error(`mainElement is required: ${this.mainSummeryElement}`)
@@ -162,5 +147,20 @@ export class JobInJaProduct implements IJobProvider {
     }
 
     return jobs
+  }
+
+  async initialize(): Promise<void> {
+    await this.page.goto(JOB_IN_JA_URL, { waitUntil: WAIT_UNTIL })
+    this.mainSummeryElement = await this.getElement(SUMMERY_ELEMENT_SELECTOR)
+
+    this.lastPage = await this.getLastPage()
+  }
+
+  async getJobs(): Promise<ICrawledJob[]> {
+    return this.mode === ECrawlMode.FULL ? this.getFullJobs() : this.getIncrementalJobs()
+  }
+
+  async getJobsByCount(count: number): Promise<ICrawledJob[]> {
+    return await this.fetchJobs(count)
   }
 }
