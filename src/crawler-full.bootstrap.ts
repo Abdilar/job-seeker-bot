@@ -23,8 +23,14 @@ async function run() {
   const jobService = new JobService(repository)
   const crawlMode: ECrawlMode = crawlArgs.mode ?? ECrawlMode.INCREMENTAL
 
-  // NOTE: The list itself, not only its presence, selects the providers, so `--providers=job_in_ja` no longer crawls every provider as well.
-  for (const provider of (crawlArgs.providers ?? []) as EProvider[]) {
+  // NOTE: The list itself, not only its presence, selects the providers, so `--providers=job_in_ja` no longer crawls every provider as well. Without the flag, the full crawl falls back to every registered provider.
+  const selectedProviders = (crawlArgs.providers as EProvider[] | undefined) ?? [
+    EProvider.JOB_IN_JA,
+    EProvider.JOB_VISION,
+    EProvider.IRAN_TALENT,
+  ]
+
+  for (const provider of selectedProviders) {
     switch (provider) {
       case EProvider.JOB_IN_JA:
         providers.push(new JobInJaCreator(jobService, crawlMode))

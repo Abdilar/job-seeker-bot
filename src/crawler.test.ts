@@ -350,11 +350,19 @@ describe('crawler full bootstrap', () => {
     expect(creatorModeMock).toHaveBeenCalledWith('JOB_IN_JA', ECrawlMode.INCREMENTAL)
   })
 
-  it('crawls nothing when --providers is absent', async () => {
+  it('crawls every registered provider when --providers is absent', async () => {
     await runBootstrap('--mode=full')
 
-    expect(creatorModeMock).not.toHaveBeenCalled()
-    expect(crawlJobsTaskConstructorMock).toHaveBeenCalledWith(jobServiceInstance, [])
+    expect(creatorModeMock).toHaveBeenCalledTimes(3)
+    expect(creatorModeMock).toHaveBeenCalledWith('JOB_IN_JA', ECrawlMode.FULL)
+    expect(creatorModeMock).toHaveBeenCalledWith('JOB_VISION', ECrawlMode.FULL)
+    expect(creatorModeMock).toHaveBeenCalledWith('IRAN_TALENT', ECrawlMode.FULL)
+
+    expect(crawlJobsTaskConstructorMock).toHaveBeenCalledWith(jobServiceInstance, [
+      jobInJaCreatorInstance,
+      jobVisionCreatorInstance,
+      iranTalentCreatorInstance,
+    ])
   })
 
   it('skips a provider that has no creator yet', async () => {
