@@ -234,7 +234,24 @@ describe('IranTalentProduct', () => {
   })
 
   describe('FULL mode', () => {
-    it('should take the last page from the largest pagination button, not the last one', async () => {
+    it('takes the last page from the search state instead of the pagination', async () => {
+      setupPage(1, ['1'], searchState([], [], 3))
+
+      parserParseMock.mockResolvedValue(createJob('Job', oldDate))
+
+      const provider = createProvider(ECrawlMode.FULL)
+
+      await provider.initialize()
+
+      const jobs = await provider.getJobs()
+
+      expect(jobs).toHaveLength(3)
+      expect(gotoMock).toHaveBeenLastCalledWith(`${IRAN_TALENT_URL}&page=3`, {
+        waitUntil: WAIT_UNTIL,
+      })
+    })
+
+    it('takes the last page from the largest pagination button, not the last one', async () => {
       setupPage(1, ['3', '1', '2'])
 
       parserParseMock.mockResolvedValue(createJob('Job', oldDate))
@@ -618,6 +635,23 @@ describe('IranTalentProduct', () => {
       expect(await parseContractType('/job/graphic-designer/186192')).toBe(EContractType.FULL_TIME)
     })
 
+    it('warns and stores the page as full time when the search state is incomplete', async () => {
+      setupPage(1, ['1'], '{}')
+
+      parserParseMock.mockResolvedValue(createJob('Job', oldDate))
+
+      const provider = createProvider(ECrawlMode.FULL)
+
+      await provider.initialize()
+      await provider.getJobs()
+
+      expect(consoleWarnMock).toHaveBeenCalledWith(
+        'IranTalent Provider: The search state is incomplete, so the jobs of this page are stored as full time.',
+        { url: PAGE_URL },
+      )
+      expect(await parseContractType('/job/graphic-designer/186192')).toBe(EContractType.FULL_TIME)
+    })
+
     it('warns and stores the page as full time when the search state script is empty', async () => {
       setupPage(1, ['1'], '')
 
@@ -630,6 +664,23 @@ describe('IranTalentProduct', () => {
 
       expect(consoleWarnMock).toHaveBeenCalledTimes(1)
     })
+
+    it('warns only once when the search state is missing on every page', async () => {
+      setupPage(1, ['1', '2'], null)
+
+      parserParseMock.mockResolvedValue(createJob('Job', oldDate))
+
+      const provider = createProvider(ECrawlMode.FULL)
+
+      await provider.initialize()
+      await provider.getJobs()
+
+      expect(consoleWarnMock).toHaveBeenCalledTimes(1)
+      expect(consoleWarnMock).toHaveBeenCalledWith(
+        'IranTalent Provider: The search state is missing, so the jobs of this page are stored as full time.',
+        { url: PAGE_URL },
+      )
+    })
   })
 })
 
@@ -641,6 +692,7 @@ interface SearchStatePosition {
 function searchState(
   positions: SearchStatePosition[],
   boosted: SearchStatePosition[] = [],
+  lastPage?: number,
 ): string {
   const toRecord = ({ id, titleFarsi }: SearchStatePosition) => ({
     id,
@@ -649,7 +701,10 @@ function searchState(
 
   return JSON.stringify({
     serverSideSearchResult: {
-      data: { data: positions.map(toRecord) },
+      data: {
+        data: positions.map(toRecord),
+        ...(lastPage ? { last_page: lastPage } : {}),
+      },
       boosted_positions: boosted.map(toRecord),
     },
   })

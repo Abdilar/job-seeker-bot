@@ -14,7 +14,7 @@ import {
   TITLE_SELECTOR,
 } from './iran-talent.constant'
 import type { IJobParserStrategy } from '../job.model'
-import { toEnglishDigits } from '../../utilities'
+import { getLocatorText, toEnglishDigits } from '../../utilities'
 import { convertDaysAgoToJalaliDate } from '../../../utilities'
 
 export class IranTalentParser implements IJobParserStrategy {
@@ -28,14 +28,14 @@ export class IranTalentParser implements IJobParserStrategy {
         throw new Error('Url not found...')
       }
       const { url, id } = this.parseUrl(href)
-      const title = await this.getText(content.locator(TITLE_SELECTOR))
-      const passedDateAttribute = await this.getText(content.locator(PASSED_DAYS_SELECTOR))
+      const title = await getLocatorText(content.locator(TITLE_SELECTOR))
+      const passedDateAttribute = await getLocatorText(content.locator(PASSED_DAYS_SELECTOR))
       const postedAt = convertDaysAgoToJalaliDate(this.parsePassedDays(passedDateAttribute))
-      const companyAttribute = await this.getText(content.locator(COMPANY_SELECTOR))
+      const companyAttribute = await getLocatorText(content.locator(COMPANY_SELECTOR))
       const company: ICompany = this.parseCompany(companyAttribute)
-      const locationAttribute = await this.getText(content.locator(LOCATION_SELECTOR))
+      const locationAttribute = await getLocatorText(content.locator(LOCATION_SELECTOR))
       const location: ILocation = this.parseLocation(locationAttribute)
-      const salary = await this.getText(content.locator(SALARY_SELECTOR))
+      const salary = await getLocatorText(content.locator(SALARY_SELECTOR))
 
       return {
         title: title.trim(),
@@ -54,27 +54,20 @@ export class IranTalentParser implements IJobParserStrategy {
     }
   }
 
-  private async getText(locator: Locator): Promise<string> {
-    // NOTE: Card selectors can resolve to several nodes once the site adds a badge, and a multi-match read fails strict mode.
-    const firstMatch = locator.first()
-
-    return (await firstMatch.count()) ? (await firstMatch.textContent()) || '' : ''
-  }
-
   // INFO: Only a page whose whole search state is unusable is reported by the provider; a single record without an employment type is ordinary IranTalent data and keeps the card-level default.
   private getContractType(jobId: string): EContractType {
     return this.contractTypes.get(jobId) ?? EContractType.FULL_TIME
   }
 
   private parseUrl(href: string): { url: string; id: string } {
-    const { origin, pathname } = new URL(href, IRAN_TALENT_ORIGIN)
+    const { pathname } = new URL(href, IRAN_TALENT_ORIGIN)
     const [, jobId] = pathname.match(JOB_ID_PATTERN) ?? []
 
     if (!jobId) {
       throw new Error('Job id not found...')
     }
 
-    return { url: `${origin}${pathname}`, id: jobId }
+    return { url: `${IRAN_TALENT_ORIGIN}${pathname}`, id: jobId }
   }
 
   private parsePassedDays(passedDays: string): string {

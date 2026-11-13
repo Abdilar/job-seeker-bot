@@ -3,7 +3,7 @@ import { TODAY } from '../../../constants'
 export const IRAN_TALENT_ORIGIN = 'https://www.irantalent.com'
 export const JOB_ID_PATTERN = /^\/job\/[^/]+\/(\d+)/
 
-// NOTE: IranTalent prints an exact day count only for the last days; everything older is a bucket, so each label maps to the oldest day that bucket can mean.
+// NOTE: IranTalent prints an exact day count only for the last days; everything older is a bucket, so each label maps to a single day. The open-ended `بیش از یک ماه` keeps the newest possible day (31), so an old job stays as recent as its label allows instead of being skipped as stale.
 export const PASSED_DAYS_BUCKETS: Record<string, string> = {
   امروز: TODAY,
   دیروز: '1',

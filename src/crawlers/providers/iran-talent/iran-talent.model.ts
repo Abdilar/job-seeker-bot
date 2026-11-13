@@ -5,7 +5,10 @@ export interface IIranTalentPosition {
 
 export interface IIranTalentSearchState {
   serverSideSearchResult?: {
-    data?: { data?: IIranTalentPosition[] }
+    data?: {
+      data?: IIranTalentPosition[]
+      last_page?: number
+    }
     boosted_positions?: IIranTalentPosition[]
   }
 }

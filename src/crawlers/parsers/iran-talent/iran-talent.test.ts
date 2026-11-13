@@ -96,6 +96,17 @@ describe('IranTalentParser', () => {
     expect(result?.url).toBe('https://www.irantalent.com/job/electrical-engineer/186191')
   })
 
+  it('normalizes a bare irantalent host into the canonical origin', async () => {
+    const content = createJobLocator({
+      ...completeJob,
+      href: 'https://irantalent.com/job/electrical-engineer/186191',
+    })
+
+    const result = await parser.parse(content)
+
+    expect(result?.url).toBe('https://www.irantalent.com/job/electrical-engineer/186191')
+  })
+
   it.each([
     ['امروز', '2026-09-27T10:00:00.000Z'],
     ['دیروز', '2026-09-26T10:00:00.000Z'],

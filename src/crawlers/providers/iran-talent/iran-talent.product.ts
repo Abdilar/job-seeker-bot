@@ -19,6 +19,9 @@ export class IranTalentProduct implements IJobProvider {
   private lastPage: number = 1
   private currentPage: number = 1
   private mainElement?: Locator
+  private searchStateLoaded = false
+  private searchState?: IIranTalentSearchState
+  private searchStateWarningShown = false
 
   constructor(
     private readonly page: Page,
@@ -53,6 +56,18 @@ export class IranTalentProduct implements IJobProvider {
   }
 
   private async getLastPage(): Promise<number> {
+    const state = await this.readSearchState()
+    const lastPage = Number(state?.serverSideSearchResult?.data?.last_page)
+
+    if (Number.isInteger(lastPage) && lastPage > 0) {
+      return lastPage
+    }
+
+    // NOTE: The paginator always renders the last page number, while the total job count divided by a page size would misread it because IranTalent pads some pages with boosted cards.
+    return this.getLastPageFromPagination()
+  }
+
+  private async getLastPageFromPagination(): Promise<number> {
     const pageButtons = this.getElement('button.page-number')
     const pageButtonsTotal = await pageButtons.count()
 
@@ -72,7 +87,6 @@ export class IranTalentProduct implements IJobProvider {
       return 1
     }
 
-    // NOTE: The paginator always renders the last page number, while the total job count divided by a page size would misread it because IranTalent pads some pages with boosted cards.
     return Math.max(...pageNumbers)
   }
 
@@ -84,6 +98,7 @@ export class IranTalentProduct implements IJobProvider {
       })
       await this.waitForJobs()
       this.mainElement = this.getElement(MAIN_ELEMENT_SELECTOR)
+      this.resetSearchState()
     }
   }
 
@@ -194,50 +209,85 @@ export class IranTalentProduct implements IJobProvider {
   }
 
   // NOTE: IranTalent prerenders `script#ng-state` only for non-browser user agents, so a headed run gets the client-rendered shell and every job of the page falls back to the card-level default.
-  private async readContractTypes(): Promise<Map<string, EContractType>> {
-    const contractTypes = new Map<string, EContractType>()
+  private async readSearchState(): Promise<IIranTalentSearchState | undefined> {
+    if (this.searchStateLoaded) {
+      return this.searchState
+    }
+
+    this.searchStateLoaded = true
     const stateElement = this.getElement('script#ng-state').first()
 
     if (!(await stateElement.count())) {
-      // eslint-disable-next-line no-console
-      console.warn(
-        `IranTalent Provider: The search state is missing, so the jobs of this page are stored as full time.`,
-        { url: this.page.url() },
-      )
+      this.warnSearchStateFallback('missing')
+
+      return undefined
+    }
+
+    try {
+      const state = JSON.parse((await stateElement.textContent()) ?? '') as IIranTalentSearchState
+      this.searchState = state
+
+      return state
+    } catch {
+      // NOTE: A malformed payload must not cost the page its jobs, but it must not pass unnoticed either.
+      this.warnSearchStateFallback('unreadable')
+
+      return undefined
+    }
+  }
+
+  private resetSearchState(): void {
+    this.searchStateLoaded = false
+    this.searchState = undefined
+  }
+
+  // INFO: One warning per run is enough, because every following page of the same crawl fails the same way.
+  private warnSearchStateFallback(reason: 'missing' | 'unreadable' | 'incomplete'): void {
+    if (this.searchStateWarningShown) {
+      return
+    }
+
+    this.searchStateWarningShown = true
+    // eslint-disable-next-line no-console
+    console.warn(
+      `IranTalent Provider: The search state is ${reason}, so the jobs of this page are stored as full time.`,
+      { url: this.page.url() },
+    )
+  }
+
+  // NOTE: IranTalent also exposes freelance and contract employment types, but the domain has only full time and part time, so the shared mapper stores every non full-time type as part time.
+  private async readContractTypes(): Promise<Map<string, EContractType>> {
+    const contractTypes = new Map<string, EContractType>()
+    const state = await this.readSearchState()
+
+    if (!state) {
+      return contractTypes
+    }
+
+    const { serverSideSearchResult } = state
+
+    if (!serverSideSearchResult?.data) {
+      this.warnSearchStateFallback('incomplete')
 
       return contractTypes
     }
 
-    const state = await stateElement.textContent()
+    const positions = [
+      ...(serverSideSearchResult.data.data ?? []),
+      ...(serverSideSearchResult.boosted_positions ?? []),
+    ]
 
-    try {
-      const { serverSideSearchResult } = JSON.parse(state ?? '') as IIranTalentSearchState
-      const positions = [
-        ...(serverSideSearchResult?.data?.data ?? []),
-        ...(serverSideSearchResult?.boosted_positions ?? []),
-      ]
+    for (const position of positions) {
+      const employmentType = position.employment_type?.title_farsi
 
-      for (const position of positions) {
-        const employmentType = position.employment_type?.title_farsi
-
-        if (!position.id || !employmentType) {
-          continue
-        }
-
-        contractTypes.set(
-          String(position.id),
-          convertPersianContractTypeToEContractType(employmentType),
-        )
+      if (!position.id || !employmentType) {
+        continue
       }
-    } catch {
-      // NOTE: A malformed payload must not cost the page its jobs, but it must not pass unnoticed either.
-      // eslint-disable-next-line no-console
-      console.warn(
-        `IranTalent Provider: The search state is unreadable, so the jobs of this page are stored as full time.`,
-        { url: this.page.url() },
-      )
 
-      return new Map()
+      contractTypes.set(
+        String(position.id),
+        convertPersianContractTypeToEContractType(employmentType),
+      )
     }
 
     return contractTypes
