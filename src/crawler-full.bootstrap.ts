@@ -1,6 +1,6 @@
 import { ECrawlMode } from './constants'
 import type { JobProvider } from './crawlers'
-import { JobInJaCreator, JobVisionCreator } from './crawlers'
+import { IranTalentCreator, JobInJaCreator, JobVisionCreator } from './crawlers'
 import { JobRepository } from './repositories'
 import { JobService } from './services'
 import { CrawlJobsTask } from './tasks'
@@ -23,18 +23,26 @@ async function run() {
   const jobService = new JobService(repository)
   const crawlMode: ECrawlMode = crawlArgs.mode ?? ECrawlMode.INCREMENTAL
 
-  if (crawlArgs?.providers) {
-    for (const provider of Object.values(EProvider)) {
-      switch (provider) {
-        case EProvider.JOB_IN_JA:
-          providers.push(new JobInJaCreator(jobService, crawlMode))
-          break
-        case EProvider.JOB_VISION:
-          providers.push(new JobVisionCreator(jobService, crawlMode))
-          break
-        default:
-          break
-      }
+  // NOTE: The list itself, not only its presence, selects the providers, so `--providers=job_in_ja` no longer crawls every provider as well. Without the flag, the full crawl falls back to every registered provider.
+  const selectedProviders = (crawlArgs.providers as EProvider[] | undefined) ?? [
+    EProvider.JOB_IN_JA,
+    EProvider.JOB_VISION,
+    EProvider.IRAN_TALENT,
+  ]
+
+  for (const provider of selectedProviders) {
+    switch (provider) {
+      case EProvider.JOB_IN_JA:
+        providers.push(new JobInJaCreator(jobService, crawlMode))
+        break
+      case EProvider.JOB_VISION:
+        providers.push(new JobVisionCreator(jobService, crawlMode))
+        break
+      case EProvider.IRAN_TALENT:
+        providers.push(new IranTalentCreator(jobService, crawlMode))
+        break
+      default:
+        break
     }
   }
 

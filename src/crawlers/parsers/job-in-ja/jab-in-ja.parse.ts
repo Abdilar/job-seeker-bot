@@ -1,7 +1,7 @@
 import { Locator } from 'playwright'
 import { EProvider, ICompany, ICrawledJob, ILocation } from '../../../types'
 import { TODAY } from '../../../constants'
-import { LOCATION_COUNTRY } from './job-in-ja.constant'
+import { LOCATION_COUNTRY } from '../../constants'
 import { IJobParserStrategy } from '../job.model'
 import { convertPersianContractTypeToEContractType, toEnglishDigits } from '../../utilities'
 import { convertDaysAgoToJalaliDate } from '../../../utilities'

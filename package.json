@@ -3,7 +3,7 @@
   "version": "1.5.0",
   "main": "index.js",
   "scripts": {
-    "crawl:full": "tsc & node dist/crawler-full.bootstrap.js --mode=full --providers=job_in_ja",
+    "crawl:full": "tsc && node dist/crawler-full.bootstrap.js --mode=full",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
@@ -13,7 +13,7 @@
     "commit": "cz",
     "start:bot": "node dist/bot.bootstrap.js",
     "start:crawler-incremental": "node dist/crawler-incremental.bootstrap.js",
-    "start:crawler-full": "node dist/crawler-full.bootstrap.js",
+    "start:crawler-full": "node dist/crawler-full.bootstrap.js --mode=full",
     "test": "vitest",
     "test:run": "dotenv -e .env -- vitest run --config vitest.config.mjs",
     "test:db:migrate": "dotenv -e .env.test -- prisma migrate deploy",
