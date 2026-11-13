@@ -1,19 +1,19 @@
-import type { ECrawlMode } from '../../constants'
+import type { ECrawlJobMode } from '../../constants'
 import type { JobProvider } from '../../crawlers'
 import { JobInJaCreator } from '../../crawlers'
 import type { IJobService } from '../../services'
 import { EProvider } from '../../types'
 
 export function providerCreator(
-  provider: EProvider,
   service: IJobService,
-  mode?: ECrawlMode,
-): JobProvider | undefined {
+  provider?: EProvider,
+  jobMode?: ECrawlJobMode,
+): JobProvider {
   // TODO: add all providers
   switch (provider) {
     case EProvider.JOB_IN_JA:
-      return new JobInJaCreator(service, mode)
+      return new JobInJaCreator(service, jobMode)
     default:
-      break
+      return new JobInJaCreator(service, jobMode)
   }
 }
