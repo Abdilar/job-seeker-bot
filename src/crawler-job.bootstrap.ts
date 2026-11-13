@@ -1,9 +1,7 @@
 import { ECrawlJobMode } from './constants'
-import type { JobProvider } from './crawlers'
 import { JobRepository } from './repositories'
 import { JobService } from './services'
-import type { CrawlerJobArgumentsType } from './types'
-import { EProvider } from './types'
+import type { EProvider, CrawlerJobArgumentsType } from './types'
 import { providerCreator } from './utilities'
 
 async function run() {
@@ -20,25 +18,18 @@ async function run() {
 
   const repository = new JobRepository()
   const jobService = new JobService(repository)
-  const mode: ECrawlJobMode = crawlArgs.mode ?? ECrawlJobMode.SUMMARY
-  const providerName: EProvider = crawlArgs.provider ?? EProvider.JOB_IN_JA
+  const jobMode: ECrawlJobMode = crawlArgs.mode ?? ECrawlJobMode.SUMMARY
 
-  const provider = providerCreator(providerName, jobService)
-
-  if (!provider) {
-    // eslint-disable-next-line no-console
-    console.error('The provider is undefined')
-    return
-  }
-
-  if (mode === ECrawlJobMode.SUMMARY) {
-    await crawlSummaryJob(provider)
+  if (jobMode === ECrawlJobMode.SUMMARY) {
+    await crawlSummaryJob(jobService, crawlArgs.provider)
   } else {
-    await crawlDetailJob(provider)
+    await crawlDetailJob(jobService, crawlArgs.provider)
   }
 }
 
-async function crawlSummaryJob(provider: JobProvider) {
+async function crawlSummaryJob(service: JobService, eProvider?: EProvider) {
+  const provider = providerCreator(service, eProvider, ECrawlJobMode.SUMMARY)
+
   try {
     const providerName = provider.constructor.name.replaceAll('Creator', '')
     // eslint-disable-next-line no-console
@@ -55,7 +46,9 @@ async function crawlSummaryJob(provider: JobProvider) {
   }
 }
 
-async function crawlDetailJob(provider: JobProvider) {
+async function crawlDetailJob(service: JobService, eProvider?: EProvider) {
+  const provider = providerCreator(service, eProvider, ECrawlJobMode.DETAIL)
+
   try {
     const providerName = provider.constructor.name.replaceAll('Creator', '')
     // eslint-disable-next-line no-console
