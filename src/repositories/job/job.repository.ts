@@ -8,7 +8,7 @@ import {
 } from '@prisma/client'
 import type { IJobRepository, PrismaJobType } from './job.model'
 import { prisma } from '../../database/prisma'
-import type { IJob, ICrawledJob, IJobFilter, ICrawledJobDetail } from '../../types'
+import type { IJob, ICrawledJob, IJobFilter, ICrawledJobDetail, EProvider } from '../../types'
 import { EProvider as EDomainProvider, EContractType } from '../../types'
 import { chunk } from '../../utilities'
 
@@ -284,12 +284,13 @@ export class JobRepository implements IJobRepository {
     return jobs.map((job) => this.convertPrismaJobToIJob(job))
   }
 
-  async findJobsWithoutDetails(): Promise<IJob[]> {
+  async findJobsWithoutDetail(provider: EProvider): Promise<IJob[]> {
     const jobs = await prisma.job.findMany({
       where: {
         detail: {
           is: null,
         },
+        provider: provider,
       },
       orderBy: [{ postedAt: 'desc' }, { id: 'desc' }],
       include: {
