@@ -47,8 +47,8 @@ export class JobService implements IJobService {
     return this.repository.findPaginated(page, limit, filter)
   }
 
-  getJobsWithoutDetails(): Promise<IJob[]> {
-    return this.repository.findJobsWithoutDetails()
+  getJobsWithoutDetail(provider: EProvider): Promise<IJob[]> {
+    return this.repository.findJobsWithoutDetail(provider)
   }
 
   getJob(id: string): Promise<IJob | null> {
