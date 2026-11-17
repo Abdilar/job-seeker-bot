@@ -1,7 +1,8 @@
-import type { ICrawledJob } from '../../types'
+import type { ICrawledJob, IJob } from '../../types'
 
 export interface IJobProvider {
-  initialize(): Promise<void>
+  initializeSummery(): Promise<void>
   getJobs(): Promise<ICrawledJob[]>
   getJobsByCount(count: number): Promise<ICrawledJob[]>
+  getJobsWithoutDetail(): Promise<IJob[]>
 }
