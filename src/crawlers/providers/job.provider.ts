@@ -8,35 +8,39 @@ export abstract class JobProvider {
 
   protected abstract createProvider(page: Page): Promise<IJobProvider>
 
-  private async initPage(): Promise<Page> {
+  private async initProvider(): Promise<IJobProvider> {
     this.browser = await chromium.launch({ headless: process.env.NODE_ENV === 'production' })
     const context = await this.browser.newContext({
       ignoreHTTPSErrors: true,
     })
-    return await context.newPage()
+    const page = await context.newPage()
+    // eslint-disable-next-line no-console
+    console.log('JobProvider: initProvider()')
+    return await this.createProvider(page)
   }
 
   async crawlJobs(): Promise<ICrawledJob[]> {
-    const page = await this.initPage()
+    const provider = await this.initProvider()
 
-    const provider = await this.createProvider(page)
     return provider.getJobs()
   }
 
   async crawlJobsByCount(count: number) {
-    const page = await this.initPage()
+    const provider = await this.initProvider()
 
-    const provider = await this.createProvider(page)
     return await provider.getJobsByCount(count)
   }
 
   async crawlJobDetail() {
-    const page = await this.initPage()
+    const provider = await this.initProvider()
 
-    await this.createProvider(page)
+    const jobs = await provider.getJobsWithoutDetail()
+    // eslint-disable-next-line no-console
+    console.log('JobProvider: crawlJobDetail() -> ', { jobs: jobs.length })
+    return jobs
   }
 
   async closeBrowser(): Promise<void> {
-    await this.browser?.close()
+    // await this.browser?.close()
   }
 }
