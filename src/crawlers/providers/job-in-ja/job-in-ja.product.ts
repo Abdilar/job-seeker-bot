@@ -2,7 +2,7 @@ import type { Locator, Page } from 'playwright'
 import { WAIT_UNTIL } from '../../constants'
 import { toEnglishDigits } from '../../utilities'
 import type { IJobProvider } from '../job.model'
-import { EProvider, type ICrawledJob } from '../../../types'
+import { EProvider, type IJob, type ICrawledJob } from '../../../types'
 import type { JobParser } from '../../parsers'
 import { JOB_IN_JA_TIMEZONE, JOB_IN_JA_URL, SUMMERY_ELEMENT_SELECTOR } from './job-in-ja.constant'
 import { isRecent, randomDelay } from '../../../utilities'
@@ -149,7 +149,7 @@ export class JobInJaProduct implements IJobProvider {
     return jobs
   }
 
-  async initialize(): Promise<void> {
+  async initializeSummery(): Promise<void> {
     await this.page.goto(JOB_IN_JA_URL, { waitUntil: WAIT_UNTIL })
     this.mainSummeryElement = await this.getElement(SUMMERY_ELEMENT_SELECTOR)
 
@@ -162,5 +162,22 @@ export class JobInJaProduct implements IJobProvider {
 
   async getJobsByCount(count: number): Promise<ICrawledJob[]> {
     return await this.fetchJobs(count)
+  }
+
+  async getJobsWithoutDetail(): Promise<IJob[]> {
+    const jobsWithoutDetail = await this.service.getJobsWithoutDetail(EProvider.JOB_IN_JA)
+    // eslint-disable-next-line no-console
+    console.log(
+      `jobinja provider: getJobsWithoutDetail() -> Found ${jobsWithoutDetail.length} jobs without details.`,
+    )
+    const condition = 1
+    // eslint-disable-next-line no-console
+    console.log(`jobinja provider: getJobsWithoutDetail() -> condition: ${condition}`)
+    for (let index = 0; index < condition; index++) {
+      const jobDetail = await this.parser.parseDetail(jobsWithoutDetail[index])
+      // eslint-disable-next-line no-console
+      console.log(`jobinja provider: getJobsWithoutDetail() -> jobDetail:`, { jobDetail })
+    }
+    return jobsWithoutDetail
   }
 }
