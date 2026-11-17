@@ -9,6 +9,9 @@ export function providerCreator(
   provider?: EProvider,
   jobMode?: ECrawlJobMode,
 ): JobProvider {
+  // eslint-disable-next-line no-console
+  console.log('crawl: providerCreator(service, provider, jobMode)')
+
   // TODO: add all providers
   switch (provider) {
     case EProvider.JOB_IN_JA:
