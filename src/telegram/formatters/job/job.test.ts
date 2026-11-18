@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { EContractType, EProvider, type IJob } from '../../../types'
+import { EContractType, EJobStatus, EProvider, type IJob } from '../../../types'
 import { JobFormatter } from './job.formatter'
 import { PAGINATION_LIMIT } from '../../constants'
 
@@ -9,6 +9,8 @@ const createJob = (overrides: Partial<IJob> = {}): IJob => ({
   url: 'https://example.com/jobs/1',
   contractType: EContractType.FULL_TIME,
   provider: EProvider.JOB_IN_JA,
+  status: EJobStatus.ACTIVE,
+  checkFailures: 0,
   salary: '50 میلیون تومان',
   postedAt: new Date('2026-09-20T10:00:00.000Z'),
   company: {

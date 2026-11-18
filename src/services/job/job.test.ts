@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import type { IJobRepository } from '../../repositories'
 import type { ICrawledJob, IJob, IJobFilter } from '../../types'
-import { EContractType, EProvider } from '../../types'
+import { EContractType, EJobStatus, EProvider } from '../../types'
 import { JobService } from './job.service'
 
 const createCrawledJob = (overrides: Partial<ICrawledJob> = {}): ICrawledJob => ({
@@ -22,6 +22,8 @@ const createCrawledJob = (overrides: Partial<ICrawledJob> = {}): ICrawledJob => 
 const createJob = (overrides: Partial<IJob> = {}): IJob => ({
   ...createCrawledJob(),
   id: 'job-123',
+  status: EJobStatus.ACTIVE,
+  checkFailures: 0,
   ...overrides,
 })
 
@@ -35,6 +37,9 @@ describe('JobService', () => {
   const findByUrlMock = vi.fn<IJobRepository['findByUrl']>()
   const findAllMock = vi.fn<IJobRepository['findAll']>()
   const findPaginatedMock = vi.fn<IJobRepository['findPaginated']>()
+  const findForRevalidationMock = vi.fn<IJobRepository['findForRevalidation']>()
+  const findExistingUrlsMock = vi.fn<IJobRepository['findExistingUrls']>()
+  const updateStatusMock = vi.fn<IJobRepository['updateStatus']>()
   const existsMock = vi.fn<IJobRepository['exists']>()
   const countMock = vi.fn<IJobRepository['count']>()
 
@@ -47,6 +52,9 @@ describe('JobService', () => {
     findLatestByProvider: findLatestByProviderMock,
     findAll: findAllMock,
     findPaginated: findPaginatedMock,
+    findForRevalidation: findForRevalidationMock,
+    findExistingUrls: findExistingUrlsMock,
+    updateStatus: updateStatusMock,
     exists: existsMock,
     count: countMock,
   }

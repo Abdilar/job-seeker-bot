@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { IJobService } from '../../../services'
-import { EContractType, EProvider, type IJob } from '../../../types'
+import { EContractType, EJobStatus, EProvider, type IJob } from '../../../types'
 import type { IJobRenderer } from '../../renders'
 import type { TelegramContextType } from '../../telegram.model'
 import { JobHandler } from './job.handler'
@@ -34,6 +34,8 @@ describe('JobHandler', () => {
     url: 'https://example.com/jobs/1',
     contractType: EContractType.FULL_TIME,
     provider: EProvider.JOB_IN_JA,
+    status: EJobStatus.ACTIVE,
+    checkFailures: 0,
     salary: '100M',
     postedAt: new Date('2026-09-20'),
     company: {

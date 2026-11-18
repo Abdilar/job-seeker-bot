@@ -1,4 +1,5 @@
 export * from './job.model'
+export * from './job-status.model'
 export * from './provider.model'
 export * from './crawler.model'
 export * from './company.model'

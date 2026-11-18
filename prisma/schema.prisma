@@ -30,20 +30,39 @@ enum ECrawlerStatus {
   FAILED
 }
 
+enum EJobStatus {
+  ACTIVE
+  EXPIRED
+  CLOSED
+  REMOVED
+  UNKNOWN
+}
+
 model Job {
-  id           String    @id @default(cuid())
-  title        String
-  url          String    @unique
-  contractType String
-  salary       String?
-  postedAt     DateTime?
-  provider     EProvider
-  companyId    String
-  company      Company   @relation(fields: [companyId], references: [id])
-  locationId   String
-  location     Location  @relation(fields: [locationId], references: [id])
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id             String     @id @default(cuid())
+  title          String
+  url            String     @unique
+  contractType   String
+  salary         String?
+  postedAt       DateTime?
+  provider       EProvider
+  status         EJobStatus @default(ACTIVE)
+  lastSeenAt     DateTime?
+  lastCheckedAt  DateTime?
+  expiredAt      DateTime?
+  expiryReason   String?
+  checkFailures  Int        @default(0)
+  unknownSince   DateTime?
+  archivedAt     DateTime?
+  companyId      String
+  company        Company    @relation(fields: [companyId], references: [id])
+  locationId     String
+  location       Location   @relation(fields: [locationId], references: [id])
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@index([status, lastCheckedAt])
+  @@index([provider, status, postedAt])
 }
 
 model Company {

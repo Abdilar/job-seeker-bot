@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { EContractType, EProvider, type IJob } from '../../../types'
+import { EContractType, EJobStatus, EProvider, type IJob } from '../../../types'
 import { PAGINATION_LIMIT } from '../../constants'
 import { JobListKeyboard } from './job-list.keyboard'
 
@@ -9,6 +9,8 @@ const createJob = (id: string): IJob => ({
   url: `https://example.com/jobs/${id}`,
   contractType: EContractType.FULL_TIME,
   provider: EProvider.JOB_IN_JA,
+  status: EJobStatus.ACTIVE,
+  checkFailures: 0,
   company: {
     fullName: 'Example Company',
   },
