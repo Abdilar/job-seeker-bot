@@ -1,4 +1,9 @@
-import { EJobStatus, EProvider, type IJobStatusCheck, type IJobStatusTarget } from '../../types'
+import {
+  EJobStatusCheckOutcome,
+  EProvider,
+  type IJobStatusCheck,
+  type IJobStatusTarget,
+} from '../../types'
 import type { IJobStatusChecker } from './job-status.model'
 import {
   fetchJobPage,
@@ -37,14 +42,14 @@ export class JobInJaStatusChecker implements IJobStatusChecker {
       const postings = parseJobPostingJsonLd(page.body)
 
       if (postings.length) {
-        return { status: EJobStatus.ACTIVE, reason: 'jobposting-json-ld', checkedAt }
+        return { outcome: EJobStatusCheckOutcome.ACTIVE, reason: 'jobposting-json-ld', checkedAt }
       }
 
       if (APPLY_PATTERN.test(text)) {
-        return { status: EJobStatus.ACTIVE, reason: 'apply-button', checkedAt }
+        return { outcome: EJobStatusCheckOutcome.ACTIVE, reason: 'apply-button', checkedAt }
       }
 
-      return { status: EJobStatus.UNKNOWN, reason: 'no-status-signal', checkedAt }
+      return { outcome: EJobStatusCheckOutcome.RETRY, reason: 'no-status-signal', checkedAt }
     } catch (error) {
       return resolveCheckError(error, checkedAt)
     }

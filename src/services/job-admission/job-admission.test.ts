@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { IJobStatusChecker } from '../../crawlers/status'
 import type { IJobRepository } from '../../repositories/job'
-import { EContractType, EJobStatus, EProvider, type ICrawledJob } from '../../types'
+import { EContractType, EJobStatusCheckOutcome, EProvider, type ICrawledJob } from '../../types'
 import { JobAdmissionService } from './job-admission.service'
 
 const createJob = (overrides: Partial<ICrawledJob> = {}): ICrawledJob => ({
@@ -16,9 +16,9 @@ const createJob = (overrides: Partial<ICrawledJob> = {}): ICrawledJob => ({
 
 type CheckerMock = IJobStatusChecker & { checkMock: ReturnType<typeof vi.fn> }
 
-const createChecker = (status: EJobStatus, supports = true): CheckerMock => {
+const createChecker = (outcome: EJobStatusCheckOutcome, supports = true): CheckerMock => {
   const checkMock = vi.fn().mockResolvedValue({
-    status,
+    outcome,
     reason: 'test',
     checkedAt: new Date('2026-11-18T10:00:00.000Z'),
   })
@@ -39,76 +39,77 @@ describe('JobAdmissionService', () => {
 
   it('does not check jobs that already exist', async () => {
     const job = createJob()
-    const checker = createChecker(EJobStatus.EXPIRED)
+    const checker = createChecker(EJobStatusCheckOutcome.EXPIRED)
     const service = new JobAdmissionService(repository, [checker], { maxChecks: 10 })
 
     findExistingUrlsMock.mockResolvedValue(new Set([job.url]))
 
     const result = await service.filterNewJobs([job])
 
-    expect(result).toEqual({ accepted: [job], rejected: 0 })
+    expect(result).toEqual({ accepted: [job], rejected: 0, retry: 0 })
     expect(checker.checkMock).not.toHaveBeenCalled()
   })
 
-  it('accepts active and unknown new jobs', async () => {
+  it('accepts active jobs and postpones unverified ones', async () => {
     const activeJob = createJob({ url: 'https://example.com/job/active' })
-    const unknownJob = createJob({
-      url: 'https://example.com/job/unknown',
+    const retryJob = createJob({
+      url: 'https://example.com/job/retry',
       provider: EProvider.JOB_VISION,
     })
     const activeChecker = {
       supports: (provider: EProvider) => provider === activeJob.provider,
       check: vi.fn().mockResolvedValue({
-        status: EJobStatus.ACTIVE,
+        outcome: EJobStatusCheckOutcome.ACTIVE,
         reason: 'test',
         checkedAt: new Date(),
       }),
     }
-    const unknownChecker = {
-      supports: (provider: EProvider) => provider === unknownJob.provider,
+    const retryChecker = {
+      supports: (provider: EProvider) => provider === retryJob.provider,
       check: vi.fn().mockResolvedValue({
-        status: EJobStatus.UNKNOWN,
+        outcome: EJobStatusCheckOutcome.RETRY,
         reason: 'test',
         checkedAt: new Date(),
       }),
     }
-    const service = new JobAdmissionService(repository, [activeChecker, unknownChecker], {
+    const service = new JobAdmissionService(repository, [activeChecker, retryChecker], {
       maxChecks: 10,
     })
 
     findExistingUrlsMock.mockResolvedValue(new Set())
 
-    const result = await service.filterNewJobs([activeJob, unknownJob])
+    const result = await service.filterNewJobs([activeJob, retryJob])
 
-    expect(result.accepted[0]).toEqual(activeJob)
-    expect(result.accepted[1]).toEqual({ ...unknownJob, status: EJobStatus.UNKNOWN })
+    expect(result.accepted).toEqual([activeJob])
     expect(result.rejected).toBe(0)
+    expect(result.retry).toBe(1)
     expect(activeChecker.check).toHaveBeenCalledOnce()
-    expect(unknownChecker.check).toHaveBeenCalledOnce()
+    expect(retryChecker.check).toHaveBeenCalledOnce()
   })
 
-  it.each([EJobStatus.EXPIRED, EJobStatus.CLOSED, EJobStatus.REMOVED])(
-    'rejects a new job whose status is %s',
-    async (status) => {
-      const job = createJob()
-      const checker = createChecker(status)
-      const service = new JobAdmissionService(repository, [checker], { maxChecks: 10 })
-      const infoMock = vi.spyOn(console, 'info').mockImplementation(() => {})
+  it.each([
+    EJobStatusCheckOutcome.EXPIRED,
+    EJobStatusCheckOutcome.CLOSED,
+    EJobStatusCheckOutcome.REMOVED,
+  ])('rejects a new job whose outcome is %s', async (outcome) => {
+    const job = createJob()
+    const checker = createChecker(outcome)
+    const service = new JobAdmissionService(repository, [checker], { maxChecks: 10 })
+    const infoMock = vi.spyOn(console, 'info').mockImplementation(() => {})
 
-      findExistingUrlsMock.mockResolvedValue(new Set())
+    findExistingUrlsMock.mockResolvedValue(new Set())
 
-      const result = await service.filterNewJobs([job])
+    const result = await service.filterNewJobs([job])
 
-      expect(result).toEqual({ accepted: [], rejected: 1 })
-      expect(infoMock).toHaveBeenCalledOnce()
-      infoMock.mockRestore()
-    },
-  )
+    expect(result).toEqual({ accepted: [], rejected: 1, retry: 0 })
+    expect(infoMock).toHaveBeenCalledOnce()
+    infoMock.mockRestore()
+  })
 
   it('stops checking after maxChecks and accepts the rest', async () => {
     const first = createJob({ url: 'https://example.com/job/1' })
     const second = createJob({ url: 'https://example.com/job/2' })
-    const checker = createChecker(EJobStatus.EXPIRED)
+    const checker = createChecker(EJobStatusCheckOutcome.EXPIRED)
     const service = new JobAdmissionService(repository, [checker], { maxChecks: 1 })
 
     findExistingUrlsMock.mockResolvedValue(new Set())
@@ -120,7 +121,7 @@ describe('JobAdmissionService', () => {
     expect(checker.checkMock).toHaveBeenCalledOnce()
   })
 
-  it('accepts the job when the checker throws', async () => {
+  it('postpones the job when the checker throws', async () => {
     const job = createJob()
     const checker = {
       supports: () => true,
@@ -133,14 +134,15 @@ describe('JobAdmissionService', () => {
 
     const result = await service.filterNewJobs([job])
 
-    expect(result.accepted).toEqual([job])
+    expect(result.accepted).toEqual([])
     expect(result.rejected).toBe(0)
+    expect(result.retry).toBe(1)
     errorMock.mockRestore()
   })
 
   it('accepts jobs when no checker supports their provider', async () => {
     const job = createJob()
-    const checker = createChecker(EJobStatus.EXPIRED, false)
+    const checker = createChecker(EJobStatusCheckOutcome.EXPIRED, false)
     const service = new JobAdmissionService(repository, [checker], { maxChecks: 10 })
 
     findExistingUrlsMock.mockResolvedValue(new Set())

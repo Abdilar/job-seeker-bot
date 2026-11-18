@@ -17,7 +17,6 @@ export interface IJobStatusUpdate {
   reason?: string
   checkedAt: Date
   checkFailures: number
-  unknownSince?: Date | null
   expiredAt?: Date | null
 }
 

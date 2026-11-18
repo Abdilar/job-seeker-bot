@@ -27,7 +27,6 @@ export interface IJob extends ICrawledJob {
   expiredAt?: Date
   expiryReason?: string
   checkFailures: number
-  unknownSince?: Date
   archivedAt?: Date
   createdAt?: Date
   updatedAt?: Date

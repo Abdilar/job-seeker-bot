@@ -1,6 +1,6 @@
 import type { IJobStatusChecker } from '../../crawlers/status'
 import type { IJobStatusService } from '../../services'
-import { EJobStatus } from '../../types'
+import { EJobStatusCheckOutcome } from '../../types'
 import { randomDelay } from '../../utilities'
 import type {
   IRevalidateJobsTask,
@@ -24,7 +24,7 @@ export class RevalidateJobsTask implements IRevalidateJobsTask {
       expired: 0,
       closed: 0,
       removed: 0,
-      unknown: 0,
+      retry: 0,
       errors: 0,
     }
 
@@ -58,19 +58,15 @@ export class RevalidateJobsTask implements IRevalidateJobsTask {
 
       try {
         const check = await checker.check(job)
-        const change = await this.jobStatusService.recordResult(
-          job,
-          check,
-          this.options.minFailures,
-        )
+        await this.jobStatusService.recordResult(job, check)
 
         result.checked++
 
-        if (change.status === EJobStatus.ACTIVE) result.active++
-        if (change.status === EJobStatus.EXPIRED) result.expired++
-        if (change.status === EJobStatus.CLOSED) result.closed++
-        if (change.status === EJobStatus.REMOVED) result.removed++
-        if (change.status === EJobStatus.UNKNOWN) result.unknown++
+        if (check.outcome === EJobStatusCheckOutcome.ACTIVE) result.active++
+        if (check.outcome === EJobStatusCheckOutcome.EXPIRED) result.expired++
+        if (check.outcome === EJobStatusCheckOutcome.CLOSED) result.closed++
+        if (check.outcome === EJobStatusCheckOutcome.REMOVED) result.removed++
+        if (check.outcome === EJobStatusCheckOutcome.RETRY) result.retry++
 
         await randomDelay(300, 800)
       } catch (error) {

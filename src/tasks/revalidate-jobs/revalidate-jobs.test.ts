@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { IJobStatusChecker } from '../../crawlers/status'
 import type { IJobStatusService } from '../../services'
-import { EContractType, EJobStatus, EProvider, type IJob } from '../../types'
+import {
+  EContractType,
+  EJobStatus,
+  EJobStatusCheckOutcome,
+  EProvider,
+  type IJob,
+} from '../../types'
 import { RevalidateJobsTask } from './revalidate-jobs.task'
 
 const { randomDelayMock } = vi.hoisted(() => ({ randomDelayMock: vi.fn() }))
@@ -27,14 +33,14 @@ const createJob = (overrides: Partial<IJob> = {}): IJob => ({
 
 const createChecker = (
   provider: EProvider,
-  statuses: EJobStatus[],
+  outcomes: EJobStatusCheckOutcome[],
 ): IJobStatusChecker & { check: ReturnType<typeof vi.fn> } => {
   let index = 0
 
   return {
     supports: (candidate: EProvider) => candidate === provider,
     check: vi.fn().mockImplementation(async () => ({
-      status: statuses[index++] ?? EJobStatus.ACTIVE,
+      outcome: outcomes[index++] ?? EJobStatusCheckOutcome.ACTIVE,
       reason: 'test',
       checkedAt: new Date('2026-11-18T10:00:00.000Z'),
     })),
@@ -53,7 +59,6 @@ describe('RevalidateJobsTask', () => {
     providers: [EProvider.JOB_IN_JA, EProvider.JOB_VISION],
     batchSize: 10,
     staleAfterDays: 7,
-    minFailures: 3,
   }
 
   const createTask = (checkers: IJobStatusChecker[]) =>
@@ -68,20 +73,20 @@ describe('RevalidateJobsTask', () => {
     expect(findCandidatesMock).not.toHaveBeenCalled()
   })
 
-  it('checks candidates and counts every resulting status', async () => {
+  it('checks candidates and counts every resulting outcome', async () => {
     const jobs = [
       createJob({ id: 'active', url: 'https://example.com/job/active' }),
       createJob({ id: 'expired', url: 'https://example.com/job/expired' }),
       createJob({ id: 'closed', url: 'https://example.com/job/closed' }),
       createJob({ id: 'removed', url: 'https://example.com/job/removed' }),
-      createJob({ id: 'unknown', url: 'https://example.com/job/unknown' }),
+      createJob({ id: 'retry', url: 'https://example.com/job/retry' }),
     ]
     const checker = createChecker(EProvider.JOB_IN_JA, [
-      EJobStatus.ACTIVE,
-      EJobStatus.EXPIRED,
-      EJobStatus.CLOSED,
-      EJobStatus.REMOVED,
-      EJobStatus.UNKNOWN,
+      EJobStatusCheckOutcome.ACTIVE,
+      EJobStatusCheckOutcome.EXPIRED,
+      EJobStatusCheckOutcome.CLOSED,
+      EJobStatusCheckOutcome.REMOVED,
+      EJobStatusCheckOutcome.RETRY,
     ])
     const task = createTask([checker])
 
@@ -91,7 +96,7 @@ describe('RevalidateJobsTask', () => {
       .mockResolvedValueOnce({ status: EJobStatus.EXPIRED, checkFailures: 0 })
       .mockResolvedValueOnce({ status: EJobStatus.CLOSED, checkFailures: 0 })
       .mockResolvedValueOnce({ status: EJobStatus.REMOVED, checkFailures: 0 })
-      .mockResolvedValueOnce({ status: EJobStatus.UNKNOWN, checkFailures: 3 })
+      .mockResolvedValueOnce({ status: EJobStatus.ACTIVE, checkFailures: 1 })
     vi.spyOn(console, 'log').mockImplementation(() => {})
 
     const result = await task.run()
@@ -102,7 +107,7 @@ describe('RevalidateJobsTask', () => {
       expired: 1,
       closed: 1,
       removed: 1,
-      unknown: 1,
+      retry: 1,
       errors: 0,
     })
     expect(findCandidatesMock).toHaveBeenCalledWith(
@@ -116,7 +121,7 @@ describe('RevalidateJobsTask', () => {
   it('continues after a checker error', async () => {
     const first = createJob({ id: 'first', url: 'https://example.com/job/first' })
     const second = createJob({ id: 'second', url: 'https://example.com/job/second' })
-    const checker = createChecker(EProvider.JOB_IN_JA, [EJobStatus.ACTIVE])
+    const checker = createChecker(EProvider.JOB_IN_JA, [EJobStatusCheckOutcome.ACTIVE])
     checker.check.mockRejectedValueOnce(new Error('network'))
     const task = createTask([checker])
 

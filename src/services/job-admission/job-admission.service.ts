@@ -1,13 +1,17 @@
 import type { IJobStatusChecker } from '../../crawlers/status'
 import type { IJobRepository } from '../../repositories/job'
-import { EJobStatus, type ICrawledJob } from '../../types'
+import { EJobStatusCheckOutcome, type ICrawledJob } from '../../types'
 import type { IJobAdmissionService, JobAdmissionResult } from './job-admission.model'
 
 export interface JobAdmissionOptions {
   maxChecks: number
 }
 
-const REJECTED_STATUSES = new Set([EJobStatus.EXPIRED, EJobStatus.CLOSED, EJobStatus.REMOVED])
+const REJECTED_OUTCOMES = new Set([
+  EJobStatusCheckOutcome.EXPIRED,
+  EJobStatusCheckOutcome.CLOSED,
+  EJobStatusCheckOutcome.REMOVED,
+])
 
 export class JobAdmissionService implements IJobAdmissionService {
   constructor(
@@ -20,6 +24,7 @@ export class JobAdmissionService implements IJobAdmissionService {
     const existingUrls = await this.repository.findExistingUrls(jobs.map((job) => job.url))
     const accepted: ICrawledJob[] = []
     let rejected = 0
+    let retry = 0
     let checked = 0
 
     for (const job of jobs) {
@@ -40,28 +45,36 @@ export class JobAdmissionService implements IJobAdmissionService {
       try {
         const check = await checker.check(job)
 
-        if (REJECTED_STATUSES.has(check.status)) {
+        if (REJECTED_OUTCOMES.has(check.outcome)) {
           rejected++
           // eslint-disable-next-line no-console
           console.info('Skipping an inactive job before saving:', {
             url: job.url,
-            status: check.status,
+            outcome: check.outcome,
             reason: check.reason,
           })
           continue
         }
 
-        accepted.push(
-          check.status === EJobStatus.UNKNOWN ? { ...job, status: EJobStatus.UNKNOWN } : job,
-        )
-      } catch (error) {
-        // NOTE: A failed admission check must not drop a job that might still be valid.
+        if (check.outcome === EJobStatusCheckOutcome.RETRY) {
+          retry++
+          // eslint-disable-next-line no-console
+          console.info('Postponing an unverified job before saving:', {
+            url: job.url,
+            reason: check.reason,
+          })
+          continue
+        }
+
         accepted.push(job)
+      } catch (error) {
+        // NOTE: A failed admission check must not store an unverified job as active.
+        retry++
         // eslint-disable-next-line no-console
         console.error('Job admission check failed:', { url: job.url, error })
       }
     }
 
-    return { accepted, rejected }
+    return { accepted, rejected, retry }
   }
 }

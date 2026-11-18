@@ -35,7 +35,6 @@ enum EJobStatus {
   EXPIRED
   CLOSED
   REMOVED
-  UNKNOWN
 }
 
 model Job {
@@ -52,7 +51,6 @@ model Job {
   expiredAt      DateTime?
   expiryReason   String?
   checkFailures  Int        @default(0)
-  unknownSince   DateTime?
   archivedAt     DateTime?
   companyId      String
   company        Company    @relation(fields: [companyId], references: [id])

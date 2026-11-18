@@ -18,11 +18,16 @@ export class CrawlJobsTask implements ICrawlJobsTask {
         const jobs = await provider.crawlJobs()
         const admitted = this.admissionService
           ? await this.admissionService.filterNewJobs(jobs)
-          : { accepted: jobs, rejected: 0 }
+          : { accepted: jobs, rejected: 0, retry: 0 }
 
         if (admitted.rejected) {
           // eslint-disable-next-line no-console
           console.log(`Skipped ${admitted.rejected} inactive ${providerName} jobs before saving`)
+        }
+
+        if (admitted.retry) {
+          // eslint-disable-next-line no-console
+          console.log(`Postponed ${admitted.retry} unverified ${providerName} jobs`)
         }
 
         // eslint-disable-next-line no-console

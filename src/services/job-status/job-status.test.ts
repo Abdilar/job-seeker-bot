@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { IJobRepository } from '../../repositories/job'
-import { EContractType, EJobStatus, EProvider, type IJob } from '../../types'
+import {
+  EContractType,
+  EJobStatus,
+  EJobStatusCheckOutcome,
+  EProvider,
+  type IJob,
+} from '../../types'
 import { JobStatusService } from './job-status.service'
 
 const createJob = (overrides: Partial<IJob> = {}): IJob => ({
@@ -42,13 +48,13 @@ describe('JobStatusService', () => {
   })
 
   it('resets the failure state after a successful check', async () => {
-    const job = createJob({ checkFailures: 2, unknownSince: checkedAt })
+    const job = createJob({ checkFailures: 2 })
 
-    const result = await service.recordResult(
-      job,
-      { status: EJobStatus.ACTIVE, reason: 'jobposting-json-ld', checkedAt },
-      3,
-    )
+    const result = await service.recordResult(job, {
+      outcome: EJobStatusCheckOutcome.ACTIVE,
+      reason: 'jobposting-json-ld',
+      checkedAt,
+    })
 
     expect(result).toEqual({ status: EJobStatus.ACTIVE, checkFailures: 0 })
     expect(updateStatusMock).toHaveBeenCalledWith(job.id, {
@@ -56,7 +62,6 @@ describe('JobStatusService', () => {
       reason: undefined,
       checkedAt,
       checkFailures: 0,
-      unknownSince: null,
       expiredAt: null,
     })
   })
@@ -64,11 +69,11 @@ describe('JobStatusService', () => {
   it('marks a strongly expired job with a timestamp', async () => {
     const job = createJob()
 
-    const result = await service.recordResult(
-      job,
-      { status: EJobStatus.EXPIRED, reason: 'valid-through', checkedAt },
-      3,
-    )
+    const result = await service.recordResult(job, {
+      outcome: EJobStatusCheckOutcome.EXPIRED,
+      reason: 'valid-through',
+      checkedAt,
+    })
 
     expect(result).toEqual({ status: EJobStatus.EXPIRED, checkFailures: 0 })
     expect(updateStatusMock).toHaveBeenCalledWith(
@@ -77,61 +82,38 @@ describe('JobStatusService', () => {
         status: EJobStatus.EXPIRED,
         reason: 'valid-through',
         expiredAt: checkedAt,
-        unknownSince: null,
       }),
     )
   })
 
-  it('keeps a job active until the failure threshold is reached', async () => {
+  it('keeps the job active and increments failures when a check needs a retry', async () => {
     const job = createJob({ checkFailures: 1 })
 
-    const result = await service.recordResult(
-      job,
-      { status: EJobStatus.UNKNOWN, reason: 'timeout', checkedAt },
-      3,
-    )
+    const result = await service.recordResult(job, {
+      outcome: EJobStatusCheckOutcome.RETRY,
+      reason: 'timeout',
+      checkedAt,
+    })
 
     expect(result).toEqual({ status: EJobStatus.ACTIVE, checkFailures: 2 })
-    expect(updateStatusMock).toHaveBeenCalledWith(
-      job.id,
-      expect.objectContaining({ status: EJobStatus.ACTIVE, checkFailures: 2 }),
-    )
+    expect(updateStatusMock).toHaveBeenCalledWith(job.id, {
+      status: EJobStatus.ACTIVE,
+      reason: undefined,
+      checkedAt,
+      checkFailures: 2,
+      expiredAt: null,
+    })
   })
 
-  it('marks a job unknown at the failure threshold and preserves the first unknown time', async () => {
-    const firstUnknown = new Date('2026-11-17T10:00:00.000Z')
-    const job = createJob({ checkFailures: 2, unknownSince: firstUnknown })
+  it('keeps the previous status when a retry is needed after a non-active state', async () => {
+    const job = createJob({ status: EJobStatus.ACTIVE, checkFailures: 3 })
 
-    const result = await service.recordResult(
-      job,
-      { status: EJobStatus.UNKNOWN, reason: 'timeout', checkedAt },
-      3,
-    )
+    const result = await service.recordResult(job, {
+      outcome: EJobStatusCheckOutcome.RETRY,
+      reason: 'http-403',
+      checkedAt,
+    })
 
-    expect(result).toEqual({ status: EJobStatus.UNKNOWN, checkFailures: 3 })
-    expect(updateStatusMock).toHaveBeenCalledWith(
-      job.id,
-      expect.objectContaining({
-        status: EJobStatus.UNKNOWN,
-        reason: 'timeout',
-        checkFailures: 3,
-        unknownSince: firstUnknown,
-      }),
-    )
-  })
-
-  it('sets unknownSince when the job first becomes unknown', async () => {
-    const job = createJob({ checkFailures: 2 })
-
-    await service.recordResult(
-      job,
-      { status: EJobStatus.UNKNOWN, reason: 'http-403', checkedAt },
-      3,
-    )
-
-    expect(updateStatusMock).toHaveBeenCalledWith(
-      job.id,
-      expect.objectContaining({ unknownSince: checkedAt }),
-    )
+    expect(result).toEqual({ status: EJobStatus.ACTIVE, checkFailures: 4 })
   })
 })

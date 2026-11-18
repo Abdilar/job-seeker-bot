@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { EJobStatus, EProvider } from '../../types'
+import { EJobStatusCheckOutcome, EProvider } from '../../types'
 import { JobInJaStatusChecker } from './job-in-ja.status'
 import { JobVisionStatusChecker } from './job-vision.status'
 import { htmlToText, normalizeJobUrl, parseJobPostingJsonLd } from './job-status.util'
@@ -63,7 +63,7 @@ describe('JobInJaStatusChecker', () => {
 
     const result = await checker.check({ url: jobInJaUrl, provider: EProvider.JOB_IN_JA })
 
-    expect(result.status).toBe(EJobStatus.ACTIVE)
+    expect(result.outcome).toBe(EJobStatusCheckOutcome.ACTIVE)
     expect(result.reason).toBe('jobposting-json-ld')
   })
 
@@ -72,7 +72,7 @@ describe('JobInJaStatusChecker', () => {
 
     const result = await checker.check({ url: jobInJaUrl, provider: EProvider.JOB_IN_JA })
 
-    expect(result.status).toBe(EJobStatus.EXPIRED)
+    expect(result.outcome).toBe(EJobStatusCheckOutcome.EXPIRED)
     expect(result.reason).toBe('source-expired')
   })
 
@@ -81,7 +81,7 @@ describe('JobInJaStatusChecker', () => {
 
     const result = await checker.check({ url: jobInJaUrl, provider: EProvider.JOB_IN_JA })
 
-    expect(result.status).toBe(EJobStatus.CLOSED)
+    expect(result.outcome).toBe(EJobStatusCheckOutcome.CLOSED)
     expect(result.reason).toBe('position-closed')
   })
 
@@ -90,7 +90,7 @@ describe('JobInJaStatusChecker', () => {
 
     const result = await checker.check({ url: jobInJaUrl, provider: EProvider.JOB_IN_JA })
 
-    expect(result.status).toBe(EJobStatus.REMOVED)
+    expect(result.outcome).toBe(EJobStatusCheckOutcome.REMOVED)
     expect(result.reason).toBe('http-404')
   })
 
@@ -99,7 +99,7 @@ describe('JobInJaStatusChecker', () => {
 
     const result = await checker.check({ url: jobInJaUrl, provider: EProvider.JOB_IN_JA })
 
-    expect(result.status).toBe(EJobStatus.UNKNOWN)
+    expect(result.outcome).toBe(EJobStatusCheckOutcome.RETRY)
     expect(result.reason).toBe('http-403')
   })
 
@@ -108,7 +108,7 @@ describe('JobInJaStatusChecker', () => {
 
     const result = await checker.check({ url: jobInJaUrl, provider: EProvider.JOB_IN_JA })
 
-    expect(result.status).toBe(EJobStatus.REMOVED)
+    expect(result.outcome).toBe(EJobStatusCheckOutcome.REMOVED)
     expect(result.reason).toBe('redirect')
   })
 
@@ -117,7 +117,7 @@ describe('JobInJaStatusChecker', () => {
 
     const result = await checker.check({ url: jobInJaUrl, provider: EProvider.JOB_IN_JA })
 
-    expect(result.status).toBe(EJobStatus.UNKNOWN)
+    expect(result.outcome).toBe(EJobStatusCheckOutcome.RETRY)
     expect(result.reason).toBe('no-status-signal')
   })
 
@@ -130,8 +130,11 @@ describe('JobInJaStatusChecker', () => {
     fetchMock.mockRejectedValueOnce(timeoutError)
     const timeout = await checker.check({ url: jobInJaUrl, provider: EProvider.JOB_IN_JA })
 
-    expect(network).toMatchObject({ status: EJobStatus.UNKNOWN, reason: 'network-error' })
-    expect(timeout).toMatchObject({ status: EJobStatus.UNKNOWN, reason: 'timeout' })
+    expect(network).toMatchObject({
+      outcome: EJobStatusCheckOutcome.RETRY,
+      reason: 'network-error',
+    })
+    expect(timeout).toMatchObject({ outcome: EJobStatusCheckOutcome.RETRY, reason: 'timeout' })
   })
 })
 
@@ -160,7 +163,7 @@ describe('JobVisionStatusChecker', () => {
 
     const result = await checker.check({ url: jobVisionUrl, provider: EProvider.JOB_VISION })
 
-    expect(result.status).toBe(EJobStatus.ACTIVE)
+    expect(result.outcome).toBe(EJobStatusCheckOutcome.ACTIVE)
     expect(result.reason).toBe('valid-through')
   })
 
@@ -171,7 +174,7 @@ describe('JobVisionStatusChecker', () => {
 
     const result = await checker.check({ url: jobVisionUrl, provider: EProvider.JOB_VISION })
 
-    expect(result.status).toBe(EJobStatus.EXPIRED)
+    expect(result.outcome).toBe(EJobStatusCheckOutcome.EXPIRED)
     expect(result.reason).toBe('valid-through')
   })
 
@@ -180,7 +183,7 @@ describe('JobVisionStatusChecker', () => {
 
     const result = await checker.check({ url: jobVisionUrl, provider: EProvider.JOB_VISION })
 
-    expect(result.status).toBe(EJobStatus.ACTIVE)
+    expect(result.outcome).toBe(EJobStatusCheckOutcome.ACTIVE)
     expect(result.reason).toBe('jobposting-json-ld')
   })
 
@@ -193,8 +196,8 @@ describe('JobVisionStatusChecker', () => {
     fetchMock.mockResolvedValueOnce(response('', 404, jobVisionUrl))
     const removed = await checker.check({ url: jobVisionUrl, provider: EProvider.JOB_VISION })
 
-    expect(closed.status).toBe(EJobStatus.CLOSED)
-    expect(removed.status).toBe(EJobStatus.REMOVED)
+    expect(closed.outcome).toBe(EJobStatusCheckOutcome.CLOSED)
+    expect(removed.outcome).toBe(EJobStatusCheckOutcome.REMOVED)
   })
 
   it('returns unknown when there is no JobPosting', async () => {
@@ -202,7 +205,7 @@ describe('JobVisionStatusChecker', () => {
 
     const result = await checker.check({ url: jobVisionUrl, provider: EProvider.JOB_VISION })
 
-    expect(result.status).toBe(EJobStatus.UNKNOWN)
+    expect(result.outcome).toBe(EJobStatusCheckOutcome.RETRY)
     expect(result.reason).toBe('no-status-signal')
   })
 })

@@ -12,7 +12,6 @@ export const JOB_STATUS_MAP = {
   [EJobStatus.EXPIRED]: '⛔ این آگهی منقضی شده است.',
   [EJobStatus.CLOSED]: '⛔ این موقعیت شغلی بسته شده است.',
   [EJobStatus.REMOVED]: '⛔ این آگهی از منبع حذف شده است.',
-  [EJobStatus.UNKNOWN]: '⚠️ وضعیت این آگهی تأیید نشد.',
 }
 
 export const PROVIDER_MAP = {

@@ -30,7 +30,6 @@ async function bootstrap(): Promise<void> {
     providers: [EProvider.JOB_IN_JA, EProvider.JOB_VISION],
     batchSize: Number(process.env.JOB_REVALIDATION_BATCH_SIZE ?? 200),
     staleAfterDays: Number(process.env.JOB_REVALIDATION_AFTER_DAYS ?? 7),
-    minFailures: Number(process.env.JOB_REVALIDATION_MIN_FAILURES ?? 3),
   })
 
   const scheduler = new CrawlerScheduler(crawlJobsTask, executionService)

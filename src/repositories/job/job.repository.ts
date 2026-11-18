@@ -47,7 +47,6 @@ const jobStatusToPrismaMap: Record<EJobStatus, EPrismaJobStatus> = {
   [EJobStatus.EXPIRED]: EPrismaJobStatus.EXPIRED,
   [EJobStatus.CLOSED]: EPrismaJobStatus.CLOSED,
   [EJobStatus.REMOVED]: EPrismaJobStatus.REMOVED,
-  [EJobStatus.UNKNOWN]: EPrismaJobStatus.UNKNOWN,
 }
 
 const prismaJobStatusToDomainMap: Record<EPrismaJobStatus, EJobStatus> = {
@@ -55,7 +54,6 @@ const prismaJobStatusToDomainMap: Record<EPrismaJobStatus, EJobStatus> = {
   [EPrismaJobStatus.EXPIRED]: EJobStatus.EXPIRED,
   [EPrismaJobStatus.CLOSED]: EJobStatus.CLOSED,
   [EPrismaJobStatus.REMOVED]: EJobStatus.REMOVED,
-  [EPrismaJobStatus.UNKNOWN]: EJobStatus.UNKNOWN,
 }
 
 export class JobRepository implements IJobRepository {
@@ -108,7 +106,6 @@ export class JobRepository implements IJobRepository {
       expiredAt: data.expiredAt ? new Date(data.expiredAt) : undefined,
       expiryReason: data.expiryReason ?? undefined,
       checkFailures: data.checkFailures,
-      unknownSince: data.unknownSince ? new Date(data.unknownSince) : undefined,
       archivedAt: data.archivedAt ? new Date(data.archivedAt) : undefined,
       createdAt: data.createdAt ? new Date(data.createdAt) : undefined,
       updatedAt: data.updatedAt ? new Date(data.updatedAt) : undefined,
@@ -264,7 +261,7 @@ export class JobRepository implements IJobRepository {
     const jobs = await prisma.job.findMany({
       where: {
         provider: { in: query.providers.map((provider) => prismaProviderMap[provider]) },
-        status: { in: [EPrismaJobStatus.ACTIVE, EPrismaJobStatus.UNKNOWN] },
+        status: EPrismaJobStatus.ACTIVE,
         archivedAt: null,
         OR: [{ lastCheckedAt: null }, { lastCheckedAt: { lt: query.staleBefore } }],
       },
@@ -305,7 +302,6 @@ export class JobRepository implements IJobRepository {
         lastCheckedAt: update.checkedAt,
         checkFailures: update.checkFailures,
         expiryReason: update.reason ?? null,
-        unknownSince: update.unknownSince ?? null,
         expiredAt: update.expiredAt ?? null,
       },
     })

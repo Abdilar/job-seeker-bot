@@ -4,7 +4,6 @@ export interface RevalidateJobsOptions {
   providers: EProvider[]
   batchSize: number
   staleAfterDays: number
-  minFailures: number
 }
 
 export interface RevalidateJobsResult {
@@ -13,7 +12,7 @@ export interface RevalidateJobsResult {
   expired: number
   closed: number
   removed: number
-  unknown: number
+  retry: number
   errors: number
 }
 

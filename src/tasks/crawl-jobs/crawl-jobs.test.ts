@@ -77,7 +77,9 @@ describe('CrawlJobsTask', () => {
         company: { fullName: 'Example' },
         location: { country: 'Iran', province: 'Tehran' },
       }
-      const filterNewJobsMock = vi.fn().mockResolvedValue({ accepted: [admitted], rejected: 1 })
+      const filterNewJobsMock = vi
+        .fn()
+        .mockResolvedValue({ accepted: [admitted], rejected: 1, retry: 0 })
       const admissionService = {
         filterNewJobs: filterNewJobsMock,
       } as unknown as IJobAdmissionService

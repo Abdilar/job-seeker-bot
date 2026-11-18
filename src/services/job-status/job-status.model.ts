@@ -7,5 +7,5 @@ export interface IJobStatusChange {
 
 export interface IJobStatusService {
   findCandidates(providers: IJob['provider'][], staleBefore: Date, limit: number): Promise<IJob[]>
-  recordResult(job: IJob, check: IJobStatusCheck, minFailures: number): Promise<IJobStatusChange>
+  recordResult(job: IJob, check: IJobStatusCheck): Promise<IJobStatusChange>
 }

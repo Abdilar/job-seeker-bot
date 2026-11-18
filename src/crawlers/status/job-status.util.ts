@@ -1,4 +1,4 @@
-import { EJobStatus, type IJobStatusCheck } from '../../types'
+import { EJobStatusCheckOutcome, type IJobStatusCheck } from '../../types'
 
 export const STATUS_CHECK_TIMEOUT_MS = 20_000
 export const STATUS_CHECK_USER_AGENT =
@@ -120,23 +120,23 @@ export function resolvePageStatus(
   checkedAt: Date,
 ): IJobStatusCheck | undefined {
   if (page.status === 404 || page.status === 410) {
-    return { status: EJobStatus.REMOVED, reason: `http-${page.status}`, checkedAt }
+    return { outcome: EJobStatusCheckOutcome.REMOVED, reason: `http-${page.status}`, checkedAt }
   }
 
   if (page.status === 403 || page.status === 429 || page.status >= 500) {
-    return { status: EJobStatus.UNKNOWN, reason: `http-${page.status}`, checkedAt }
+    return { outcome: EJobStatusCheckOutcome.RETRY, reason: `http-${page.status}`, checkedAt }
   }
 
   if (page.status !== 200) {
-    return { status: EJobStatus.UNKNOWN, reason: `http-${page.status}`, checkedAt }
+    return { outcome: EJobStatusCheckOutcome.RETRY, reason: `http-${page.status}`, checkedAt }
   }
 
   if (isRedirectedToAnotherPage(originalUrl, page.finalUrl)) {
-    return { status: EJobStatus.REMOVED, reason: 'redirect', checkedAt }
+    return { outcome: EJobStatusCheckOutcome.REMOVED, reason: 'redirect', checkedAt }
   }
 
   if (!new URL(page.finalUrl).pathname.includes('/jobs/')) {
-    return { status: EJobStatus.REMOVED, reason: 'redirect', checkedAt }
+    return { outcome: EJobStatusCheckOutcome.REMOVED, reason: 'redirect', checkedAt }
   }
 
   return undefined
@@ -144,11 +144,11 @@ export function resolvePageStatus(
 
 export function resolveTextStatus(text: string, checkedAt: Date): IJobStatusCheck | undefined {
   if (hasAnyPattern(text, EXPIRED_TEXT_PATTERNS)) {
-    return { status: EJobStatus.EXPIRED, reason: 'source-expired', checkedAt }
+    return { outcome: EJobStatusCheckOutcome.EXPIRED, reason: 'source-expired', checkedAt }
   }
 
   if (hasAnyPattern(text, CLOSED_TEXT_PATTERNS)) {
-    return { status: EJobStatus.CLOSED, reason: 'position-closed', checkedAt }
+    return { outcome: EJobStatusCheckOutcome.CLOSED, reason: 'position-closed', checkedAt }
   }
 
   return undefined
@@ -156,7 +156,7 @@ export function resolveTextStatus(text: string, checkedAt: Date): IJobStatusChec
 
 export function resolveCheckError(error: unknown, checkedAt: Date): IJobStatusCheck {
   return {
-    status: EJobStatus.UNKNOWN,
+    outcome: EJobStatusCheckOutcome.RETRY,
     reason: error instanceof Error && error.name === 'AbortError' ? 'timeout' : 'network-error',
     checkedAt,
   }

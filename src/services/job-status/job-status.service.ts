@@ -1,5 +1,11 @@
 import type { IJobRepository } from '../../repositories/job'
-import { EJobStatus, type IJob, type IJobStatusCheck, type EProvider } from '../../types'
+import {
+  EJobStatus,
+  EJobStatusCheckOutcome,
+  type IJob,
+  type IJobStatusCheck,
+  type EProvider,
+} from '../../types'
 import type { IJobStatusChange, IJobStatusService } from './job-status.model'
 
 export class JobStatusService implements IJobStatusService {
@@ -9,41 +15,36 @@ export class JobStatusService implements IJobStatusService {
     return this.repository.findForRevalidation({ providers, staleBefore, limit })
   }
 
-  async recordResult(
-    job: IJob,
-    check: IJobStatusCheck,
-    minFailures: number,
-  ): Promise<IJobStatusChange> {
-    let status = check.status
-    let checkFailures = check.status === EJobStatus.ACTIVE ? 0 : job.checkFailures + 1
-    let unknownSince: Date | null = null
+  async recordResult(job: IJob, check: IJobStatusCheck): Promise<IJobStatusChange> {
+    let status = job.status
+    let checkFailures = job.checkFailures
     let expiredAt: Date | null = null
     let reason: string | undefined = check.reason
 
-    if (check.status === EJobStatus.UNKNOWN) {
-      if (checkFailures < minFailures) {
-        status = EJobStatus.ACTIVE
-        reason = undefined
-      } else {
-        status = EJobStatus.UNKNOWN
-        unknownSince = job.unknownSince ?? check.checkedAt
-      }
+    if (check.outcome === EJobStatusCheckOutcome.ACTIVE) {
+      status = EJobStatus.ACTIVE
+      checkFailures = 0
+      reason = undefined
     }
 
-    if (check.status === EJobStatus.ACTIVE) {
-      checkFailures = 0
-      unknownSince = null
-      expiredAt = null
+    if (check.outcome === EJobStatusCheckOutcome.RETRY) {
+      status = job.status
+      checkFailures = job.checkFailures + 1
       reason = undefined
     }
 
     if (
-      status === EJobStatus.EXPIRED ||
-      status === EJobStatus.CLOSED ||
-      status === EJobStatus.REMOVED
+      check.outcome === EJobStatusCheckOutcome.EXPIRED ||
+      check.outcome === EJobStatusCheckOutcome.CLOSED ||
+      check.outcome === EJobStatusCheckOutcome.REMOVED
     ) {
+      status =
+        check.outcome === EJobStatusCheckOutcome.EXPIRED
+          ? EJobStatus.EXPIRED
+          : check.outcome === EJobStatusCheckOutcome.CLOSED
+            ? EJobStatus.CLOSED
+            : EJobStatus.REMOVED
       checkFailures = 0
-      unknownSince = null
       expiredAt = check.checkedAt
     }
 
@@ -52,7 +53,6 @@ export class JobStatusService implements IJobStatusService {
       reason,
       checkedAt: check.checkedAt,
       checkFailures,
-      unknownSince,
       expiredAt,
     })
 

@@ -6,7 +6,7 @@ import {
   type Job,
   type Location,
 } from '@prisma/client'
-import { EContractType, EJobStatus, EProvider, type ICrawledJob } from '../../types'
+import { EContractType, EJobStatus, EProvider } from '../../types'
 import { JobRepository } from './job.repository'
 
 const { jobMock } = vi.hoisted(() => ({
@@ -55,7 +55,6 @@ const prismaJob: Job & { company: Company; location: Location } = {
   expiredAt: null,
   expiryReason: null,
   checkFailures: 0,
-  unknownSince: null,
   archivedAt: null,
   companyId: company.id,
   company,
@@ -85,7 +84,7 @@ describe('JobRepository status support', () => {
     expect(jobMock.findMany).toHaveBeenCalledWith({
       where: {
         provider: { in: [PrismaProvider.JOB_IN_JA] },
-        status: { in: [PrismaJobStatus.ACTIVE, PrismaJobStatus.UNKNOWN] },
+        status: PrismaJobStatus.ACTIVE,
         archivedAt: null,
         OR: [{ lastCheckedAt: null }, { lastCheckedAt: { lt: staleBefore } }],
       },
@@ -125,7 +124,6 @@ describe('JobRepository status support', () => {
       reason: 'valid-through',
       checkedAt,
       checkFailures: 0,
-      unknownSince: null,
       expiredAt: checkedAt,
     })
 
@@ -136,7 +134,6 @@ describe('JobRepository status support', () => {
         lastCheckedAt: checkedAt,
         checkFailures: 0,
         expiryReason: 'valid-through',
-        unknownSince: null,
         expiredAt: checkedAt,
       },
     })
@@ -184,28 +181,5 @@ describe('JobRepository status support', () => {
       checkFailures: 0,
       lastSeenAt: prismaJob.lastSeenAt,
     })
-  })
-
-  it('persists an explicit UNKNOWN status for a newly discovered job', async () => {
-    const crawledJob: ICrawledJob = {
-      title: 'Example',
-      url: 'https://example.com/job/unknown',
-      contractType: EContractType.FULL_TIME,
-      provider: EProvider.JOB_IN_JA,
-      status: EJobStatus.UNKNOWN,
-      company: { fullName: 'Example' },
-      location: { country: 'Iran', province: 'Tehran' },
-    }
-    jobMock.upsert.mockResolvedValue(prismaJob)
-
-    await repository.createMany([crawledJob])
-
-    const upsertArgs = jobMock.upsert.mock.calls[0]?.[0] as {
-      create: { status: PrismaJobStatus }
-      update: Record<string, unknown>
-    }
-
-    expect(upsertArgs.create.status).toBe(PrismaJobStatus.UNKNOWN)
-    expect(upsertArgs.update).not.toHaveProperty('status')
   })
 })

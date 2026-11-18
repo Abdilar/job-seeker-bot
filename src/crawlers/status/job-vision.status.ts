@@ -1,4 +1,9 @@
-import { EJobStatus, EProvider, type IJobStatusCheck, type IJobStatusTarget } from '../../types'
+import {
+  EJobStatusCheckOutcome,
+  EProvider,
+  type IJobStatusCheck,
+  type IJobStatusTarget,
+} from '../../types'
 import type { IJobStatusChecker } from './job-status.model'
 import {
   fetchJobPage,
@@ -36,7 +41,7 @@ export class JobVisionStatusChecker implements IJobStatusChecker {
       const posting = postings[0]
 
       if (!posting) {
-        return { status: EJobStatus.UNKNOWN, reason: 'no-status-signal', checkedAt }
+        return { outcome: EJobStatusCheckOutcome.RETRY, reason: 'no-status-signal', checkedAt }
       }
 
       const validThrough = posting.validThrough
@@ -46,12 +51,12 @@ export class JobVisionStatusChecker implements IJobStatusChecker {
 
         if (!Number.isNaN(deadline.getTime())) {
           return deadline.getTime() < checkedAt.getTime()
-            ? { status: EJobStatus.EXPIRED, reason: 'valid-through', checkedAt }
-            : { status: EJobStatus.ACTIVE, reason: 'valid-through', checkedAt }
+            ? { outcome: EJobStatusCheckOutcome.EXPIRED, reason: 'valid-through', checkedAt }
+            : { outcome: EJobStatusCheckOutcome.ACTIVE, reason: 'valid-through', checkedAt }
         }
       }
 
-      return { status: EJobStatus.ACTIVE, reason: 'jobposting-json-ld', checkedAt }
+      return { outcome: EJobStatusCheckOutcome.ACTIVE, reason: 'jobposting-json-ld', checkedAt }
     } catch (error) {
       return resolveCheckError(error, checkedAt)
     }

@@ -5,11 +5,18 @@ export enum EJobStatus {
   EXPIRED = 'EXPIRED',
   CLOSED = 'CLOSED',
   REMOVED = 'REMOVED',
-  UNKNOWN = 'UNKNOWN',
+}
+
+export enum EJobStatusCheckOutcome {
+  ACTIVE = 'ACTIVE',
+  EXPIRED = 'EXPIRED',
+  CLOSED = 'CLOSED',
+  REMOVED = 'REMOVED',
+  RETRY = 'RETRY',
 }
 
 export interface IJobStatusCheck {
-  status: EJobStatus
+  outcome: EJobStatusCheckOutcome
   reason: string
   checkedAt: Date
 }
