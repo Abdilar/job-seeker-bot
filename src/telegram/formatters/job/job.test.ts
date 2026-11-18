@@ -87,5 +87,17 @@ describe('JobFormatter', () => {
       const result = formatter.formatDetail(job)
       expect(result).toContain('💰 حقوق: <b>نامشخص</b>')
     })
+
+    it('does not show a status line for an active job', () => {
+      const result = formatter.formatDetail(createJob({ status: EJobStatus.ACTIVE }))
+
+      expect(result).not.toContain('این آگهی منقضی شده است')
+    })
+
+    it('shows the status line for an inactive job', () => {
+      const result = formatter.formatDetail(createJob({ status: EJobStatus.EXPIRED }))
+
+      expect(result).toContain('⛔ این آگهی منقضی شده است.')
+    })
   })
 })

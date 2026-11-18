@@ -1,10 +1,18 @@
-import { EContractType, EProvider } from '../../types'
+import { EContractType, EJobStatus, EProvider } from '../../types'
 
 export const PAGINATION_LIMIT = 15
 
 export const CONTRACT_TYPE_MAP = {
   [EContractType.FULL_TIME]: 'تمام وقت',
   [EContractType.PART_TIME]: 'پاره وقت',
+}
+
+export const JOB_STATUS_MAP = {
+  [EJobStatus.ACTIVE]: '',
+  [EJobStatus.EXPIRED]: '⛔ این آگهی منقضی شده است.',
+  [EJobStatus.CLOSED]: '⛔ این موقعیت شغلی بسته شده است.',
+  [EJobStatus.REMOVED]: '⛔ این آگهی از منبع حذف شده است.',
+  [EJobStatus.UNKNOWN]: '⚠️ وضعیت این آگهی تأیید نشد.',
 }
 
 export const PROVIDER_MAP = {
