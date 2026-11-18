@@ -1,8 +1,9 @@
 import { ECrawlMode } from './constants'
 import type { JobProvider } from './crawlers'
 import { JobInJaCreator, JobVisionCreator } from './crawlers'
+import { JobInJaStatusChecker, JobVisionStatusChecker } from './crawlers/status'
 import { JobRepository } from './repositories'
-import { JobService } from './services'
+import { JobAdmissionService, JobService } from './services'
 import { CrawlJobsTask } from './tasks'
 import type { CrawlerFullArgumentsType } from './types'
 import { EProvider } from './types'
@@ -38,7 +39,17 @@ async function run() {
     }
   }
 
-  const crawlJobsTask = new CrawlJobsTask(jobService, providers)
+  const crawlJobsTask = new CrawlJobsTask(
+    jobService,
+    providers,
+    new JobAdmissionService(
+      repository,
+      [new JobInJaStatusChecker(), new JobVisionStatusChecker()],
+      {
+        maxChecks: Number(process.env.JOB_ADMISSION_MAX_CHECKS ?? 100),
+      },
+    ),
+  )
   await crawlJobsTask.run()
 }
 

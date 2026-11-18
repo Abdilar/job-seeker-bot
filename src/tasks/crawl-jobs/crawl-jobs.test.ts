@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ICrawledJob } from '../../types'
-import type { IJobService } from '../../services'
+import { EContractType, EProvider, type ICrawledJob } from '../../types'
+import type { IJobAdmissionService, IJobService } from '../../services'
 import type { JobProvider } from '../../crawlers'
 import { CrawlJobsTask } from './crawl-jobs.task'
 
@@ -66,6 +66,27 @@ describe('CrawlJobsTask', () => {
 
       expect(crawlJobsMock).not.toHaveBeenCalled()
       expect(saveAllMock).not.toHaveBeenCalled()
+    })
+
+    it('saves only the jobs accepted by the admission filter', async () => {
+      const admitted: ICrawledJob = {
+        title: 'Example',
+        url: 'https://example.com/job/1',
+        contractType: EContractType.FULL_TIME,
+        provider: EProvider.JOB_IN_JA,
+        company: { fullName: 'Example' },
+        location: { country: 'Iran', province: 'Tehran' },
+      }
+      const filterNewJobsMock = vi.fn().mockResolvedValue({ accepted: [admitted], rejected: 1 })
+      const admissionService = {
+        filterNewJobs: filterNewJobsMock,
+      } as unknown as IJobAdmissionService
+      const admittedTask = new CrawlJobsTask(jobService, [provider], admissionService)
+
+      await admittedTask.run()
+
+      expect(filterNewJobsMock).toHaveBeenCalledOnce()
+      expect(saveAllMock).toHaveBeenCalledExactlyOnceWith([admitted])
     })
   })
 
