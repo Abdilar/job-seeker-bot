@@ -8,6 +8,9 @@ const {
   executionRepositoryInstance,
   executionServiceInstance,
   crawlJobsTaskInstance,
+  jobAdmissionServiceInstance,
+  jobStatusServiceInstance,
+  revalidateJobsTaskInstance,
 
   jobRepositoryConstructorMock,
   jobServiceConstructorMock,
@@ -16,10 +19,15 @@ const {
   executionRepositoryConstructorMock,
   executionServiceConstructorMock,
   crawlJobsTaskConstructorMock,
+  jobAdmissionServiceConstructorMock,
+  jobStatusServiceConstructorMock,
+  revalidateJobsTaskConstructorMock,
   schedulerConstructorMock,
+  jobStatusSchedulerConstructorMock,
 
   recoverInterruptedExecutionsMock,
   schedulerStartMock,
+  jobStatusSchedulerStartMock,
   consoleLogMock,
   consoleErrorMock,
 } = vi.hoisted(() => {
@@ -28,9 +36,13 @@ const {
   const jobInJaCreatorMockInstance = {}
   const jobVisionCreatorMockInstance = {}
   const executionRepositoryMockInstance = {}
+  const jobAdmissionServiceMockInstance = {}
+  const jobStatusServiceMockInstance = {}
+  const revalidateJobsTaskMockInstance = {}
 
   const recoverMock = vi.fn<() => Promise<number>>()
   const startMock = vi.fn<() => void>()
+  const jobStatusStartMock = vi.fn<() => void>()
 
   const executionServiceMockInstance = {
     recoverInterruptedExecutions: recoverMock,
@@ -46,6 +58,9 @@ const {
     executionRepositoryInstance: executionRepositoryMockInstance,
     executionServiceInstance: executionServiceMockInstance,
     crawlJobsTaskInstance: crawlJobsTaskMockInstance,
+    jobAdmissionServiceInstance: jobAdmissionServiceMockInstance,
+    jobStatusServiceInstance: jobStatusServiceMockInstance,
+    revalidateJobsTaskInstance: revalidateJobsTaskMockInstance,
 
     jobRepositoryConstructorMock: vi.fn<() => void>(),
 
@@ -59,12 +74,24 @@ const {
 
     executionServiceConstructorMock: vi.fn<(repository: unknown) => void>(),
 
-    crawlJobsTaskConstructorMock: vi.fn<(jobService: unknown, providers: unknown[]) => void>(),
+    crawlJobsTaskConstructorMock:
+      vi.fn<(jobService: unknown, providers: unknown[], admissionService: unknown) => void>(),
+
+    jobAdmissionServiceConstructorMock:
+      vi.fn<(repository: unknown, checkers: unknown[], options: unknown) => void>(),
+
+    jobStatusServiceConstructorMock: vi.fn<(repository: unknown) => void>(),
+
+    revalidateJobsTaskConstructorMock:
+      vi.fn<(service: unknown, checkers: unknown[], options: unknown) => void>(),
 
     schedulerConstructorMock: vi.fn<(task: unknown, executionService: unknown) => void>(),
 
+    jobStatusSchedulerConstructorMock: vi.fn<(task: unknown) => void>(),
+
     recoverInterruptedExecutionsMock: recoverMock,
     schedulerStartMock: startMock,
+    jobStatusSchedulerStartMock: jobStatusStartMock,
 
     consoleLogMock: vi.fn<(message: string) => void>(),
 
@@ -86,6 +113,20 @@ vi.mock('./crawlers', () => ({
       jobVisionCreatorConstructorMock(jobService)
 
       return jobVisionCreatorInstance
+    }
+  },
+}))
+
+vi.mock('./crawlers/status', () => ({
+  JobInJaStatusChecker: class {
+    supports() {
+      return true
+    }
+  },
+
+  JobVisionStatusChecker: class {
+    supports() {
+      return true
     }
   },
 }))
@@ -124,14 +165,38 @@ vi.mock('./services', () => ({
       return executionServiceInstance
     }
   },
+
+  JobAdmissionService: class {
+    constructor(repository: unknown, checkers: unknown[], options: unknown) {
+      jobAdmissionServiceConstructorMock(repository, checkers, options)
+
+      return jobAdmissionServiceInstance
+    }
+  },
+
+  JobStatusService: class {
+    constructor(repository: unknown) {
+      jobStatusServiceConstructorMock(repository)
+
+      return jobStatusServiceInstance
+    }
+  },
 }))
 
 vi.mock('./tasks', () => ({
   CrawlJobsTask: class {
-    constructor(jobService: unknown, providers: unknown[]) {
-      crawlJobsTaskConstructorMock(jobService, providers)
+    constructor(jobService: unknown, providers: unknown[], admissionService: unknown) {
+      crawlJobsTaskConstructorMock(jobService, providers, admissionService)
 
       return crawlJobsTaskInstance
+    }
+  },
+
+  RevalidateJobsTask: class {
+    constructor(service: unknown, checkers: unknown[], options: unknown) {
+      revalidateJobsTaskConstructorMock(service, checkers, options)
+
+      return revalidateJobsTaskInstance
     }
   },
 }))
@@ -143,6 +208,16 @@ vi.mock('./scheduler', () => ({
 
       return {
         start: schedulerStartMock,
+      }
+    }
+  },
+
+  JobStatusScheduler: class {
+    constructor(revalidateJobsTask: unknown) {
+      jobStatusSchedulerConstructorMock(revalidateJobsTask)
+
+      return {
+        start: jobStatusSchedulerStartMock,
       }
     }
   },
@@ -189,19 +264,32 @@ describe('crawler bootstrap', () => {
 
     expect(executionServiceConstructorMock).toHaveBeenCalledWith(executionRepositoryInstance)
 
-    expect(crawlJobsTaskConstructorMock).toHaveBeenCalledWith(jobServiceInstance, [
-      jobInJaCreatorInstance,
-      jobVisionCreatorInstance,
-    ])
+    expect(crawlJobsTaskConstructorMock).toHaveBeenCalledWith(
+      jobServiceInstance,
+      [jobInJaCreatorInstance, jobVisionCreatorInstance],
+      jobAdmissionServiceInstance,
+    )
+
+    expect(jobStatusServiceConstructorMock).toHaveBeenCalledWith(jobRepositoryInstance)
+
+    expect(revalidateJobsTaskConstructorMock).toHaveBeenCalledWith(
+      jobStatusServiceInstance,
+      expect.any(Array),
+      expect.any(Object),
+    )
 
     expect(schedulerConstructorMock).toHaveBeenCalledWith(
       crawlJobsTaskInstance,
       executionServiceInstance,
     )
 
+    expect(jobStatusSchedulerConstructorMock).toHaveBeenCalledWith(revalidateJobsTaskInstance)
+
     expect(recoverInterruptedExecutionsMock).toHaveBeenCalledOnce()
 
     expect(schedulerStartMock).toHaveBeenCalledOnce()
+
+    expect(jobStatusSchedulerStartMock).toHaveBeenCalledOnce()
 
     expect(consoleLogMock).toHaveBeenCalledWith('Recovered 2 interrupted crawler executions')
 
