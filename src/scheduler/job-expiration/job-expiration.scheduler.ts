@@ -1,13 +1,13 @@
 import cron from 'node-cron'
 import { JOB_POSTING_TIMEZONE } from '../../crawlers/constants'
-import type { IRevalidateJobsTask } from '../../tasks'
+import type { IExpireJobsTask } from '../../tasks'
 
-export class JobStatusScheduler {
+export class JobExpirationScheduler {
   private isRunning = false
 
   constructor(
-    private readonly revalidateJobs: IRevalidateJobsTask,
-    private readonly scheduleTime = process.env.JOB_REVALIDATION_SCHEDULE_TIME ?? '0 */6 * * *',
+    private readonly expireJobs: IExpireJobsTask,
+    private readonly scheduleTime = process.env.JOB_EXPIRATION_SCHEDULE_TIME ?? '0 3 * * *',
   ) {}
 
   start(): void {
@@ -16,7 +16,7 @@ export class JobStatusScheduler {
       async () => {
         if (this.isRunning) {
           // eslint-disable-next-line no-console
-          console.log('Job revalidation is already running. Skipping...')
+          console.log('Job expiration is already running. Skipping...')
 
           return
         }
@@ -24,10 +24,10 @@ export class JobStatusScheduler {
         this.isRunning = true
 
         try {
-          await this.revalidateJobs.run()
+          await this.expireJobs.run()
         } catch (error) {
           // eslint-disable-next-line no-console
-          console.error('Job revalidation failed:', error)
+          console.error('Job expiration failed:', error)
         } finally {
           this.isRunning = false
         }
@@ -38,6 +38,6 @@ export class JobStatusScheduler {
     )
 
     // eslint-disable-next-line no-console
-    console.log(`Job status scheduler started with "${this.scheduleTime}".`)
+    console.log(`Job expiration scheduler started with "${this.scheduleTime}".`)
   }
 }

@@ -1,12 +1,11 @@
 import type { JobProvider } from '../../crawlers'
-import type { IJobAdmissionService, IJobService } from '../../services'
+import type { IJobService } from '../../services'
 import type { ICrawlJobsTask } from './crawl-jobs.model'
 
 export class CrawlJobsTask implements ICrawlJobsTask {
   constructor(
     private readonly jobService: IJobService,
     private readonly providers: JobProvider[],
-    private readonly admissionService?: IJobAdmissionService,
   ) {}
 
   async run(): Promise<void> {
@@ -16,25 +15,9 @@ export class CrawlJobsTask implements ICrawlJobsTask {
         // eslint-disable-next-line no-console
         console.log(`Start crawling ${providerName} jobs...`)
         const jobs = await provider.crawlJobs()
-        const admitted = this.admissionService
-          ? await this.admissionService.filterNewJobs(jobs)
-          : { accepted: jobs, rejected: 0, retry: 0 }
-
-        if (admitted.rejected) {
-          // eslint-disable-next-line no-console
-          console.log(`Skipped ${admitted.rejected} inactive ${providerName} jobs before saving`)
-        }
-
-        if (admitted.retry) {
-          // eslint-disable-next-line no-console
-          console.log(`Postponed ${admitted.retry} unverified ${providerName} jobs`)
-        }
-
         // eslint-disable-next-line no-console
-        console.log(
-          `Finish crawling ${providerName} and Start saving ${admitted.accepted.length} jobs`,
-        )
-        await this.jobService.saveAll(admitted.accepted)
+        console.log(`Finish crawling ${providerName} and Start saving ${jobs.length} jobs`)
+        await this.jobService.saveAll(jobs)
         // eslint-disable-next-line no-console
         console.log(`All ${providerName} jobs saved successfully`)
       } finally {

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { JOB_POSTING_TIMEZONE } from '../../crawlers/constants'
-import type { IRevalidateJobsTask } from '../../tasks'
-import { JobStatusScheduler } from './job-status.scheduler'
+import type { IExpireJobsTask } from '../../tasks'
+import { JobExpirationScheduler } from './job-expiration.scheduler'
 
 const { scheduleMock } = vi.hoisted(() => ({ scheduleMock: vi.fn() }))
 
@@ -9,9 +9,9 @@ vi.mock('node-cron', () => ({
   default: { schedule: scheduleMock },
 }))
 
-describe('JobStatusScheduler', () => {
+describe('JobExpirationScheduler', () => {
   const runMock = vi.fn<() => Promise<void>>()
-  const task = { run: runMock } as unknown as IRevalidateJobsTask
+  const task = { run: runMock } as unknown as IExpireJobsTask
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -23,8 +23,8 @@ describe('JobStatusScheduler', () => {
     vi.restoreAllMocks()
   })
 
-  it('schedules the revalidation task with the configured time and timezone', () => {
-    const scheduler = new JobStatusScheduler(task, '0 4 * * *')
+  it('schedules expiration with the configured time and timezone', () => {
+    const scheduler = new JobExpirationScheduler(task, '0 4 * * *')
 
     scheduler.start()
 
@@ -34,7 +34,7 @@ describe('JobStatusScheduler', () => {
   })
 
   it('runs the task when the cron callback fires', async () => {
-    const scheduler = new JobStatusScheduler(task, '0 4 * * *')
+    const scheduler = new JobExpirationScheduler(task, '0 4 * * *')
 
     scheduler.start()
     const callback = scheduleMock.mock.calls[0][1] as () => Promise<void>
@@ -43,7 +43,7 @@ describe('JobStatusScheduler', () => {
     expect(runMock).toHaveBeenCalledOnce()
   })
 
-  it('does not run two revalidations at the same time', async () => {
+  it('does not run two expirations at the same time', async () => {
     let release: () => void = () => {}
     runMock.mockImplementation(
       () =>
@@ -51,7 +51,7 @@ describe('JobStatusScheduler', () => {
           release = resolve
         }),
     )
-    const scheduler = new JobStatusScheduler(task, '0 4 * * *')
+    const scheduler = new JobExpirationScheduler(task, '0 4 * * *')
 
     scheduler.start()
     const callback = scheduleMock.mock.calls[0][1] as () => Promise<void>

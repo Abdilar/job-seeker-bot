@@ -10,7 +10,6 @@ const createJob = (id: string): IJob => ({
   contractType: EContractType.FULL_TIME,
   provider: EProvider.JOB_IN_JA,
   status: EJobStatus.ACTIVE,
-  checkFailures: 0,
   company: {
     fullName: 'Example Company',
   },

@@ -11,7 +11,6 @@ interface IBaseJob {
   salary?: string
   postedAt?: Date
   provider: EProvider
-  status?: EJobStatus
 }
 
 export interface ICrawledJob extends IBaseJob {
@@ -23,10 +22,8 @@ export interface IJob extends ICrawledJob {
   id: string
   status: EJobStatus
   lastSeenAt?: Date
-  lastCheckedAt?: Date
   expiredAt?: Date
   expiryReason?: string
-  checkFailures: number
   archivedAt?: Date
   createdAt?: Date
   updatedAt?: Date

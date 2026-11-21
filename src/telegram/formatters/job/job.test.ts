@@ -10,7 +10,6 @@ const createJob = (overrides: Partial<IJob> = {}): IJob => ({
   contractType: EContractType.FULL_TIME,
   provider: EProvider.JOB_IN_JA,
   status: EJobStatus.ACTIVE,
-  checkFailures: 0,
   salary: '50 میلیون تومان',
   postedAt: new Date('2026-09-20T10:00:00.000Z'),
   company: {

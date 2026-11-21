@@ -35,7 +35,6 @@ describe('JobHandler', () => {
     contractType: EContractType.FULL_TIME,
     provider: EProvider.JOB_IN_JA,
     status: EJobStatus.ACTIVE,
-    checkFailures: 0,
     salary: '100M',
     postedAt: new Date('2026-09-20'),
     company: {

@@ -1,11 +1,6 @@
 import type { Prisma } from '@prisma/client'
 import { EJobStatus as EPrismaJobStatus, EProvider as EPrismaProvider } from '@prisma/client'
-import type {
-  IJobRepository,
-  IJobStatusUpdate,
-  IRevalidationCandidateQuery,
-  PrismaJobType,
-} from './job.model'
+import type { IJobRepository, PrismaJobType } from './job.model'
 import { prisma } from '../../database/prisma'
 import type { IJob, ICrawledJob, IJobFilter } from '../../types'
 import { EJobStatus, EProvider as EDomainProvider, EContractType } from '../../types'
@@ -63,7 +58,6 @@ export class JobRepository implements IJobRepository {
       salary: data.salary ?? null,
       postedAt: data.postedAt ?? null,
       lastSeenAt: new Date(),
-      ...(data.status && { status: jobStatusToPrismaMap[data.status] }),
       provider: prismaProviderMap[data.provider],
       company: {
         connectOrCreate: {
@@ -102,10 +96,8 @@ export class JobRepository implements IJobRepository {
       provider: domainProviderMap[data.provider],
       status: prismaJobStatusToDomainMap[data.status],
       lastSeenAt: data.lastSeenAt ? new Date(data.lastSeenAt) : undefined,
-      lastCheckedAt: data.lastCheckedAt ? new Date(data.lastCheckedAt) : undefined,
       expiredAt: data.expiredAt ? new Date(data.expiredAt) : undefined,
       expiryReason: data.expiryReason ?? undefined,
-      checkFailures: data.checkFailures,
       archivedAt: data.archivedAt ? new Date(data.archivedAt) : undefined,
       createdAt: data.createdAt ? new Date(data.createdAt) : undefined,
       updatedAt: data.updatedAt ? new Date(data.updatedAt) : undefined,
@@ -257,54 +249,21 @@ export class JobRepository implements IJobRepository {
     return jobs.map((job) => this.convertPrismaJobToIJob(job))
   }
 
-  async findForRevalidation(query: IRevalidationCandidateQuery): Promise<IJob[]> {
-    const jobs = await prisma.job.findMany({
+  async expireOlderThan(cutoff: Date): Promise<number> {
+    const result = await prisma.job.updateMany({
       where: {
-        provider: { in: query.providers.map((provider) => prismaProviderMap[provider]) },
         status: EPrismaJobStatus.ACTIVE,
         archivedAt: null,
-        OR: [{ lastCheckedAt: null }, { lastCheckedAt: { lt: query.staleBefore } }],
+        postedAt: { lt: cutoff },
       },
-      orderBy: [{ lastCheckedAt: { sort: 'asc', nulls: 'first' } }, { id: 'asc' }],
-      take: query.limit,
-      include: { company: true, location: true },
-    })
-
-    return jobs.map((job) => this.convertPrismaJobToIJob(job))
-  }
-
-  async findExistingUrls(urls: string[]): Promise<Set<string>> {
-    if (!urls.length) {
-      return new Set()
-    }
-
-    const existingUrls = new Set<string>()
-
-    for (const urlsChunk of chunk(urls, 1_000)) {
-      const rows = await prisma.job.findMany({
-        where: { url: { in: urlsChunk } },
-        select: { url: true },
-      })
-
-      for (const row of rows) {
-        existingUrls.add(row.url)
-      }
-    }
-
-    return existingUrls
-  }
-
-  async updateStatus(id: string, update: IJobStatusUpdate): Promise<void> {
-    await prisma.job.update({
-      where: { id },
       data: {
-        status: jobStatusToPrismaMap[update.status],
-        lastCheckedAt: update.checkedAt,
-        checkFailures: update.checkFailures,
-        expiryReason: update.reason ?? null,
-        expiredAt: update.expiredAt ?? null,
+        status: EPrismaJobStatus.EXPIRED,
+        expiredAt: new Date(),
+        expiryReason: 'ttl',
       },
     })
+
+    return result.count
   }
 
   async exists(url: string): Promise<boolean> {

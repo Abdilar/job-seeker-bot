@@ -15,6 +15,7 @@ const { jobMock } = vi.hoisted(() => ({
     findFirst: vi.fn(),
     findUnique: vi.fn(),
     update: vi.fn(),
+    updateMany: vi.fn(),
     count: vi.fn(),
     upsert: vi.fn(),
     delete: vi.fn(),
@@ -51,10 +52,8 @@ const prismaJob: Job & { company: Company; location: Location } = {
   provider: PrismaProvider.JOB_IN_JA,
   status: PrismaJobStatus.ACTIVE,
   lastSeenAt: new Date('2026-11-18T10:00:00.000Z'),
-  lastCheckedAt: null,
   expiredAt: null,
   expiryReason: null,
-  checkFailures: 0,
   archivedAt: null,
   companyId: company.id,
   company,
@@ -72,71 +71,34 @@ describe('JobRepository status support', () => {
     jobMock.findMany.mockResolvedValue([])
   })
 
-  it('finds revalidation candidates with the expected filters', async () => {
-    const staleBefore = new Date('2026-11-11T10:00:00.000Z')
+  it('expires active jobs older than the cutoff in one batch', async () => {
+    const cutoff = new Date('2026-10-23T10:00:00.000Z')
+    jobMock.updateMany.mockResolvedValue({ count: 4 })
 
-    await repository.findForRevalidation({
-      providers: [EProvider.JOB_IN_JA],
-      staleBefore,
-      limit: 50,
-    })
+    const expired = await repository.expireOlderThan(cutoff)
 
-    expect(jobMock.findMany).toHaveBeenCalledWith({
+    expect(expired).toBe(4)
+    const updateArgs = jobMock.updateMany.mock.calls[0]?.[0] as {
       where: {
-        provider: { in: [PrismaProvider.JOB_IN_JA] },
-        status: PrismaJobStatus.ACTIVE,
-        archivedAt: null,
-        OR: [{ lastCheckedAt: null }, { lastCheckedAt: { lt: staleBefore } }],
-      },
-      orderBy: [{ lastCheckedAt: { sort: 'asc', nulls: 'first' } }, { id: 'asc' }],
-      take: 50,
-      include: { company: true, location: true },
-    })
-  })
-
-  it('returns the set of existing URLs', async () => {
-    jobMock.findMany.mockResolvedValue([{ url: 'https://example.com/job/1' }])
-
-    const result = await repository.findExistingUrls([
-      'https://example.com/job/1',
-      'https://example.com/job/2',
-    ])
-
-    expect(result).toEqual(new Set(['https://example.com/job/1']))
-    expect(jobMock.findMany).toHaveBeenCalledWith({
-      where: { url: { in: ['https://example.com/job/1', 'https://example.com/job/2'] } },
-      select: { url: true },
-    })
-  })
-
-  it('does not query the database for an empty URL list', async () => {
-    const result = await repository.findExistingUrls([])
-
-    expect(result).toEqual(new Set())
-    expect(jobMock.findMany).not.toHaveBeenCalled()
-  })
-
-  it('updates the lifecycle fields of a job', async () => {
-    const checkedAt = new Date('2026-11-18T10:00:00.000Z')
-
-    await repository.updateStatus('job-1', {
-      status: EJobStatus.EXPIRED,
-      reason: 'valid-through',
-      checkedAt,
-      checkFailures: 0,
-      expiredAt: checkedAt,
-    })
-
-    expect(jobMock.update).toHaveBeenCalledWith({
-      where: { id: 'job-1' },
+        status: PrismaJobStatus
+        archivedAt: null
+        postedAt: { lt: Date }
+      }
       data: {
-        status: PrismaJobStatus.EXPIRED,
-        lastCheckedAt: checkedAt,
-        checkFailures: 0,
-        expiryReason: 'valid-through',
-        expiredAt: checkedAt,
-      },
+        status: PrismaJobStatus
+        expiredAt: Date
+        expiryReason: string
+      }
+    }
+
+    expect(updateArgs.where).toEqual({
+      status: PrismaJobStatus.ACTIVE,
+      archivedAt: null,
+      postedAt: { lt: cutoff },
     })
+    expect(updateArgs.data.status).toBe(PrismaJobStatus.EXPIRED)
+    expect(updateArgs.data.expiredAt).toBeInstanceOf(Date)
+    expect(updateArgs.data.expiryReason).toBe('ttl')
   })
 
   it('filters the public list to active, non-archived jobs by default', async () => {
@@ -178,7 +140,6 @@ describe('JobRepository status support', () => {
 
     expect(job).toMatchObject({
       status: EJobStatus.ACTIVE,
-      checkFailures: 0,
       lastSeenAt: prismaJob.lastSeenAt,
     })
   })

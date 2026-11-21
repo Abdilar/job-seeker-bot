@@ -47,10 +47,8 @@ model Job {
   provider       EProvider
   status         EJobStatus @default(ACTIVE)
   lastSeenAt     DateTime?
-  lastCheckedAt  DateTime?
   expiredAt      DateTime?
   expiryReason   String?
-  checkFailures  Int        @default(0)
   archivedAt     DateTime?
   companyId      String
   company        Company    @relation(fields: [companyId], references: [id])
@@ -59,7 +57,7 @@ model Job {
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 
-  @@index([status, lastCheckedAt])
+  @@index([status, postedAt])
   @@index([provider, status, postedAt])
 }
 
