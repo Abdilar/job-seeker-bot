@@ -3,13 +3,12 @@ import type {
   ICompany,
   ICrawledJob,
   ICrawledJobDetail,
-  IJob,
   IJobExperience,
   ILocation,
 } from '../../../types'
 import { EEducationLevel, EGender, EProvider, EWorkMode } from '../../../types'
 import { TODAY } from '../../../constants'
-import { DETAIL_ELEMENT_SELECTOR, LOCATION_COUNTRY } from './job-in-ja.constant'
+import { LOCATION_COUNTRY } from './job-in-ja.constant'
 import type { IJobParserStrategy } from '../job.model'
 import {
   convertPersianContractTypeToEContractType,
@@ -17,7 +16,6 @@ import {
   toEnglishDigits,
 } from '../../utilities'
 import { convertDaysAgoToJalaliDate, normalizeText } from '../../../utilities'
-import { WAIT_UNTIL } from '../../constants'
 
 export class JobInJaParser implements IJobParserStrategy {
   constructor(private readonly page: Page) {}
@@ -59,24 +57,12 @@ export class JobInJaParser implements IJobParserStrategy {
     }
   }
 
-  async parseDetail(job: IJob): Promise<ICrawledJobDetail | undefined> {
+  async parseDetail(content: Locator, url: string): Promise<ICrawledJobDetail | undefined> {
     try {
       // eslint-disable-next-line no-console
-      console.log(`jobinja parser: parseDetail(job: IJob) -> jobUrl: ${job.url}`)
+      console.log(`jobinja parser: parseDetail(job: IJob) -> jobUrl: ${url}`)
 
-      if (!job.url) {
-        throw new Error('Url not found...')
-      }
-
-      await this.page.goto(job.url, { waitUntil: WAIT_UNTIL })
-      const mainElement = this.page.locator(DETAIL_ELEMENT_SELECTOR)
-      await mainElement.waitFor({ state: 'attached' })
-
-      if ((await mainElement.count()) === 0) {
-        throw new Error(`The ${DETAIL_ELEMENT_SELECTOR} selector does not exist!`)
-      }
-
-      const infoItemElements = mainElement.locator('.c-infoBox__item')
+      const infoItemElements = content.locator('.c-infoBox__item')
       const infoItems = await this.parseInfoItems(infoItemElements)
       const category = infoItems.get('دسته بندی شغلی')?.[0]
       const salary = this.parseSalary(infoItems)
@@ -85,7 +71,6 @@ export class JobInJaParser implements IJobParserStrategy {
       const skills = infoItems.get('مهارت های مورد نیاز') ?? []
       const workMode = this.parseWorkMode(infoItems)
       const experience = this.parseExperience(infoItems)
-      const applicationUrl = job.url
 
       const result = {
         category: category,
@@ -95,7 +80,7 @@ export class JobInJaParser implements IJobParserStrategy {
         experience: experience,
         education: educationalLevel,
         workMode: workMode,
-        applicationUrl,
+        applicationUrl: url,
       }
       // eslint-disable-next-line no-console
       console.log(`jobinja parser: parseDetail(job: IJob) -> result: `, { result })
