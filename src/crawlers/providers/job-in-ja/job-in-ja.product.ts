@@ -2,12 +2,15 @@ import type { Locator, Page } from 'playwright'
 import { WAIT_UNTIL } from '../../constants'
 import { toEnglishDigits } from '../../utilities'
 import type { IJobProvider } from '../job.model'
+import type { IExtractedJob, ICrawledJobDetail } from '../../../types'
 import { EProvider, type IJob, type ICrawledJob } from '../../../types'
 import type { JobParser } from '../../parsers'
 import { JOB_IN_JA_TIMEZONE, JOB_IN_JA_URL, SUMMERY_ELEMENT_SELECTOR } from './job-in-ja.constant'
 import { isRecent, randomDelay } from '../../../utilities'
-import type { IJobService } from '../../../services'
+import { JobExtractionService, type IJobService } from '../../../services'
 import { ECrawlMode } from '../../../constants'
+import { DETAIL_ELEMENT_SELECTOR } from '../../parsers/job-in-ja/job-in-ja.constant'
+import { JobExtractionApi } from '../../../api'
 
 export class JobInJaProduct implements IJobProvider {
   private lastPage: number = 1
@@ -165,19 +168,80 @@ export class JobInJaProduct implements IJobProvider {
   }
 
   async getJobsWithoutDetail(): Promise<IJob[]> {
+    const jobExtractionApi = new JobExtractionApi()
+    const jobExtractionService = new JobExtractionService(jobExtractionApi)
+
     const jobsWithoutDetail = await this.service.getJobsWithoutDetail(EProvider.JOB_IN_JA)
     // eslint-disable-next-line no-console
     console.log(
       `jobinja provider: getJobsWithoutDetail() -> Found ${jobsWithoutDetail.length} jobs without details.`,
     )
-    const condition = 1
+    const condition = 4
     // eslint-disable-next-line no-console
     console.log(`jobinja provider: getJobsWithoutDetail() -> condition: ${condition}`)
     for (let index = 0; index < condition; index++) {
-      const jobDetail = await this.parser.parseDetail(jobsWithoutDetail[index])
-      // eslint-disable-next-line no-console
-      console.log(`jobinja provider: getJobsWithoutDetail() -> jobDetail:`, { jobDetail })
+      try {
+        const mainElement = await this.getJobDetailElement(jobsWithoutDetail[index])
+        const description = await mainElement.innerText()
+        const extractJobData = await jobExtractionService.extractJobDetail(description)
+
+        const jobDetail = await this.parser.parseDetail(mainElement, this.page.url())
+        const data: ICrawledJobDetail | undefined = this.updateJobDetail(extractJobData, jobDetail)
+
+        if (data) {
+          const jobData = await this.service.saveJobDetail(jobsWithoutDetail[index].id, data)
+          // eslint-disable-next-line no-console
+          console.log(`jobinja provider: getJobsWithoutDetail() -> jobDetail:`, {
+            detail: data,
+            jobData,
+          })
+        }
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.log(`jobinja provider: getJobsWithoutDetail() -> error:`, {
+          error,
+        })
+        continue
+      }
     }
     return jobsWithoutDetail
+  }
+
+  private async getJobDetailElement(job: IJob): Promise<Locator> {
+    if (!job.url) {
+      throw new Error('Url not found...')
+    }
+
+    await this.page.goto(job.url, { waitUntil: WAIT_UNTIL })
+    const mainElement = this.page.locator(DETAIL_ELEMENT_SELECTOR)
+    await mainElement.waitFor({ state: 'attached' })
+
+    if ((await mainElement.count()) === 0) {
+      throw new Error(`The ${DETAIL_ELEMENT_SELECTOR} selector does not exist!`)
+    }
+
+    return mainElement
+  }
+
+  private updateJobDetail(
+    extractJob: IExtractedJob,
+    jobDetail?: ICrawledJobDetail,
+  ): ICrawledJobDetail | undefined {
+    if (!jobDetail) {
+      return undefined
+    }
+
+    jobDetail = {
+      ...jobDetail,
+      description: extractJob.description || undefined,
+      skills: extractJob.skills,
+      responsibilities: extractJob.responsibilities,
+      requirements: extractJob.requirements,
+      preferredQualifications: extractJob.preferredQualifications,
+      benefits: extractJob.benefits,
+      workMode: extractJob.workMode || undefined,
+      visaSponsorship: extractJob.visaSponsorship || undefined,
+    }
+    return jobDetail
   }
 }
