@@ -1,6 +1,6 @@
 import { Bot } from 'grammy'
 import { IJobHandler } from './job.model'
-import { IJobService } from '../../../services'
+import type { IJobService, IJobVerificationService } from '../../../services'
 import { JobFormatter } from '../../formatters'
 import { TelegramContextType } from '../../telegram.model'
 import { JobDetailsKeyboard } from '../../keyboards'
@@ -13,6 +13,7 @@ export class JobHandler implements IJobHandler {
   constructor(
     private readonly jobService: IJobService,
     private readonly jobRenderer: IJobRenderer,
+    private readonly verificationService?: IJobVerificationService,
   ) {}
 
   register(bot: Bot<TelegramContextType>): void {
@@ -31,7 +32,7 @@ export class JobHandler implements IJobHandler {
       return
     }
 
-    const job = await this.jobService.getJob(jobId)
+    let job = await this.jobService.getJob(jobId)
 
     if (!job) {
       await context.answerCallbackQuery({
@@ -40,10 +41,15 @@ export class JobHandler implements IJobHandler {
       return
     }
 
+    await context.answerCallbackQuery()
+
+    if (this.verificationService) {
+      job = await this.verificationService.verify(job)
+    }
+
     const message = this.jobFormatter.formatDetail(job)
     const keyboard = this.detailsKeyboard.create(job.url, page)
 
-    await context.answerCallbackQuery()
     await context.editMessageText(message, {
       parse_mode: 'HTML',
       reply_markup: keyboard,

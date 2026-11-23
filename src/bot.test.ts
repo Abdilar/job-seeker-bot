@@ -3,8 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 const {
   repositoryInstance,
   jobServiceInstance,
+  verificationServiceInstance,
   repositoryConstructorMock,
   jobServiceConstructorMock,
+  verificationServiceConstructorMock,
+  jobLinkCheckerConstructorMock,
   telegramBotConstructorMock,
   startMock,
   dotenvConfigMock,
@@ -12,10 +15,12 @@ const {
 } = vi.hoisted(() => {
   const repositoryMockInstance = {}
   const jobServiceMockInstance = {}
+  const verificationServiceMockInstance = {}
 
   return {
     repositoryInstance: repositoryMockInstance,
     jobServiceInstance: jobServiceMockInstance,
+    verificationServiceInstance: verificationServiceMockInstance,
 
     repositoryConstructorMock: vi.fn(function () {
       return repositoryMockInstance
@@ -25,7 +30,14 @@ const {
       return jobServiceMockInstance
     }),
 
-    telegramBotConstructorMock: vi.fn<(token: string, jobService: unknown) => void>(),
+    verificationServiceConstructorMock: vi.fn(function () {
+      return verificationServiceMockInstance
+    }),
+
+    jobLinkCheckerConstructorMock: vi.fn<() => void>(),
+
+    telegramBotConstructorMock:
+      vi.fn<(token: string, jobService: unknown, verificationService: unknown) => void>(),
 
     startMock: vi.fn<() => Promise<void>>(),
 
@@ -47,12 +59,21 @@ vi.mock('./repositories', () => ({
 
 vi.mock('./services', () => ({
   JobService: jobServiceConstructorMock,
+  JobVerificationService: verificationServiceConstructorMock,
+}))
+
+vi.mock('./crawlers/verification', () => ({
+  JobLinkChecker: class {
+    constructor() {
+      jobLinkCheckerConstructorMock()
+    }
+  },
 }))
 
 vi.mock('./telegram/telegram.bootstrap', () => ({
   TelegramBot: class {
-    constructor(token: string, jobService: unknown) {
-      telegramBotConstructorMock(token, jobService)
+    constructor(token: string, jobService: unknown, verificationService: unknown) {
+      telegramBotConstructorMock(token, jobService, verificationService)
     }
 
     start(): Promise<void> {
@@ -98,8 +119,20 @@ describe('bot bootstrap', () => {
     expect(jobServiceConstructorMock).toHaveBeenCalledOnce()
     expect(jobServiceConstructorMock).toHaveBeenCalledWith(repositoryInstance)
 
+    expect(verificationServiceConstructorMock).toHaveBeenCalledOnce()
+    expect(verificationServiceConstructorMock).toHaveBeenCalledWith(
+      repositoryInstance,
+      expect.anything(),
+      expect.any(Number),
+    )
+    expect(jobLinkCheckerConstructorMock).toHaveBeenCalledOnce()
+
     expect(telegramBotConstructorMock).toHaveBeenCalledOnce()
-    expect(telegramBotConstructorMock).toHaveBeenCalledWith('test-token', jobServiceInstance)
+    expect(telegramBotConstructorMock).toHaveBeenCalledWith(
+      'test-token',
+      jobServiceInstance,
+      verificationServiceInstance,
+    )
 
     expect(startMock).toHaveBeenCalledOnce()
     expect(process.exitCode).toBeUndefined()
