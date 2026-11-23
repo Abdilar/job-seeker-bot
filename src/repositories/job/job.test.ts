@@ -52,8 +52,10 @@ const prismaJob: Job & { company: Company; location: Location } = {
   provider: PrismaProvider.JOB_IN_JA,
   status: PrismaJobStatus.ACTIVE,
   lastSeenAt: new Date('2026-11-18T10:00:00.000Z'),
+  lastVerifiedAt: null,
   expiredAt: null,
   expiryReason: null,
+  removalReason: null,
   archivedAt: null,
   companyId: company.id,
   company,
@@ -99,6 +101,38 @@ describe('JobRepository status support', () => {
     expect(updateArgs.data.status).toBe(PrismaJobStatus.EXPIRED)
     expect(updateArgs.data.expiredAt).toBeInstanceOf(Date)
     expect(updateArgs.data.expiryReason).toBe('ttl')
+  })
+
+  it('updates the verification fields of an inactive job', async () => {
+    const checkedAt = new Date('2026-11-23T10:00:00.000Z')
+
+    await repository.updateVerification('job-1', {
+      status: EJobStatus.EXPIRED,
+      checkedAt,
+      reason: 'source-expired',
+    })
+
+    expect(jobMock.update).toHaveBeenCalledWith({
+      where: { id: 'job-1' },
+      data: {
+        status: PrismaJobStatus.EXPIRED,
+        lastVerifiedAt: checkedAt,
+        expiredAt: checkedAt,
+        expiryReason: 'source-expired',
+        removalReason: null,
+      },
+    })
+  })
+
+  it('touches the verification time without changing the status', async () => {
+    const checkedAt = new Date('2026-11-23T10:00:00.000Z')
+
+    await repository.touchVerification('job-1', checkedAt)
+
+    expect(jobMock.update).toHaveBeenCalledWith({
+      where: { id: 'job-1' },
+      data: { lastVerifiedAt: checkedAt },
+    })
   })
 
   it('filters the public list to active, non-archived jobs by default', async () => {

@@ -22,8 +22,10 @@ export interface IJob extends ICrawledJob {
   id: string
   status: EJobStatus
   lastSeenAt?: Date
+  lastVerifiedAt?: Date
   expiredAt?: Date
   expiryReason?: string
+  removalReason?: string
   archivedAt?: Date
   createdAt?: Date
   updatedAt?: Date

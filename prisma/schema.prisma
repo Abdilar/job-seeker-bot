@@ -47,8 +47,10 @@ model Job {
   provider       EProvider
   status         EJobStatus @default(ACTIVE)
   lastSeenAt     DateTime?
+  lastVerifiedAt DateTime?
   expiredAt      DateTime?
   expiryReason   String?
+  removalReason  String?
   archivedAt     DateTime?
   companyId      String
   company        Company    @relation(fields: [companyId], references: [id])

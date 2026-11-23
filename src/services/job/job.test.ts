@@ -37,6 +37,8 @@ describe('JobService', () => {
   const findAllMock = vi.fn<IJobRepository['findAll']>()
   const findPaginatedMock = vi.fn<IJobRepository['findPaginated']>()
   const expireOlderThanMock = vi.fn<IJobRepository['expireOlderThan']>()
+  const updateVerificationMock = vi.fn<IJobRepository['updateVerification']>()
+  const touchVerificationMock = vi.fn<IJobRepository['touchVerification']>()
   const existsMock = vi.fn<IJobRepository['exists']>()
   const countMock = vi.fn<IJobRepository['count']>()
 
@@ -50,6 +52,8 @@ describe('JobService', () => {
     findAll: findAllMock,
     findPaginated: findPaginatedMock,
     expireOlderThan: expireOlderThanMock,
+    updateVerification: updateVerificationMock,
+    touchVerification: touchVerificationMock,
     exists: existsMock,
     count: countMock,
   }

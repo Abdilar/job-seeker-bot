@@ -1,6 +1,6 @@
 import type { Prisma } from '@prisma/client'
 import { EJobStatus as EPrismaJobStatus, EProvider as EPrismaProvider } from '@prisma/client'
-import type { IJobRepository, PrismaJobType } from './job.model'
+import type { IJobRepository, IJobVerificationUpdate, PrismaJobType } from './job.model'
 import { prisma } from '../../database/prisma'
 import type { IJob, ICrawledJob, IJobFilter } from '../../types'
 import { EJobStatus, EProvider as EDomainProvider, EContractType } from '../../types'
@@ -96,8 +96,10 @@ export class JobRepository implements IJobRepository {
       provider: domainProviderMap[data.provider],
       status: prismaJobStatusToDomainMap[data.status],
       lastSeenAt: data.lastSeenAt ? new Date(data.lastSeenAt) : undefined,
+      lastVerifiedAt: data.lastVerifiedAt ? new Date(data.lastVerifiedAt) : undefined,
       expiredAt: data.expiredAt ? new Date(data.expiredAt) : undefined,
       expiryReason: data.expiryReason ?? undefined,
+      removalReason: data.removalReason ?? undefined,
       archivedAt: data.archivedAt ? new Date(data.archivedAt) : undefined,
       createdAt: data.createdAt ? new Date(data.createdAt) : undefined,
       updatedAt: data.updatedAt ? new Date(data.updatedAt) : undefined,
@@ -264,6 +266,29 @@ export class JobRepository implements IJobRepository {
     })
 
     return result.count
+  }
+
+  async updateVerification(id: string, update: IJobVerificationUpdate): Promise<void> {
+    const isActive = update.status === EJobStatus.ACTIVE
+    const isRemoved = update.status === EJobStatus.REMOVED
+
+    await prisma.job.update({
+      where: { id },
+      data: {
+        status: jobStatusToPrismaMap[update.status],
+        lastVerifiedAt: update.checkedAt,
+        expiredAt: isActive ? null : update.checkedAt,
+        expiryReason: isActive || isRemoved ? null : (update.reason ?? null),
+        removalReason: isRemoved ? (update.reason ?? null) : null,
+      },
+    })
+  }
+
+  async touchVerification(id: string, checkedAt: Date): Promise<void> {
+    await prisma.job.update({
+      where: { id },
+      data: { lastVerifiedAt: checkedAt },
+    })
   }
 
   async exists(url: string): Promise<boolean> {
