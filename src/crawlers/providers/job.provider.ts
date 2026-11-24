@@ -41,6 +41,6 @@ export abstract class JobProvider {
   }
 
   async closeBrowser(): Promise<void> {
-    // await this.browser?.close()
+    await this.browser?.close()
   }
 }
