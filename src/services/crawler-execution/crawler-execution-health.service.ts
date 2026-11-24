@@ -1,3 +1,4 @@
+import { TEHRAN_TIMEZONE } from '../../constants'
 import { ECrawlerStatus } from '../../types'
 import type {
   ICrawlerExecutionHealthService,
@@ -13,14 +14,14 @@ export class CrawlerExecutionHealthService implements ICrawlerExecutionHealthSer
 
     const now = new Date()
     const today = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'Asia/Tehran',
+      timeZone: TEHRAN_TIMEZONE,
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
     }).format(now)
 
     const currentTime = new Intl.DateTimeFormat('en-GB', {
-      timeZone: 'Asia/Tehran',
+      timeZone: TEHRAN_TIMEZONE,
       hour: '2-digit',
       minute: '2-digit',
       hourCycle: 'h23',
@@ -42,7 +43,7 @@ export class CrawlerExecutionHealthService implements ICrawlerExecutionHealthSer
     }
 
     const executionDate = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'Asia/Tehran',
+      timeZone: TEHRAN_TIMEZONE,
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
