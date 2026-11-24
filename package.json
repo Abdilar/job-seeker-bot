@@ -3,9 +3,10 @@
   "version": "1.4.0",
   "main": "index.js",
   "scripts": {
-    "crawl:job-summery": "tsc & node dist/crawler-job.bootstrap.js --mode=summery --provider=job_in_ja",
-    "crawl:job-detail": "tsc & node dist/crawler-job.bootstrap.js --mode=detail --provider=job_in_ja",
-    "crawl:full": "tsc & node dist/crawler-full.bootstrap.js --mode=full --providers=job_in_ja",
+    "crawl:job-summary": "tsc & node dist/crawler-job.bootstrap.js --job-mode=summary --provider=job_in_ja",
+    "crawl:job-detail": "tsc & node dist/crawler-job.bootstrap.js --job-mode=detail --provider=job_in_ja",
+    "crawl:manual": "tsc & node dist/crawler-manual.bootstrap.js --job-mode=summary --crawl-mode=full --providers=job_in_ja",
+    "crawl:incremental": "tsc & node dist/crawler-incremental.bootstrap.js",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
