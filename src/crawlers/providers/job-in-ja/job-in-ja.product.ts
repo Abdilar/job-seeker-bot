@@ -5,10 +5,10 @@ import type { IJobProvider } from '../job.model'
 import type { IExtractedJob, ICrawledJobDetail } from '../../../types'
 import { EProvider, type IJob, type ICrawledJob } from '../../../types'
 import type { JobParser } from '../../parsers'
-import { JOB_IN_JA_TIMEZONE, JOB_IN_JA_URL, SUMMERY_ELEMENT_SELECTOR } from './job-in-ja.constant'
+import { JOB_IN_JA_URL, SUMMERY_ELEMENT_SELECTOR } from './job-in-ja.constant'
 import { isRecent, randomDelay } from '../../../utilities'
 import { JobExtractionService, type IJobService } from '../../../services'
-import { ECrawlMode } from '../../../constants'
+import { ECrawlMode, TEHRAN_TIMEZONE } from '../../../constants'
 import { DETAIL_ELEMENT_SELECTOR } from '../../parsers/job-in-ja/job-in-ja.constant'
 import { JobExtractionApi } from '../../../api'
 
@@ -98,13 +98,12 @@ export class JobInJaProduct implements IJobProvider {
         console.info(`Jobinja Provider: Fetching page "${page}"`)
         const items = await this.fetchJobs()
         const recentJobs = items.filter(
-          (item) =>
-            !item.postedAt || isRecent(item.postedAt, latestJob?.postedAt, JOB_IN_JA_TIMEZONE),
+          (item) => !item.postedAt || isRecent(item.postedAt, latestJob?.postedAt, TEHRAN_TIMEZONE),
         )
         jobs.push(...recentJobs)
         const lastJob = items.at(-1)
         shouldContinue = lastJob
-          ? !lastJob.postedAt || isRecent(lastJob.postedAt, latestJob?.postedAt, JOB_IN_JA_TIMEZONE)
+          ? !lastJob.postedAt || isRecent(lastJob.postedAt, latestJob?.postedAt, TEHRAN_TIMEZONE)
           : false
         // eslint-disable-next-line no-console
         console.info(`Jobinja Provider: Fetch has been done.`, {
