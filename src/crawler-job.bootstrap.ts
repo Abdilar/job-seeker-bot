@@ -8,7 +8,17 @@ async function run() {
   const args: Partial<CrawlerJobArgumentsType>[] = process.argv
     .filter((arg: string) => arg.startsWith('--'))
     .map((item) => {
-      const key = item.split('=')[0].replaceAll('--', '')
+      const key = item
+        .split('=')[0]
+        .replaceAll('--', '')
+        .split('-')
+        .map((i, index) => {
+          if (index !== 0) {
+            return i[0].toUpperCase() + i.split('').splice(1).join('')
+          }
+          return i
+        })
+        .join('')
       const value = item.split('=')[1].toUpperCase()
 
       return { [key]: value }
@@ -18,7 +28,7 @@ async function run() {
 
   const repository = new JobRepository()
   const jobService = new JobService(repository)
-  const jobMode: ECrawlJobMode = crawlArgs.mode ?? ECrawlJobMode.SUMMARY
+  const jobMode: ECrawlJobMode = crawlArgs.jobMode ?? ECrawlJobMode.SUMMARY
   // eslint-disable-next-line no-console
   console.log({ jobMode, crawlArgs })
   if (jobMode === ECrawlJobMode.SUMMARY) {
@@ -75,10 +85,11 @@ run()
   .then(() => {
     // eslint-disable-next-line no-console
     console.log('Crawler finished successfully')
-    // process.exit(1)
+    process.exit(0)
   })
   .catch((error) => {
     // eslint-disable-next-line no-console
     console.error('Crawler failed:', error)
-    process.exitCode = 1
+    process.exit(1)
   })
+  .finally(() => process.exit(0))
