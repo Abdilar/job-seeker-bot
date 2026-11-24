@@ -19,13 +19,14 @@ export interface ICrawlerExecution {
 export type CrawlerFullArgumentsType =
   | {
       providers?: EProvider[]
-      mode?: ECrawlMode
+      crawlMode?: ECrawlMode
+      jobMode?: ECrawlJobMode
     }
   | Record<string, never>
 
 export type CrawlerJobArgumentsType =
   | {
       provider?: EProvider
-      mode?: ECrawlJobMode
+      jobMode?: ECrawlJobMode
     }
   | Record<string, never>
