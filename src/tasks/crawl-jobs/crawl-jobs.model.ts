@@ -1,3 +1,4 @@
 export interface ICrawlJobsTask {
-  run(): Promise<void>
+  runSummary(): Promise<void>
+  runDetail(): Promise<void>
 }

@@ -8,7 +8,7 @@ export class CrawlJobsTask implements ICrawlJobsTask {
     private readonly providers: JobProvider[],
   ) {}
 
-  async run(): Promise<void> {
+  async runSummary(): Promise<void> {
     for (const provider of this.providers) {
       try {
         const providerName = provider.constructor.name.replaceAll('Creator', '')
@@ -20,6 +20,25 @@ export class CrawlJobsTask implements ICrawlJobsTask {
         await this.jobService.saveAll(jobs)
         // eslint-disable-next-line no-console
         console.log(`All ${providerName} jobs saved successfully`)
+      } finally {
+        await provider.closeBrowser()
+        // eslint-disable-next-line no-console
+        console.log('Browser closed...')
+      }
+    }
+  }
+
+  async runDetail(): Promise<void> {
+    for (const provider of this.providers) {
+      try {
+        const providerName = provider.constructor.name.replaceAll('Creator', '')
+        // eslint-disable-next-line no-console
+        console.log(`Start crawling detail ${providerName} job...`)
+        const jobDetail = await provider.crawlJobDetail()
+        // eslint-disable-next-line no-console
+        console.log(`Finish crawling detail ${providerName}`)
+        // eslint-disable-next-line no-console
+        console.log({ jobDetail: jobDetail.length })
       } finally {
         await provider.closeBrowser()
         // eslint-disable-next-line no-console
