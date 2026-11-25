@@ -1,185 +1,345 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { Bot } from 'grammy'
 import type { IJobService } from '../../../services'
-import { EContractType, EProvider, type IJob } from '../../../types'
+import type { IJob } from '../../../types'
 import type { IJobRenderer } from '../../renders'
 import type { TelegramContextType } from '../../telegram.model'
 import { JobHandler } from './job.handler'
 
-type Handler = (context: TelegramContextType) => Promise<void> | void
+type Handler = (context: TelegramContextType) => Promise<void>
+
+const mocks = vi.hoisted(() => ({
+  command: vi.fn(),
+  callbackQuery: vi.fn(),
+
+  getJob: vi.fn<IJobService['getJob']>(),
+  render: vi.fn<IJobRenderer['render']>(),
+
+  formatDetail: vi.fn(),
+  createDetailsKeyboard: vi.fn(),
+
+  answerCallbackQuery: vi.fn<TelegramContextType['answerCallbackQuery']>(),
+
+  editMessageText: vi.fn<TelegramContextType['editMessageText']>(),
+}))
+
+vi.mock('../../formatters', () => ({
+  JobFormatter: class {
+    formatDetail = mocks.formatDetail
+  },
+}))
+
+vi.mock('../../keyboards', () => ({
+  JobDetailsKeyboard: class {
+    create = mocks.createDetailsKeyboard
+  },
+}))
 
 describe('JobHandler', () => {
-  const getJobMock = vi.fn<IJobService['getJob']>()
-  const renderMock = vi.fn<IJobRenderer['render']>()
+  let handler: JobHandler
+  let bot: Bot<TelegramContextType>
 
-  const jobService = {
-    getJob: getJobMock,
-  } as unknown as IJobService
-
-  const jobRenderer = {
-    render: renderMock,
-  } as IJobRenderer
-
-  const commandMock = vi.fn<(command: string, handler: Handler) => void>()
-
-  const callbackQueryMock = vi.fn<(trigger: RegExp, handler: Handler) => void>()
-
-  const bot = {
-    command: commandMock,
-    callbackQuery: callbackQueryMock,
-  }
-
-  const job: IJob = {
+  const job = {
     id: 'job-1',
-    title: 'Senior Frontend Engineer',
-    url: 'https://example.com/jobs/1',
-    contractType: EContractType.FULL_TIME,
-    provider: EProvider.JOB_IN_JA,
-    salary: '100M',
-    postedAt: new Date('2026-09-20'),
-    company: {
-      fullName: 'Example Company',
-    },
-    location: {
-      country: 'Iran',
-      province: 'Tehran',
+    title: 'Frontend Developer',
+    url: 'https://example.com/jobs/job-1',
+  } as IJob
+
+  const formattedMessage = 'Formatted job details'
+
+  const detailsKeyboard = {
+    inline_keyboard: [],
+  }
+
+  const messageOptions = {
+    parse_mode: 'HTML',
+    reply_markup: detailsKeyboard,
+    link_preview_options: {
+      is_disabled: true,
     },
   }
 
-  const createContext = (overrides: Partial<TelegramContextType> = {}): TelegramContextType =>
-    ({
-      ...overrides,
-    }) as TelegramContextType
+  const createContext = (match?: RegExpMatchArray): TelegramContextType => {
+    return {
+      match,
+      answerCallbackQuery: mocks.answerCallbackQuery,
+      editMessageText: mocks.editMessageText,
+    } as unknown as TelegramContextType
+  }
 
-  const registerHandler = (): void => {
-    const handler = new JobHandler(jobService, jobRenderer)
+  const getCommandHandler = (): Handler => {
+    return mocks.command.mock.calls[0][1] as Handler
+  }
 
-    handler.register(bot as never)
+  const getDetailsHandler = (): Handler => {
+    return mocks.callbackQuery.mock.calls[0][1] as Handler
+  }
+
+  const getPaginationHandler = (): Handler => {
+    return mocks.callbackQuery.mock.calls[1][1] as Handler
   }
 
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.resetAllMocks()
+
+    const jobService = {
+      getJob: mocks.getJob,
+    } as unknown as IJobService
+
+    const jobRenderer: IJobRenderer = {
+      render: mocks.render,
+    }
+
+    bot = {
+      command: mocks.command,
+      callbackQuery: mocks.callbackQuery,
+    } as unknown as Bot<TelegramContextType>
+
+    mocks.getJob.mockResolvedValue(job)
+    mocks.render.mockResolvedValue(undefined)
+
+    mocks.formatDetail.mockReturnValue(formattedMessage)
+    mocks.createDetailsKeyboard.mockReturnValue(detailsKeyboard)
+
+    handler = new JobHandler(jobService, jobRenderer)
+
+    handler.register(bot)
   })
 
-  it('registers jobs command and callback queries', () => {
-    registerHandler()
+  describe('register', () => {
+    it('should register the jobs command', () => {
+      expect(mocks.command).toHaveBeenCalledTimes(1)
 
-    expect(commandMock).toHaveBeenCalledWith('jobs', expect.any(Function))
+      expect(mocks.command).toHaveBeenCalledWith('jobs', expect.any(Function))
+    })
 
-    expect(callbackQueryMock).toHaveBeenCalledTimes(2)
+    it('should register the job details callback query', () => {
+      expect(mocks.callbackQuery).toHaveBeenCalledWith(/^jobs:([^:]+):(\d+)$/, expect.any(Function))
+    })
 
-    expect(callbackQueryMock).toHaveBeenNthCalledWith(
-      1,
-      /^jobs:([^:]+):(\d+)$/,
-      expect.any(Function),
+    it('should register the pagination callback query', () => {
+      expect(mocks.callbackQuery).toHaveBeenCalledWith(/^jobs:(\d+)$/, expect.any(Function))
+    })
+
+    it('should register exactly two callback queries', () => {
+      expect(mocks.callbackQuery).toHaveBeenCalledTimes(2)
+    })
+  })
+
+  describe('jobs command', () => {
+    it('should render the job list', async () => {
+      const context = createContext()
+
+      await getCommandHandler()(context)
+
+      expect(mocks.render).toHaveBeenCalledTimes(1)
+
+      expect(mocks.render).toHaveBeenCalledWith(context)
+    })
+
+    it('should propagate renderer errors', async () => {
+      const context = createContext()
+      const error = new Error('Failed to render jobs')
+
+      mocks.render.mockRejectedValue(error)
+
+      await expect(getCommandHandler()(context)).rejects.toBe(error)
+    })
+  })
+
+  describe('handleDetails', () => {
+    it('should fetch a job using the extracted job ID', async () => {
+      const context = createContext('jobs:job-1:2'.match(/^jobs:([^:]+):(\d+)$/)!)
+
+      await getDetailsHandler()(context)
+
+      expect(mocks.getJob).toHaveBeenCalledTimes(1)
+      expect(mocks.getJob).toHaveBeenCalledWith('job-1')
+    })
+
+    it('should return early when the job ID is missing', async () => {
+      const context = createContext()
+
+      await getDetailsHandler()(context)
+
+      expect(mocks.getJob).not.toHaveBeenCalled()
+      expect(mocks.formatDetail).not.toHaveBeenCalled()
+      expect(mocks.createDetailsKeyboard).not.toHaveBeenCalled()
+      expect(mocks.answerCallbackQuery).not.toHaveBeenCalled()
+      expect(mocks.editMessageText).not.toHaveBeenCalled()
+    })
+
+    it('should answer the callback query when the job is not found', async () => {
+      mocks.getJob.mockResolvedValue(null)
+
+      const context = createContext('jobs:job-1:2'.match(/^jobs:([^:]+):(\d+)$/)!)
+
+      await getDetailsHandler()(context)
+
+      expect(mocks.answerCallbackQuery).toHaveBeenCalledTimes(1)
+
+      expect(mocks.answerCallbackQuery).toHaveBeenCalledWith({
+        text: 'این موقعیت شغلی پیدا نشد.',
+      })
+
+      expect(mocks.formatDetail).not.toHaveBeenCalled()
+      expect(mocks.createDetailsKeyboard).not.toHaveBeenCalled()
+      expect(mocks.editMessageText).not.toHaveBeenCalled()
+    })
+
+    it('should format the job details', async () => {
+      const context = createContext('jobs:job-1:2'.match(/^jobs:([^:]+):(\d+)$/)!)
+
+      await getDetailsHandler()(context)
+
+      expect(mocks.formatDetail).toHaveBeenCalledTimes(1)
+      expect(mocks.formatDetail).toHaveBeenCalledWith(job)
+    })
+
+    it('should create the details keyboard using the job URL and page', async () => {
+      const context = createContext('jobs:job-1:3'.match(/^jobs:([^:]+):(\d+)$/)!)
+
+      await getDetailsHandler()(context)
+
+      expect(mocks.createDetailsKeyboard).toHaveBeenCalledWith(job.url, 3)
+    })
+
+    it('should answer the callback query', async () => {
+      const context = createContext('jobs:job-1:2'.match(/^jobs:([^:]+):(\d+)$/)!)
+
+      await getDetailsHandler()(context)
+
+      expect(mocks.answerCallbackQuery).toHaveBeenCalledTimes(1)
+      expect(mocks.answerCallbackQuery).toHaveBeenCalledWith()
+    })
+
+    it('should edit the message with formatted job details', async () => {
+      const context = createContext('jobs:job-1:2'.match(/^jobs:([^:]+):(\d+)$/)!)
+
+      await getDetailsHandler()(context)
+
+      expect(mocks.editMessageText).toHaveBeenCalledTimes(1)
+
+      expect(mocks.editMessageText).toHaveBeenCalledWith(formattedMessage, messageOptions)
+    })
+
+    it('should answer the callback query before editing the message', async () => {
+      const context = createContext('jobs:job-1:2'.match(/^jobs:([^:]+):(\d+)$/)!)
+
+      await getDetailsHandler()(context)
+
+      expect(mocks.answerCallbackQuery.mock.invocationCallOrder[0]).toBeLessThan(
+        mocks.editMessageText.mock.invocationCallOrder[0],
+      )
+    })
+
+    it.each([1, 2, 5, 10])(
+      'should preserve page %i when creating the details keyboard',
+      async (page) => {
+        const context = createContext(`jobs:job-1:${page}`.match(/^jobs:([^:]+):(\d+)$/)!)
+
+        await getDetailsHandler()(context)
+
+        expect(mocks.createDetailsKeyboard).toHaveBeenCalledWith(job.url, page)
+      },
     )
 
-    expect(callbackQueryMock).toHaveBeenNthCalledWith(2, /^jobs:(\d+)$/, expect.any(Function))
-  })
+    it('should propagate errors from the job service', async () => {
+      const error = new Error('Failed to fetch job')
 
-  it('renders jobs when jobs command is called', async () => {
-    registerHandler()
+      mocks.getJob.mockRejectedValue(error)
 
-    const commandHandler = commandMock.mock.calls[0][1]
-    const context = createContext()
+      const context = createContext('jobs:job-1:2'.match(/^jobs:([^:]+):(\d+)$/)!)
 
-    await commandHandler(context)
+      await expect(getDetailsHandler()(context)).rejects.toBe(error)
 
-    expect(renderMock).toHaveBeenCalledWith(context)
-  })
-
-  it('shows job details', async () => {
-    getJobMock.mockResolvedValue(job)
-
-    registerHandler()
-
-    const detailsHandler = callbackQueryMock.mock.calls[0][1]
-
-    const answerCallbackQueryMock = vi.fn()
-    const editMessageTextMock = vi.fn()
-
-    const context = createContext({
-      match: ['jobs:job-1:3', 'job-1', '3'],
-      answerCallbackQuery: answerCallbackQueryMock,
-      editMessageText: editMessageTextMock,
+      expect(mocks.formatDetail).not.toHaveBeenCalled()
+      expect(mocks.editMessageText).not.toHaveBeenCalled()
     })
 
-    await detailsHandler(context)
+    it('should propagate errors from the formatter', async () => {
+      const error = new Error('Failed to format job')
 
-    expect(getJobMock).toHaveBeenCalledWith('job-1')
-    expect(answerCallbackQueryMock).toHaveBeenCalledOnce()
+      mocks.formatDetail.mockImplementation(() => {
+        throw error
+      })
 
-    expect(editMessageTextMock).toHaveBeenCalledOnce()
+      const context = createContext('jobs:job-1:2'.match(/^jobs:([^:]+):(\d+)$/)!)
 
-    expect(editMessageTextMock).toHaveBeenCalledWith(
-      expect.stringContaining('Senior Frontend Engineer'),
-      expect.anything(),
-    )
+      await expect(getDetailsHandler()(context)).rejects.toBe(error)
+
+      expect(mocks.editMessageText).not.toHaveBeenCalled()
+    })
+
+    it('should propagate errors from editMessageText', async () => {
+      const error = new Error('Failed to edit message')
+
+      mocks.editMessageText.mockRejectedValue(error)
+
+      const context = createContext('jobs:job-1:2'.match(/^jobs:([^:]+):(\d+)$/)!)
+
+      await expect(getDetailsHandler()(context)).rejects.toBe(error)
+    })
   })
 
-  it('answers callback query when job does not exist', async () => {
-    getJobMock.mockResolvedValue(null)
+  describe('showJobs', () => {
+    it('should answer the callback query', async () => {
+      const context = createContext('jobs:2'.match(/^jobs:(\d+)$/)!)
 
-    registerHandler()
+      await getPaginationHandler()(context)
 
-    const detailsHandler = callbackQueryMock.mock.calls[0][1]
-
-    const answerCallbackQueryMock = vi.fn()
-    const editMessageTextMock = vi.fn()
-
-    const context = createContext({
-      match: ['jobs:missing:2', 'missing', '2'],
-      answerCallbackQuery: answerCallbackQueryMock,
-      editMessageText: editMessageTextMock,
+      expect(mocks.answerCallbackQuery).toHaveBeenCalledTimes(1)
+      expect(mocks.answerCallbackQuery).toHaveBeenCalledWith()
     })
 
-    await detailsHandler(context)
+    it('should render the requested page in edit mode', async () => {
+      const context = createContext('jobs:3'.match(/^jobs:(\d+)$/)!)
 
-    expect(getJobMock).toHaveBeenCalledWith('missing')
+      await getPaginationHandler()(context)
 
-    expect(answerCallbackQueryMock).toHaveBeenCalledWith({
-      text: 'این موقعیت شغلی پیدا نشد.',
+      expect(mocks.render).toHaveBeenCalledTimes(1)
+
+      expect(mocks.render).toHaveBeenCalledWith(context, 3, true)
     })
 
-    expect(editMessageTextMock).not.toHaveBeenCalled()
-  })
+    it.each([1, 2, 5, 10])('should render page %i', async (page) => {
+      const context = createContext(`jobs:${page}`.match(/^jobs:(\d+)$/)!)
 
-  it('does nothing when job id is missing', async () => {
-    registerHandler()
+      await getPaginationHandler()(context)
 
-    const detailsHandler = callbackQueryMock.mock.calls[0][1]
-
-    const answerCallbackQueryMock = vi.fn()
-    const editMessageTextMock = vi.fn()
-
-    const context = createContext({
-      match: undefined,
-      answerCallbackQuery: answerCallbackQueryMock,
-      editMessageText: editMessageTextMock,
+      expect(mocks.render).toHaveBeenCalledWith(context, page, true)
     })
 
-    await detailsHandler(context)
+    it('should answer the callback query before rendering', async () => {
+      const context = createContext('jobs:2'.match(/^jobs:(\d+)$/)!)
 
-    expect(getJobMock).not.toHaveBeenCalled()
-    expect(answerCallbackQueryMock).not.toHaveBeenCalled()
-    expect(editMessageTextMock).not.toHaveBeenCalled()
-  })
+      await getPaginationHandler()(context)
 
-  it('renders requested jobs page when pagination callback is called', async () => {
-    registerHandler()
-
-    const paginationHandler = callbackQueryMock.mock.calls[1][1]
-
-    const answerCallbackQueryMock = vi.fn()
-
-    const context = createContext({
-      match: ['jobs:4', '4'],
-      answerCallbackQuery: answerCallbackQueryMock,
+      expect(mocks.answerCallbackQuery.mock.invocationCallOrder[0]).toBeLessThan(
+        mocks.render.mock.invocationCallOrder[0],
+      )
     })
 
-    await paginationHandler(context)
+    it('should not render when answering the callback query fails', async () => {
+      const error = new Error('Failed to answer callback')
 
-    expect(answerCallbackQueryMock).toHaveBeenCalledOnce()
+      mocks.answerCallbackQuery.mockRejectedValue(error)
 
-    expect(renderMock).toHaveBeenCalledWith(context, 4, true)
+      const context = createContext('jobs:2'.match(/^jobs:(\d+)$/)!)
+
+      await expect(getPaginationHandler()(context)).rejects.toBe(error)
+
+      expect(mocks.render).not.toHaveBeenCalled()
+    })
+
+    it('should propagate errors from the renderer', async () => {
+      const error = new Error('Failed to render jobs')
+
+      mocks.render.mockRejectedValue(error)
+
+      const context = createContext('jobs:2'.match(/^jobs:(\d+)$/)!)
+
+      await expect(getPaginationHandler()(context)).rejects.toBe(error)
+    })
   })
 })
