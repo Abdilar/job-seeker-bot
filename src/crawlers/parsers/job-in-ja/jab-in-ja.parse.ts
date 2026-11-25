@@ -10,11 +10,7 @@ import { EEducationLevel, EGender, EProvider, EWorkMode } from '../../../types'
 import { TODAY } from '../../../constants'
 import { LOCATION_COUNTRY } from './job-in-ja.constant'
 import type { IJobParserStrategy } from '../job.model'
-import {
-  convertPersianContractTypeToEContractType,
-  persianNumbersToDigits,
-  toEnglishDigits,
-} from '../../utilities'
+import { convertPersianContractTypeToEContractType, toEnglishDigits } from '../../utilities'
 import { convertDaysAgoToJalaliDate, normalizeText } from '../../../utilities'
 
 export class JobInJaParser implements IJobParserStrategy {
@@ -116,32 +112,37 @@ export class JobInJaParser implements IJobParserStrategy {
 
   private parseExperience(items: Map<string, string[]>): IJobExperience | undefined {
     const experienceData = items.get('حداقل سابقه کار')?.[0]
+
     if (!experienceData || experienceData === 'مهم نیست') {
       return undefined
     }
 
-    if (experienceData.includes('کمتر از')) {
-      const rawData = experienceData.replaceAll('کمتر از', '').replaceAll('سال', '').trim()
-      const max = persianNumbersToDigits(rawData)
-      return {
-        raw: experienceData,
-        maxYears: max,
-      }
-    } else if (experienceData.search(/[\s\u200C]+تا[\s\u200C]+/) !== -1) {
-      const numbers = experienceData.replaceAll('سال', '').trim().split('تا')
+    const numbers = toEnglishDigits(experienceData).match(/\d+/g)?.map(Number) ?? []
 
+    const [first, second] = numbers
+
+    if (first === undefined) {
+      return undefined
+    }
+
+    if (experienceData.includes('کمتر از')) {
       return {
         raw: experienceData,
-        minYears: persianNumbersToDigits(numbers[0]),
-        maxYears: persianNumbersToDigits(numbers[1].trim()),
+        maxYears: first,
       }
-    } else {
-      const rawData = experienceData.replaceAll('بیش از', '').replaceAll('سال', '').trim()
-      const min = persianNumbersToDigits(rawData)
+    }
+
+    if (second !== undefined && experienceData.includes('تا')) {
       return {
         raw: experienceData,
-        minYears: min,
+        minYears: first,
+        maxYears: second,
       }
+    }
+
+    return {
+      raw: experienceData,
+      minYears: first,
     }
   }
 
