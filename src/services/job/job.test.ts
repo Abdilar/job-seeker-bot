@@ -1,102 +1,246 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
-import type { IJobRepository } from '../../repositories'
-import type { ICrawledJob, IJob, IJobFilter } from '../../types'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { EContractType, EProvider } from '../../types'
+import type { ICrawledJob, ICrawledJobDetail, IJob, IJobDetail, IJobFilter } from '../../types'
+import type { IJobRepository } from '../../repositories/job'
 import { JobService } from './job.service'
 
-const createCrawledJob = (overrides: Partial<ICrawledJob> = {}): ICrawledJob => ({
-  title: 'Senior Frontend Engineer',
-  url: 'https://example.com/jobs/123',
-  contractType: EContractType.FULL_TIME,
-  provider: EProvider.JOB_IN_JA,
-  company: {
-    fullName: 'Example Company',
-  },
-  location: {
-    country: 'Iran',
-    province: 'Tehran',
-  },
-  ...overrides,
-})
-
-const createJob = (overrides: Partial<IJob> = {}): IJob => ({
-  ...createCrawledJob(),
-  id: 'job-123',
-  ...overrides,
-})
-
-const findLatestByProviderMock = vi.fn<IJobRepository['findLatestByProvider']>()
-
 describe('JobService', () => {
-  const createMock = vi.fn<IJobRepository['create']>()
-  const createManyMock = vi.fn<IJobRepository['createMany']>()
-  const deleteMock = vi.fn<IJobRepository['delete']>()
-  const findByIdMock = vi.fn<IJobRepository['findById']>()
-  const findByUrlMock = vi.fn<IJobRepository['findByUrl']>()
-  const findAllMock = vi.fn<IJobRepository['findAll']>()
-  const findPaginatedMock = vi.fn<IJobRepository['findPaginated']>()
-  const existsMock = vi.fn<IJobRepository['exists']>()
-  const countMock = vi.fn<IJobRepository['count']>()
+  let service: JobService
 
-  const repository: IJobRepository = {
-    create: createMock,
-    createMany: createManyMock,
-    delete: deleteMock,
-    findById: findByIdMock,
-    findByUrl: findByUrlMock,
-    findLatestByProvider: findLatestByProviderMock,
-    findAll: findAllMock,
-    findPaginated: findPaginatedMock,
-    exists: existsMock,
-    count: countMock,
-  }
+  const repository = {
+    create: vi.fn<IJobRepository['create']>(),
+    createMany: vi.fn<IJobRepository['createMany']>(),
+    updateDetail: vi.fn<IJobRepository['updateDetail']>(),
+    findPaginated: vi.fn<IJobRepository['findPaginated']>(),
+    findJobsWithoutDetail: vi.fn<IJobRepository['findJobsWithoutDetail']>(),
+    findById: vi.fn<IJobRepository['findById']>(),
+    findLatestByProvider: vi.fn<IJobRepository['findLatestByProvider']>(),
+    count: vi.fn<IJobRepository['count']>(),
+    delete: vi.fn<IJobRepository['delete']>(),
+    findByUrl: vi.fn<IJobRepository['findByUrl']>(),
+    findAll: vi.fn<IJobRepository['findAll']>(),
+    exists: vi.fn<IJobRepository['exists']>(),
+  } satisfies IJobRepository
 
-  const service = new JobService(repository)
+  const provider = EProvider.JOB_IN_JA
+  const contractType = EContractType.FULL_TIME
+  const date = new Date('2026-01-01T10:00:00Z')
+
+  const createCrawledJobDetail = (
+    overrides: Partial<ICrawledJobDetail> = {},
+  ): ICrawledJobDetail => ({
+    description: 'Frontend developer job description',
+    category: 'Software Engineering',
+    responsibilities: ['Develop user interfaces'],
+    requirements: ['Experience with React'],
+    preferredQualifications: ['Experience with Next.js'],
+    skills: ['React', 'TypeScript'],
+    benefits: ['Health insurance'],
+    applicationUrl: 'https://example.com/apply/1',
+    ...overrides,
+  })
+
+  const createCrawledJob = (overrides: Partial<ICrawledJob> = {}): ICrawledJob => ({
+    title: 'Frontend Developer',
+    url: 'https://example.com/jobs/1',
+    contractType,
+    provider,
+    postedAt: date,
+    company: {
+      fullName: 'Example Company',
+    },
+    location: {
+      country: 'Iran',
+      province: 'Tehran',
+    },
+    ...overrides,
+  })
+
+  const createJob = (overrides: Partial<IJob> = {}): IJob => ({
+    ...createCrawledJob(),
+    id: 'job-1',
+    createdAt: date,
+    updatedAt: date,
+    detail: undefined,
+    ...overrides,
+  })
+
+  const createJobDetail = (overrides: Partial<IJobDetail> = {}): IJobDetail => ({
+    ...createCrawledJobDetail(),
+    id: 'detail-1',
+    responsibilities: ['Develop user interfaces'],
+    requirements: ['Experience with React'],
+    preferredQualifications: ['Experience with Next.js'],
+    skills: ['React', 'TypeScript'],
+    benefits: ['Health insurance'],
+    ...overrides,
+  })
 
   beforeEach(() => {
     vi.resetAllMocks()
-    createManyMock.mockResolvedValue(undefined)
 
     vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    service = new JobService(repository)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  describe('isValid', () => {
+    it('should return true for a valid job', () => {
+      const job = createCrawledJob()
+
+      expect(service.isValid(job)).toBe(true)
+    })
+
+    it('should return false when the title is empty', () => {
+      const job = createCrawledJob({
+        title: '',
+      })
+
+      expect(service.isValid(job)).toBe(false)
+    })
+
+    it('should return false when the contract type is empty', () => {
+      const job = createCrawledJob({
+        contractType: '' as EContractType,
+      })
+
+      expect(service.isValid(job)).toBe(false)
+    })
+
+    it('should return false when the company name is empty', () => {
+      const job = createCrawledJob({
+        company: {
+          fullName: '',
+        },
+      })
+
+      expect(service.isValid(job)).toBe(false)
+    })
+
+    it('should return false when the country is empty', () => {
+      const job = createCrawledJob({
+        location: {
+          country: '',
+          province: 'Tehran',
+        },
+      })
+
+      expect(service.isValid(job)).toBe(false)
+    })
+
+    it('should return false when the provider is empty', () => {
+      const job = createCrawledJob({
+        provider: '' as EProvider,
+      })
+
+      expect(service.isValid(job)).toBe(false)
+    })
+
+    it.each(['', 'invalid-url', 'example.com/jobs/1', 'https://', '/jobs/1'])(
+      'should return false for an invalid URL: "%s"',
+      (url) => {
+        const job = createCrawledJob({ url })
+
+        expect(service.isValid(job)).toBe(false)
+      },
+    )
+
+    it.each([
+      'https://example.com/jobs/1',
+      'http://example.com/jobs/1',
+      'https://example.com/jobs/1?source=telegram',
+    ])('should return true for a valid URL: "%s"', (url) => {
+      const job = createCrawledJob({ url })
+
+      expect(service.isValid(job)).toBe(true)
+    })
+
+    it('should return false when job data is undefined', () => {
+      expect(service.isValid(undefined as unknown as ICrawledJob)).toBe(false)
+    })
+
+    it('should return true when job details are unavailable', () => {
+      const job = createCrawledJob()
+
+      expect(job.detail).toBeUndefined()
+      expect(service.isValid(job)).toBe(true)
+    })
+
+    it('should not interact with the repository', () => {
+      service.isValid(createCrawledJob())
+
+      expect(repository.create).not.toHaveBeenCalled()
+      expect(repository.createMany).not.toHaveBeenCalled()
+    })
   })
 
   describe('save', () => {
-    it('saves a valid job', async () => {
-      const data = createCrawledJob()
+    it('should save a valid job', async () => {
+      const crawledJob = createCrawledJob()
       const savedJob = createJob()
-      createMock.mockResolvedValue(savedJob)
-      const result = await service.save(data)
 
-      expect(createMock).toHaveBeenCalledExactlyOnceWith(data)
+      repository.create.mockResolvedValue(savedJob)
+
+      const result = await service.save(crawledJob)
+
+      expect(repository.create).toHaveBeenCalledTimes(1)
+      expect(repository.create).toHaveBeenCalledWith(crawledJob)
       expect(result).toEqual(savedJob)
     })
 
-    it('rejects an invalid job without calling repository', async () => {
-      const data = createCrawledJob({ title: '' })
+    it('should not save an invalid job', async () => {
+      const job = createCrawledJob({
+        title: '',
+      })
 
-      await expect(service.save(data)).rejects.toThrow('Failed saving job operation!')
-      expect(createMock).not.toHaveBeenCalled()
+      await expect(service.save(job)).rejects.toThrow('Failed saving job operation!')
+
+      expect(repository.create).not.toHaveBeenCalled()
     })
 
-    it('handles repository errors', async () => {
-      createMock.mockRejectedValue(new Error('Database unavailable'))
+    it('should not save a job with an invalid URL', async () => {
+      const job = createCrawledJob({
+        url: 'invalid-url',
+      })
 
-      await expect(service.save(createCrawledJob())).rejects.toThrow('Failed saving job operation!')
+      await expect(service.save(job)).rejects.toThrow('Failed saving job operation!')
+
+      expect(repository.create).not.toHaveBeenCalled()
+    })
+
+    it('should throw a custom error when the repository fails', async () => {
+      const job = createCrawledJob()
+
+      repository.create.mockRejectedValue(new Error('Database connection failed'))
+
+      await expect(service.save(job)).rejects.toThrow('Failed saving job operation!')
+
+      expect(repository.create).toHaveBeenCalledWith(job)
     })
   })
 
   describe('saveAll', () => {
-    it('saves all valid jobs', async () => {
+    it('should save all jobs when they are valid', async () => {
       const jobs = [
-        createCrawledJob(),
         createCrawledJob({
-          url: 'https://example.com/jobs/456',
+          title: 'Frontend Developer',
+          url: 'https://example.com/jobs/1',
+        }),
+        createCrawledJob({
+          title: 'Backend Developer',
+          url: 'https://example.com/jobs/2',
         }),
       ]
 
       const result = await service.saveAll(jobs)
 
-      expect(createManyMock).toHaveBeenCalledExactlyOnceWith(jobs)
+      expect(repository.createMany).toHaveBeenCalledTimes(1)
+      expect(repository.createMany).toHaveBeenCalledWith(jobs)
+
       expect(result).toEqual({
         total: 2,
         saved: 2,
@@ -104,23 +248,57 @@ describe('JobService', () => {
       })
     })
 
-    it('filters invalid jobs before saving', async () => {
-      const validJob = createCrawledJob()
-      const invalidJob = createCrawledJob({ title: '' })
-      const result = await service.saveAll([validJob, invalidJob])
+    it('should save only valid jobs', async () => {
+      const firstJob = createCrawledJob({
+        title: 'Frontend Developer',
+      })
 
-      expect(createManyMock).toHaveBeenCalledExactlyOnceWith([validJob])
+      const secondJob = createCrawledJob({
+        title: '',
+      })
+
+      const thirdJob = createCrawledJob({
+        title: 'Backend Developer',
+        url: 'https://example.com/jobs/3',
+      })
+
+      const fourthJob = createCrawledJob({
+        url: 'invalid-url',
+      })
+
+      const result = await service.saveAll([firstJob, secondJob, thirdJob, fourthJob])
+
+      expect(repository.createMany).toHaveBeenCalledTimes(1)
+
+      expect(repository.createMany).toHaveBeenCalledWith([firstJob, thirdJob])
+
       expect(result).toEqual({
-        total: 2,
-        saved: 1,
-        failed: 1,
+        total: 4,
+        saved: 2,
+        failed: 2,
       })
     })
 
-    it('handles an empty array', async () => {
+    it('should return zero saved jobs when all jobs are invalid', async () => {
+      const jobs = [createCrawledJob({ title: '' }), createCrawledJob({ url: 'invalid-url' })]
+
+      const result = await service.saveAll(jobs)
+
+      expect(repository.createMany).toHaveBeenCalledWith([])
+
+      expect(result).toEqual({
+        total: 2,
+        saved: 0,
+        failed: 2,
+      })
+    })
+
+    it('should handle an empty jobs array', async () => {
       const result = await service.saveAll([])
 
-      expect(createManyMock).toHaveBeenCalledExactlyOnceWith([])
+      expect(repository.createMany).toHaveBeenCalledTimes(1)
+      expect(repository.createMany).toHaveBeenCalledWith([])
+
       expect(result).toEqual({
         total: 0,
         saved: 0,
@@ -128,99 +306,275 @@ describe('JobService', () => {
       })
     })
 
-    it('propagates repository errors', async () => {
-      createManyMock.mockRejectedValue(new Error('Database unavailable'))
+    it('should preserve the original order of valid jobs', async () => {
+      const firstJob = createCrawledJob({
+        title: 'Job C',
+      })
 
-      await expect(service.saveAll([createCrawledJob()])).rejects.toThrow('Database unavailable')
+      const invalidJob = createCrawledJob({
+        title: '',
+      })
+
+      const secondJob = createCrawledJob({
+        title: 'Job A',
+        url: 'https://example.com/jobs/2',
+      })
+
+      await service.saveAll([firstJob, invalidJob, secondJob])
+
+      expect(repository.createMany).toHaveBeenCalledWith([firstJob, secondJob])
+    })
+
+    it('should not mutate the original jobs array', async () => {
+      const validJob = createCrawledJob()
+      const invalidJob = createCrawledJob({ title: '' })
+
+      const jobs = [validJob, invalidJob]
+      const originalJobs = structuredClone(jobs)
+
+      await service.saveAll(jobs)
+
+      expect(jobs).toEqual(originalJobs)
+    })
+
+    it('should not save jobs individually', async () => {
+      await service.saveAll([createCrawledJob()])
+
+      expect(repository.create).not.toHaveBeenCalled()
+      expect(repository.createMany).toHaveBeenCalledTimes(1)
+    })
+
+    it('should propagate repository errors', async () => {
+      const error = new Error('Failed to save multiple jobs')
+
+      repository.createMany.mockRejectedValue(error)
+
+      await expect(service.saveAll([createCrawledJob()])).rejects.toBe(error)
     })
   })
 
-  describe('isValid', () => {
-    it('accepts a valid job', () => {
-      expect(service.isValid(createCrawledJob())).toBe(true)
+  describe('saveJobDetail', () => {
+    it('should save job details using the specified job ID', async () => {
+      const detail = createJobDetail()
+
+      const updatedJob = createJob({
+        detail: {
+          ...detail,
+          id: 'detail-1',
+        },
+      })
+
+      repository.updateDetail.mockResolvedValue(updatedJob)
+
+      const result = await service.saveJobDetail('job-1', detail)
+
+      expect(repository.updateDetail).toHaveBeenCalledTimes(1)
+
+      expect(repository.updateDetail).toHaveBeenCalledWith('job-1', detail)
+
+      expect(result).toEqual(updatedJob)
     })
 
-    it.each([
-      ['title', { title: '' }],
-      ['contractType', { contractType: undefined }],
-      ['company', { company: { fullName: '' } }],
-      ['location', { location: { country: '' } }],
-      ['provider', { provider: undefined }],
-      ['url', { url: 'invalid-url' }],
-    ])('rejects invalid %s', (_field, overrides) => {
-      const job = createCrawledJob({
-        ...overrides,
-      } as Partial<ReturnType<typeof createCrawledJob>>)
+    it('should return the updated job from the repository', async () => {
+      const detail = createJobDetail()
+      const updatedJob = createJob()
 
-      expect(service.isValid(job)).toBe(false)
+      repository.updateDetail.mockResolvedValue(updatedJob)
+
+      const result = await service.saveJobDetail('job-1', detail)
+
+      expect(result).toBe(updatedJob)
+    })
+
+    it('should throw a custom error when updating details fails', async () => {
+      repository.updateDetail.mockRejectedValue(new Error('Database update failed'))
+
+      await expect(service.saveJobDetail('job-1', createJobDetail())).rejects.toThrow(
+        'Failed updating job detail operation!',
+      )
     })
   })
 
   describe('getJobs', () => {
-    it('forwards pagination and filters', async () => {
-      const jobs = [createJob()]
-      const filter: IJobFilter = {
-        provider: EProvider.JOB_IN_JA,
-      }
-      findPaginatedMock.mockResolvedValue(jobs)
-      const result = await service.getJobs(2, 10, filter)
+    it('should return paginated jobs', async () => {
+      const jobs = [createJob({ id: 'job-1' }), createJob({ id: 'job-2' })]
 
-      expect(findPaginatedMock).toHaveBeenCalledExactlyOnceWith(2, 10, filter)
+      repository.findPaginated.mockResolvedValue(jobs)
+
+      const result = await service.getJobs(1, 10)
+
+      expect(repository.findPaginated).toHaveBeenCalledTimes(1)
+
+      expect(repository.findPaginated).toHaveBeenCalledWith(1, 10, undefined)
+
       expect(result).toEqual(jobs)
+    })
+
+    it('should pass filters to the repository', async () => {
+      const filter: IJobFilter = {
+        contractType,
+        provider,
+      }
+
+      repository.findPaginated.mockResolvedValue([])
+
+      await service.getJobs(2, 10, filter)
+
+      expect(repository.findPaginated).toHaveBeenCalledWith(2, 10, filter)
+    })
+
+    it('should return an empty array when no jobs are found', async () => {
+      repository.findPaginated.mockResolvedValue([])
+
+      const result = await service.getJobs(1, 10)
+
+      expect(result).toEqual([])
+    })
+
+    it('should propagate repository errors', async () => {
+      const error = new Error('Failed to fetch jobs')
+
+      repository.findPaginated.mockRejectedValue(error)
+
+      await expect(service.getJobs(1, 10)).rejects.toBe(error)
+    })
+  })
+
+  describe('getJobsWithoutDetail', () => {
+    it('should return jobs without details for the specified provider', async () => {
+      const jobs = [createJob({ id: 'job-1' }), createJob({ id: 'job-2' })]
+
+      repository.findJobsWithoutDetail.mockResolvedValue(jobs)
+
+      const result = await service.getJobsWithoutDetail(provider)
+
+      expect(repository.findJobsWithoutDetail).toHaveBeenCalledTimes(1)
+
+      expect(repository.findJobsWithoutDetail).toHaveBeenCalledWith(provider)
+
+      expect(result).toEqual(jobs)
+    })
+
+    it('should return an empty array when no jobs are found', async () => {
+      repository.findJobsWithoutDetail.mockResolvedValue([])
+
+      const result = await service.getJobsWithoutDetail(provider)
+
+      expect(result).toEqual([])
+    })
+
+    it('should propagate repository errors', async () => {
+      const error = new Error('Failed to fetch jobs without detail')
+
+      repository.findJobsWithoutDetail.mockRejectedValue(error)
+
+      await expect(service.getJobsWithoutDetail(provider)).rejects.toBe(error)
     })
   })
 
   describe('getJob', () => {
-    it('returns an existing job', async () => {
+    it('should return a job by its ID', async () => {
       const job = createJob()
-      findByIdMock.mockResolvedValue(job)
-      const result = await service.getJob('job-123')
 
-      expect(findByIdMock).toHaveBeenCalledExactlyOnceWith('job-123')
+      repository.findById.mockResolvedValue(job)
+
+      const result = await service.getJob('job-1')
+
+      expect(repository.findById).toHaveBeenCalledTimes(1)
+      expect(repository.findById).toHaveBeenCalledWith('job-1')
+
       expect(result).toEqual(job)
     })
 
-    it('returns null when job does not exist', async () => {
-      findByIdMock.mockResolvedValue(null)
-      const result = await service.getJob('missing-job')
+    it('should return null when the job is not found', async () => {
+      repository.findById.mockResolvedValue(null)
+
+      const result = await service.getJob('unknown-job')
 
       expect(result).toBeNull()
+    })
+
+    it('should propagate repository errors', async () => {
+      const error = new Error('Failed to fetch job')
+
+      repository.findById.mockRejectedValue(error)
+
+      await expect(service.getJob('job-1')).rejects.toBe(error)
     })
   })
 
   describe('getLatestJobByProvider', () => {
-    it('returns the latest job from repository', async () => {
+    it('should return the latest job for the specified provider', async () => {
       const job = createJob()
 
-      findLatestByProviderMock.mockResolvedValue(job)
+      repository.findLatestByProvider.mockResolvedValue(job)
 
-      const result = await service.getLatestJobByProvider(EProvider.JOB_IN_JA)
+      const result = await service.getLatestJobByProvider(provider)
 
-      expect(findLatestByProviderMock).toHaveBeenCalledOnce()
-      expect(findLatestByProviderMock).toHaveBeenCalledWith(EProvider.JOB_IN_JA)
-      expect(result).toBe(job)
+      expect(repository.findLatestByProvider).toHaveBeenCalledTimes(1)
+
+      expect(repository.findLatestByProvider).toHaveBeenCalledWith(provider)
+
+      expect(result).toEqual(job)
     })
 
-    it('returns null when repository returns null', async () => {
-      findLatestByProviderMock.mockResolvedValue(null)
+    it('should return null when no job is found', async () => {
+      repository.findLatestByProvider.mockResolvedValue(null)
 
-      const result = await service.getLatestJobByProvider(EProvider.JOB_IN_JA)
+      const result = await service.getLatestJobByProvider(provider)
 
-      expect(findLatestByProviderMock).toHaveBeenCalledWith(EProvider.JOB_IN_JA)
       expect(result).toBeNull()
+    })
+
+    it('should propagate repository errors', async () => {
+      const error = new Error('Failed to fetch latest job')
+
+      repository.findLatestByProvider.mockRejectedValue(error)
+
+      await expect(service.getLatestJobByProvider(provider)).rejects.toBe(error)
     })
   })
 
   describe('count', () => {
-    it('forwards filters and returns count', async () => {
+    it('should return the total number of jobs', async () => {
+      repository.count.mockResolvedValue(100)
+
+      const result = await service.count()
+
+      expect(repository.count).toHaveBeenCalledTimes(1)
+      expect(repository.count).toHaveBeenCalledWith(undefined)
+
+      expect(result).toBe(100)
+    })
+
+    it('should count jobs using the specified filters', async () => {
       const filter: IJobFilter = {
-        contractType: EContractType.FULL_TIME,
+        contractType,
+        provider,
       }
-      countMock.mockResolvedValue(15)
+
+      repository.count.mockResolvedValue(25)
+
       const result = await service.count(filter)
 
-      expect(countMock).toHaveBeenCalledExactlyOnceWith(filter)
-      expect(result).toBe(15)
+      expect(repository.count).toHaveBeenCalledWith(filter)
+      expect(result).toBe(25)
+    })
+
+    it('should return zero when no jobs are found', async () => {
+      repository.count.mockResolvedValue(0)
+
+      const result = await service.count()
+
+      expect(result).toBe(0)
+    })
+
+    it('should propagate repository errors', async () => {
+      const error = new Error('Failed to count jobs')
+
+      repository.count.mockRejectedValue(error)
+
+      await expect(service.count()).rejects.toBe(error)
     })
   })
 })
