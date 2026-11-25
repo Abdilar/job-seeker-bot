@@ -1,135 +1,295 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ICrawledJob } from '../../types'
-import type { IJobService } from '../../services'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { JobProvider } from '../../crawlers'
+import type { IJobService } from '../../services'
 import { CrawlJobsTask } from './crawl-jobs.task'
 
 describe('CrawlJobsTask', () => {
-  const crawlJobsMock = vi.fn<JobProvider['crawlJobs']>()
-  const closeBrowserMock = vi.fn<JobProvider['closeBrowser']>()
-  const saveAllMock = vi.fn<IJobService['saveAll']>()
+  let task: CrawlJobsTask
 
-  const provider = {
-    crawlJobs: crawlJobsMock,
-    closeBrowser: closeBrowserMock,
-  } as unknown as JobProvider
+  const createProvider = () => ({
+    crawlJobs: vi.fn<JobProvider['crawlJobs']>(),
+    crawlJobDetail: vi.fn<JobProvider['crawlJobDetail']>(),
+    closeBrowser: vi.fn<JobProvider['closeBrowser']>(),
+  })
+
+  const firstProvider = createProvider()
+  const secondProvider = createProvider()
 
   const jobService = {
-    saveAll: saveAllMock,
-  } as unknown as IJobService
+    saveAll: vi.fn<IJobService['saveAll']>(),
+  }
 
-  const task = new CrawlJobsTask(jobService, [provider])
+  const firstProviderJobs = [
+    {
+      title: 'Frontend Developer',
+      url: 'https://example.com/jobs/1',
+    },
+  ] as Awaited<ReturnType<JobProvider['crawlJobs']>>
+
+  const secondProviderJobs = [
+    {
+      title: 'Backend Developer',
+      url: 'https://example.com/jobs/2',
+    },
+  ] as Awaited<ReturnType<JobProvider['crawlJobs']>>
+
+  const createTask = (
+    providers: ReturnType<typeof createProvider>[] = [firstProvider, secondProvider],
+  ): CrawlJobsTask => {
+    return new CrawlJobsTask(
+      jobService as unknown as IJobService,
+      providers as unknown as JobProvider[],
+    )
+  }
 
   beforeEach(() => {
     vi.resetAllMocks()
-    crawlJobsMock.mockResolvedValue([])
-    closeBrowserMock.mockResolvedValue(undefined)
-    saveAllMock.mockResolvedValue({
-      total: 0,
-      saved: 0,
-      failed: 0,
-    })
+
     vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    firstProvider.crawlJobs.mockResolvedValue(firstProviderJobs)
+    secondProvider.crawlJobs.mockResolvedValue(secondProviderJobs)
+
+    firstProvider.crawlJobDetail.mockResolvedValue([])
+    secondProvider.crawlJobDetail.mockResolvedValue([])
+
+    firstProvider.closeBrowser.mockResolvedValue(undefined)
+    secondProvider.closeBrowser.mockResolvedValue(undefined)
+
+    task = createTask()
   })
 
-  describe('Successful execution', () => {
-    it('crawls and saves jobs', async () => {
-      const jobs: ICrawledJob[] = []
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
 
-      crawlJobsMock.mockResolvedValue(jobs)
-      await task.run()
+  describe('runSummary', () => {
+    it('should crawl jobs from all providers', async () => {
+      await task.runSummary()
 
-      expect(crawlJobsMock).toHaveBeenCalledOnce()
-      expect(saveAllMock).toHaveBeenCalledExactlyOnceWith(jobs)
-      expect(closeBrowserMock).toHaveBeenCalledOnce()
+      expect(firstProvider.crawlJobs).toHaveBeenCalledTimes(1)
+      expect(secondProvider.crawlJobs).toHaveBeenCalledTimes(1)
     })
 
-    it('closes browser after saving jobs', async () => {
-      await task.run()
-      const saveOrder = saveAllMock.mock.invocationCallOrder[0]
-      const closeOrder = closeBrowserMock.mock.invocationCallOrder[0]
+    it('should save crawled jobs from each provider', async () => {
+      await task.runSummary()
 
-      expect(saveOrder).toBeLessThan(closeOrder)
+      expect(jobService.saveAll).toHaveBeenCalledTimes(2)
+
+      expect(jobService.saveAll).toHaveBeenNthCalledWith(1, firstProviderJobs)
+
+      expect(jobService.saveAll).toHaveBeenNthCalledWith(2, secondProviderJobs)
     })
 
-    it('handles empty jobs', async () => {
-      crawlJobsMock.mockResolvedValue([])
-      await task.run()
+    it('should close the browser of each provider', async () => {
+      await task.runSummary()
 
-      expect(saveAllMock).toHaveBeenCalledExactlyOnceWith([])
-      expect(closeBrowserMock).toHaveBeenCalledOnce()
+      expect(firstProvider.closeBrowser).toHaveBeenCalledTimes(1)
+      expect(secondProvider.closeBrowser).toHaveBeenCalledTimes(1)
     })
 
-    it('does nothing when no providers exist', async () => {
-      const emptyTask = new CrawlJobsTask(jobService, [])
-      await expect(emptyTask.run()).resolves.toBeUndefined()
+    it('should process providers sequentially', async () => {
+      await task.runSummary()
 
-      expect(crawlJobsMock).not.toHaveBeenCalled()
-      expect(saveAllMock).not.toHaveBeenCalled()
+      expect(firstProvider.closeBrowser.mock.invocationCallOrder[0]).toBeLessThan(
+        secondProvider.crawlJobs.mock.invocationCallOrder[0],
+      )
+    })
+
+    it('should save jobs before closing the browser', async () => {
+      task = createTask([firstProvider])
+
+      await task.runSummary()
+
+      expect(firstProvider.crawlJobs.mock.invocationCallOrder[0]).toBeLessThan(
+        jobService.saveAll.mock.invocationCallOrder[0],
+      )
+
+      expect(jobService.saveAll.mock.invocationCallOrder[0]).toBeLessThan(
+        firstProvider.closeBrowser.mock.invocationCallOrder[0],
+      )
+    })
+
+    it('should save an empty array when no jobs are crawled', async () => {
+      task = createTask([firstProvider])
+
+      firstProvider.crawlJobs.mockResolvedValue([])
+
+      await task.runSummary()
+
+      expect(jobService.saveAll).toHaveBeenCalledTimes(1)
+      expect(jobService.saveAll).toHaveBeenCalledWith([])
+      expect(firstProvider.closeBrowser).toHaveBeenCalledTimes(1)
+    })
+
+    it('should do nothing when providers are empty', async () => {
+      task = createTask([])
+
+      await task.runSummary()
+
+      expect(jobService.saveAll).not.toHaveBeenCalled()
+      expect(firstProvider.crawlJobs).not.toHaveBeenCalled()
+      expect(secondProvider.crawlJobs).not.toHaveBeenCalled()
+    })
+
+    it('should not crawl job details', async () => {
+      await task.runSummary()
+
+      expect(firstProvider.crawlJobDetail).not.toHaveBeenCalled()
+      expect(secondProvider.crawlJobDetail).not.toHaveBeenCalled()
+    })
+
+    it('should close the browser when crawling fails', async () => {
+      const error = new Error('Failed to crawl jobs')
+
+      firstProvider.crawlJobs.mockRejectedValue(error)
+
+      await expect(task.runSummary()).rejects.toBe(error)
+
+      expect(firstProvider.closeBrowser).toHaveBeenCalledTimes(1)
+      expect(jobService.saveAll).not.toHaveBeenCalled()
+    })
+
+    it('should close the browser when saving jobs fails', async () => {
+      const error = new Error('Failed to save jobs')
+
+      jobService.saveAll.mockRejectedValue(error)
+
+      await expect(task.runSummary()).rejects.toBe(error)
+
+      expect(firstProvider.crawlJobs).toHaveBeenCalledTimes(1)
+      expect(firstProvider.closeBrowser).toHaveBeenCalledTimes(1)
+    })
+
+    it('should not process subsequent providers when crawling fails', async () => {
+      firstProvider.crawlJobs.mockRejectedValue(new Error('Failed to crawl jobs'))
+
+      await expect(task.runSummary()).rejects.toThrow('Failed to crawl jobs')
+
+      expect(firstProvider.closeBrowser).toHaveBeenCalledTimes(1)
+
+      expect(secondProvider.crawlJobs).not.toHaveBeenCalled()
+      expect(secondProvider.closeBrowser).not.toHaveBeenCalled()
+    })
+
+    it('should not process subsequent providers when saving fails', async () => {
+      jobService.saveAll.mockRejectedValue(new Error('Failed to save jobs'))
+
+      await expect(task.runSummary()).rejects.toThrow('Failed to save jobs')
+
+      expect(firstProvider.closeBrowser).toHaveBeenCalledTimes(1)
+      expect(secondProvider.crawlJobs).not.toHaveBeenCalled()
+    })
+
+    it('should propagate errors from closeBrowser', async () => {
+      const error = new Error('Failed to close browser')
+
+      firstProvider.closeBrowser.mockRejectedValue(error)
+
+      await expect(task.runSummary()).rejects.toBe(error)
+
+      expect(jobService.saveAll).toHaveBeenCalledWith(firstProviderJobs)
+
+      expect(secondProvider.crawlJobs).not.toHaveBeenCalled()
     })
   })
 
-  describe('Failed execution', () => {
-    it('closes browser when crawling fails', async () => {
-      const error = new Error('Crawler failed')
-      crawlJobsMock.mockRejectedValue(error)
-      await expect(task.run()).rejects.toThrow('Crawler failed')
+  describe('runDetail', () => {
+    it('should crawl job details from all providers', async () => {
+      await task.runDetail()
 
-      expect(saveAllMock).not.toHaveBeenCalled()
-      expect(closeBrowserMock).toHaveBeenCalledOnce()
+      expect(firstProvider.crawlJobDetail).toHaveBeenCalledTimes(1)
+      expect(secondProvider.crawlJobDetail).toHaveBeenCalledTimes(1)
     })
 
-    it('closes browser when saving jobs fails', async () => {
-      const error = new Error('Database unavailable')
-      saveAllMock.mockRejectedValue(error)
+    it('should close the browser of each provider', async () => {
+      await task.runDetail()
 
-      await expect(task.run()).rejects.toThrow('Database unavailable')
-      expect(closeBrowserMock).toHaveBeenCalledOnce()
+      expect(firstProvider.closeBrowser).toHaveBeenCalledTimes(1)
+      expect(secondProvider.closeBrowser).toHaveBeenCalledTimes(1)
     })
 
-    it('propagates browser closing errors', async () => {
-      closeBrowserMock.mockRejectedValue(new Error('Failed to close browser'))
+    it('should process providers sequentially', async () => {
+      await task.runDetail()
 
-      await expect(task.run()).rejects.toThrow('Failed to close browser')
-    })
-  })
-
-  describe('Multiple providers', () => {
-    const secondCrawlJobsMock = vi.fn<JobProvider['crawlJobs']>()
-    const secondCloseBrowserMock = vi.fn<JobProvider['closeBrowser']>()
-    const secondProvider = {
-      crawlJobs: secondCrawlJobsMock,
-      closeBrowser: secondCloseBrowserMock,
-    } as unknown as JobProvider
-
-    const multiProviderTask = new CrawlJobsTask(jobService, [provider, secondProvider])
-
-    beforeEach(() => {
-      secondCrawlJobsMock.mockReset()
-      secondCloseBrowserMock.mockReset()
-
-      secondCrawlJobsMock.mockResolvedValue([])
-      secondCloseBrowserMock.mockResolvedValue(undefined)
+      expect(firstProvider.closeBrowser.mock.invocationCallOrder[0]).toBeLessThan(
+        secondProvider.crawlJobDetail.mock.invocationCallOrder[0],
+      )
     })
 
-    it('executes providers sequentially', async () => {
-      await multiProviderTask.run()
+    it('should crawl job details before closing the browser', async () => {
+      task = createTask([firstProvider])
 
-      expect(crawlJobsMock).toHaveBeenCalledOnce()
-      expect(secondCrawlJobsMock).toHaveBeenCalledOnce()
+      await task.runDetail()
 
-      const firstCloseOrder = closeBrowserMock.mock.invocationCallOrder[0]
-      const secondCrawlOrder = secondCrawlJobsMock.mock.invocationCallOrder[0]
-
-      expect(firstCloseOrder).toBeLessThan(secondCrawlOrder)
+      expect(firstProvider.crawlJobDetail.mock.invocationCallOrder[0]).toBeLessThan(
+        firstProvider.closeBrowser.mock.invocationCallOrder[0],
+      )
     })
 
-    it('stops execution when first provider fails', async () => {
-      crawlJobsMock.mockRejectedValue(new Error('First provider failed'))
+    it('should handle an empty job details array', async () => {
+      task = createTask([firstProvider])
 
-      await expect(multiProviderTask.run()).rejects.toThrow('First provider failed')
-      expect(closeBrowserMock).toHaveBeenCalledOnce()
-      expect(secondCrawlJobsMock).not.toHaveBeenCalled()
+      firstProvider.crawlJobDetail.mockResolvedValue([])
+
+      await expect(task.runDetail()).resolves.toBeUndefined()
+
+      expect(firstProvider.closeBrowser).toHaveBeenCalledTimes(1)
+    })
+
+    it('should do nothing when providers are empty', async () => {
+      task = createTask([])
+
+      await task.runDetail()
+
+      expect(firstProvider.crawlJobDetail).not.toHaveBeenCalled()
+      expect(secondProvider.crawlJobDetail).not.toHaveBeenCalled()
+      expect(jobService.saveAll).not.toHaveBeenCalled()
+    })
+
+    it('should not crawl job summaries', async () => {
+      await task.runDetail()
+
+      expect(firstProvider.crawlJobs).not.toHaveBeenCalled()
+      expect(secondProvider.crawlJobs).not.toHaveBeenCalled()
+    })
+
+    it('should not call saveAll', async () => {
+      await task.runDetail()
+
+      expect(jobService.saveAll).not.toHaveBeenCalled()
+    })
+
+    it('should close the browser when crawling job details fails', async () => {
+      const error = new Error('Failed to crawl job details')
+
+      firstProvider.crawlJobDetail.mockRejectedValue(error)
+
+      await expect(task.runDetail()).rejects.toBe(error)
+
+      expect(firstProvider.closeBrowser).toHaveBeenCalledTimes(1)
+    })
+
+    it('should not process subsequent providers when crawling fails', async () => {
+      firstProvider.crawlJobDetail.mockRejectedValue(new Error('Failed to crawl job details'))
+
+      await expect(task.runDetail()).rejects.toThrow('Failed to crawl job details')
+
+      expect(firstProvider.closeBrowser).toHaveBeenCalledTimes(1)
+
+      expect(secondProvider.crawlJobDetail).not.toHaveBeenCalled()
+      expect(secondProvider.closeBrowser).not.toHaveBeenCalled()
+    })
+
+    it('should propagate errors from closeBrowser', async () => {
+      const error = new Error('Failed to close browser')
+
+      firstProvider.closeBrowser.mockRejectedValue(error)
+
+      await expect(task.runDetail()).rejects.toBe(error)
+
+      expect(firstProvider.crawlJobDetail).toHaveBeenCalledTimes(1)
+      expect(secondProvider.crawlJobDetail).not.toHaveBeenCalled()
     })
   })
 })
