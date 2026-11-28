@@ -1,7 +1,7 @@
 import { Bot, session } from 'grammy'
 import type { ITelegramBot, ITelegramSession, TelegramContextType } from './telegram.model'
 import { JobHandler, JobFilterHandler, StartHandler } from './handlers'
-import type { IJobService } from '../services'
+import type { IJobService, IJobVerificationService } from '../services'
 import type { IJobRenderer } from './renders'
 import { JobRenderer } from './renders'
 
@@ -11,6 +11,7 @@ export class TelegramBot implements ITelegramBot {
   constructor(
     token: string,
     private readonly jobService: IJobService,
+    private readonly verificationService?: IJobVerificationService,
   ) {
     this.bot = new Bot<TelegramContextType>(token)
     this.bot.use(
@@ -28,7 +29,7 @@ export class TelegramBot implements ITelegramBot {
     const jobRenderer: IJobRenderer = new JobRenderer(this.jobService)
     new StartHandler().register(this.bot)
 
-    new JobHandler(this.jobService, jobRenderer).register(this.bot)
+    new JobHandler(this.jobService, jobRenderer, this.verificationService).register(this.bot)
     new JobFilterHandler(jobRenderer).register(this.bot)
   }
 

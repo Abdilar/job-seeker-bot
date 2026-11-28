@@ -8,6 +8,8 @@ const {
   executionRepositoryInstance,
   executionServiceInstance,
   crawlJobsTaskInstance,
+  jobExpirationServiceInstance,
+  expireJobsTaskInstance,
 
   jobRepositoryConstructorMock,
   jobServiceConstructorMock,
@@ -16,10 +18,14 @@ const {
   executionRepositoryConstructorMock,
   executionServiceConstructorMock,
   crawlJobsTaskConstructorMock,
+  jobExpirationServiceConstructorMock,
+  expireJobsTaskConstructorMock,
   schedulerConstructorMock,
+  jobExpirationSchedulerConstructorMock,
 
   recoverInterruptedExecutionsMock,
   schedulerStartMock,
+  jobExpirationSchedulerStartMock,
   consoleLogMock,
   consoleErrorMock,
 } = vi.hoisted(() => {
@@ -28,14 +34,14 @@ const {
   const jobInJaCreatorMockInstance = {}
   const jobVisionCreatorMockInstance = {}
   const executionRepositoryMockInstance = {}
-
+  const jobExpirationServiceMockInstance = {}
+  const expireJobsTaskMockInstance = {}
   const recoverMock = vi.fn<() => Promise<number>>()
   const startMock = vi.fn<() => void>()
-
+  const jobExpirationStartMock = vi.fn<() => void>()
   const executionServiceMockInstance = {
     recoverInterruptedExecutions: recoverMock,
   }
-
   const crawlJobsTaskMockInstance = {}
 
   return {
@@ -46,28 +52,25 @@ const {
     executionRepositoryInstance: executionRepositoryMockInstance,
     executionServiceInstance: executionServiceMockInstance,
     crawlJobsTaskInstance: crawlJobsTaskMockInstance,
+    jobExpirationServiceInstance: jobExpirationServiceMockInstance,
+    expireJobsTaskInstance: expireJobsTaskMockInstance,
 
     jobRepositoryConstructorMock: vi.fn<() => void>(),
-
     jobServiceConstructorMock: vi.fn<(repository: unknown) => void>(),
-
     jobInJaCreatorConstructorMock: vi.fn<(jobService: unknown) => void>(),
-
     jobVisionCreatorConstructorMock: vi.fn<(jobService: unknown) => void>(),
-
     executionRepositoryConstructorMock: vi.fn<() => void>(),
-
     executionServiceConstructorMock: vi.fn<(repository: unknown) => void>(),
-
     crawlJobsTaskConstructorMock: vi.fn<(jobService: unknown, providers: unknown[]) => void>(),
-
+    jobExpirationServiceConstructorMock: vi.fn<(repository: unknown) => void>(),
+    expireJobsTaskConstructorMock: vi.fn<(service: unknown, options: unknown) => void>(),
     schedulerConstructorMock: vi.fn<(task: unknown, executionService: unknown) => void>(),
+    jobExpirationSchedulerConstructorMock: vi.fn<(task: unknown) => void>(),
 
     recoverInterruptedExecutionsMock: recoverMock,
     schedulerStartMock: startMock,
-
+    jobExpirationSchedulerStartMock: jobExpirationStartMock,
     consoleLogMock: vi.fn<(message: string) => void>(),
-
     consoleErrorMock: vi.fn<(message: string, error?: unknown) => void>(),
   }
 })
@@ -124,6 +127,14 @@ vi.mock('./services', () => ({
       return executionServiceInstance
     }
   },
+
+  JobExpirationService: class {
+    constructor(repository: unknown) {
+      jobExpirationServiceConstructorMock(repository)
+
+      return jobExpirationServiceInstance
+    }
+  },
 }))
 
 vi.mock('./tasks', () => ({
@@ -132,6 +143,14 @@ vi.mock('./tasks', () => ({
       crawlJobsTaskConstructorMock(jobService, providers)
 
       return crawlJobsTaskInstance
+    }
+  },
+
+  ExpireJobsTask: class {
+    constructor(service: unknown, options: unknown) {
+      expireJobsTaskConstructorMock(service, options)
+
+      return expireJobsTaskInstance
     }
   },
 }))
@@ -143,6 +162,16 @@ vi.mock('./scheduler', () => ({
 
       return {
         start: schedulerStartMock,
+      }
+    }
+  },
+
+  JobExpirationScheduler: class {
+    constructor(expireJobsTask: unknown) {
+      jobExpirationSchedulerConstructorMock(expireJobsTask)
+
+      return {
+        start: jobExpirationSchedulerStartMock,
       }
     }
   },
@@ -166,7 +195,7 @@ describe('crawler bootstrap', () => {
     process.exitCode = undefined
   })
 
-  it('creates crawler dependencies and starts scheduler', async () => {
+  it('creates crawler dependencies and starts both schedulers', async () => {
     await import('./crawler-incremental.bootstrap.js')
 
     await vi.waitFor(() => {
@@ -174,43 +203,34 @@ describe('crawler bootstrap', () => {
     })
 
     expect(jobRepositoryConstructorMock).toHaveBeenCalledOnce()
-
     expect(jobServiceConstructorMock).toHaveBeenCalledWith(jobRepositoryInstance)
-
-    expect(jobInJaCreatorConstructorMock).toHaveBeenCalledOnce()
-
     expect(jobInJaCreatorConstructorMock).toHaveBeenCalledWith(jobServiceInstance)
-
-    expect(jobVisionCreatorConstructorMock).toHaveBeenCalledOnce()
-
     expect(jobVisionCreatorConstructorMock).toHaveBeenCalledWith(jobServiceInstance)
-
     expect(executionRepositoryConstructorMock).toHaveBeenCalledOnce()
-
     expect(executionServiceConstructorMock).toHaveBeenCalledWith(executionRepositoryInstance)
-
     expect(crawlJobsTaskConstructorMock).toHaveBeenCalledWith(jobServiceInstance, [
       jobInJaCreatorInstance,
       jobVisionCreatorInstance,
     ])
-
+    expect(jobExpirationServiceConstructorMock).toHaveBeenCalledWith(jobRepositoryInstance)
+    expect(expireJobsTaskConstructorMock).toHaveBeenCalledWith(
+      jobExpirationServiceInstance,
+      expect.any(Object),
+    )
     expect(schedulerConstructorMock).toHaveBeenCalledWith(
       crawlJobsTaskInstance,
       executionServiceInstance,
     )
-
+    expect(jobExpirationSchedulerConstructorMock).toHaveBeenCalledWith(expireJobsTaskInstance)
     expect(recoverInterruptedExecutionsMock).toHaveBeenCalledOnce()
-
     expect(schedulerStartMock).toHaveBeenCalledOnce()
-
+    expect(jobExpirationSchedulerStartMock).toHaveBeenCalledOnce()
     expect(consoleLogMock).toHaveBeenCalledWith('Recovered 2 interrupted crawler executions')
-
     expect(consoleLogMock).toHaveBeenCalledWith('Crawler scheduler started successfully!')
-
     expect(process.exitCode).toBeUndefined()
   })
 
-  it('recovers interrupted executions before starting scheduler', async () => {
+  it('recovers interrupted executions before starting the crawler scheduler', async () => {
     const executionOrder: string[] = []
 
     recoverInterruptedExecutionsMock.mockImplementation(async () => {
@@ -232,7 +252,7 @@ describe('crawler bootstrap', () => {
     expect(executionOrder).toEqual(['recover', 'start'])
   })
 
-  it('does not start scheduler when recovery fails', async () => {
+  it('does not start schedulers when recovery fails', async () => {
     const error = new Error('Recovery failed')
 
     recoverInterruptedExecutionsMock.mockRejectedValue(error)
@@ -244,7 +264,7 @@ describe('crawler bootstrap', () => {
     })
 
     expect(schedulerStartMock).not.toHaveBeenCalled()
-
+    expect(jobExpirationSchedulerStartMock).not.toHaveBeenCalled()
     expect(consoleErrorMock).toHaveBeenCalledWith('Crawler bootstrap failed:', error)
   })
 })

@@ -1,6 +1,6 @@
 import { IJob } from '../../../types'
 import { toJalali } from '../../../utilities'
-import { CONTRACT_TYPE_MAP, PAGINATION_LIMIT, PROVIDER_MAP } from '../../constants'
+import { CONTRACT_TYPE_MAP, JOB_STATUS_MAP, PAGINATION_LIMIT, PROVIDER_MAP } from '../../constants'
 import { IJobFormatter } from './job.model'
 
 export class JobFormatter implements IJobFormatter {
@@ -21,6 +21,8 @@ ${CONTRACT_TYPE_MAP[job.contractType]}
   }
 
   formatDetail(job: IJob): string {
+    const statusMessage = JOB_STATUS_MAP[job.status]
+
     return `
 <b>💼 ${job.title}</b>
 
@@ -35,8 +37,7 @@ ${CONTRACT_TYPE_MAP[job.contractType]}
 
 📅 تاریخ انتشار: <b>${toJalali(job.postedAt ?? new Date())}</b>
 
-
-🌐 منبع: <b>${PROVIDER_MAP[job.provider]}</b>
+${statusMessage ? `${statusMessage}\n\n` : ''}🌐 منبع: <b>${PROVIDER_MAP[job.provider]}</b>
     `.trim()
   }
 }

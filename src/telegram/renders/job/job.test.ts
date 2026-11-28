@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { EContractType, EProvider, type IJob } from '../../../types'
+import { EContractType, EJobStatus, EProvider, type IJob } from '../../../types'
 import type { IJobService } from '../../../services'
 import { PAGINATION_LIMIT } from '../../constants'
 import { JobRenderer } from '.'
@@ -19,6 +19,7 @@ describe('JobRenderer', () => {
     url: 'https://example.com/jobs/1',
     contractType: EContractType.FULL_TIME,
     provider: EProvider.JOB_IN_JA,
+    status: EJobStatus.ACTIVE,
     company: {
       fullName: 'Example Company',
     },

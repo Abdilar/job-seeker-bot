@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { IJobService } from '../../../services'
-import { EContractType, EProvider, type IJob } from '../../../types'
+import type { IJobService, IJobVerificationService } from '../../../services'
+import { EContractType, EJobStatus, EProvider, type IJob } from '../../../types'
 import type { IJobRenderer } from '../../renders'
 import type { TelegramContextType } from '../../telegram.model'
 import { JobHandler } from './job.handler'
@@ -34,6 +34,7 @@ describe('JobHandler', () => {
     url: 'https://example.com/jobs/1',
     contractType: EContractType.FULL_TIME,
     provider: EProvider.JOB_IN_JA,
+    status: EJobStatus.ACTIVE,
     salary: '100M',
     postedAt: new Date('2026-09-20'),
     company: {
@@ -112,6 +113,35 @@ describe('JobHandler', () => {
 
     expect(editMessageTextMock).toHaveBeenCalledWith(
       expect.stringContaining('Senior Frontend Engineer'),
+      expect.anything(),
+    )
+  })
+
+  it('verifies the job before showing its details', async () => {
+    getJobMock.mockResolvedValue(job)
+    const verifyMock = vi
+      .fn<IJobVerificationService['verify']>()
+      .mockResolvedValue({ ...job, status: EJobStatus.EXPIRED })
+
+    const handler = new JobHandler(jobService, jobRenderer, {
+      verify: verifyMock,
+    } as unknown as IJobVerificationService)
+    handler.register(bot as never)
+
+    const detailsHandler = callbackQueryMock.mock.calls[0][1]
+    const editMessageTextMock = vi.fn()
+
+    await detailsHandler(
+      createContext({
+        match: ['jobs:job-1:3', 'job-1', '3'],
+        answerCallbackQuery: vi.fn(),
+        editMessageText: editMessageTextMock,
+      }),
+    )
+
+    expect(verifyMock).toHaveBeenCalledWith(job)
+    expect(editMessageTextMock).toHaveBeenCalledWith(
+      expect.stringContaining('این آگهی منقضی شده است'),
       expect.anything(),
     )
   })

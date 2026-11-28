@@ -1,9 +1,9 @@
 import type { Prisma } from '@prisma/client'
-import { EProvider as EPrismaProvider } from '@prisma/client'
-import type { IJobRepository, PrismaJobType } from './job.model'
+import { EJobStatus as EPrismaJobStatus, EProvider as EPrismaProvider } from '@prisma/client'
+import type { IJobRepository, IJobVerificationUpdate, PrismaJobType } from './job.model'
 import { prisma } from '../../database/prisma'
 import type { IJob, ICrawledJob, IJobFilter } from '../../types'
-import { EProvider as EDomainProvider, EContractType } from '../../types'
+import { EJobStatus, EProvider as EDomainProvider, EContractType } from '../../types'
 import { chunk } from '../../utilities'
 
 const prismaProviderMap: Record<EDomainProvider, EPrismaProvider> = {
@@ -37,12 +37,27 @@ const contractTypeMap: Record<string, EContractType> = {
   [EContractType.PART_TIME]: EContractType.PART_TIME,
 }
 
+const jobStatusToPrismaMap: Record<EJobStatus, EPrismaJobStatus> = {
+  [EJobStatus.ACTIVE]: EPrismaJobStatus.ACTIVE,
+  [EJobStatus.EXPIRED]: EPrismaJobStatus.EXPIRED,
+  [EJobStatus.CLOSED]: EPrismaJobStatus.CLOSED,
+  [EJobStatus.REMOVED]: EPrismaJobStatus.REMOVED,
+}
+
+const prismaJobStatusToDomainMap: Record<EPrismaJobStatus, EJobStatus> = {
+  [EPrismaJobStatus.ACTIVE]: EJobStatus.ACTIVE,
+  [EPrismaJobStatus.EXPIRED]: EJobStatus.EXPIRED,
+  [EPrismaJobStatus.CLOSED]: EJobStatus.CLOSED,
+  [EPrismaJobStatus.REMOVED]: EJobStatus.REMOVED,
+}
+
 export class JobRepository implements IJobRepository {
   private convertICrawledJobToJobCreateInput(data: ICrawledJob): Prisma.JobCreateInput {
     return {
       ...data,
       salary: data.salary ?? null,
       postedAt: data.postedAt ?? null,
+      lastSeenAt: new Date(),
       provider: prismaProviderMap[data.provider],
       company: {
         connectOrCreate: {
@@ -79,6 +94,13 @@ export class JobRepository implements IJobRepository {
       contractType: contractTypeMap[data.contractType],
       postedAt: data.postedAt ? new Date(data.postedAt) : undefined,
       provider: domainProviderMap[data.provider],
+      status: prismaJobStatusToDomainMap[data.status],
+      lastSeenAt: data.lastSeenAt ? new Date(data.lastSeenAt) : undefined,
+      lastVerifiedAt: data.lastVerifiedAt ? new Date(data.lastVerifiedAt) : undefined,
+      expiredAt: data.expiredAt ? new Date(data.expiredAt) : undefined,
+      expiryReason: data.expiryReason ?? undefined,
+      removalReason: data.removalReason ?? undefined,
+      archivedAt: data.archivedAt ? new Date(data.archivedAt) : undefined,
       createdAt: data.createdAt ? new Date(data.createdAt) : undefined,
       updatedAt: data.updatedAt ? new Date(data.updatedAt) : undefined,
       salary: data.salary ?? undefined,
@@ -99,6 +121,7 @@ export class JobRepository implements IJobRepository {
         contractType: data.contractType,
         salary: data.salary,
         postedAt: data.postedAt,
+        lastSeenAt: new Date(),
       },
       include: {
         company: true,
@@ -135,6 +158,7 @@ export class JobRepository implements IJobRepository {
               contractType: job.contractType,
               salary: job.salary,
               postedAt: job.postedAt,
+              lastSeenAt: new Date(),
             },
           }),
         )
@@ -227,6 +251,46 @@ export class JobRepository implements IJobRepository {
     return jobs.map((job) => this.convertPrismaJobToIJob(job))
   }
 
+  async expireOlderThan(cutoff: Date): Promise<number> {
+    const result = await prisma.job.updateMany({
+      where: {
+        status: EPrismaJobStatus.ACTIVE,
+        archivedAt: null,
+        postedAt: { lt: cutoff },
+      },
+      data: {
+        status: EPrismaJobStatus.EXPIRED,
+        expiredAt: new Date(),
+        expiryReason: 'ttl',
+      },
+    })
+
+    return result.count
+  }
+
+  async updateVerification(id: string, update: IJobVerificationUpdate): Promise<void> {
+    const isActive = update.status === EJobStatus.ACTIVE
+    const isRemoved = update.status === EJobStatus.REMOVED
+
+    await prisma.job.update({
+      where: { id },
+      data: {
+        status: jobStatusToPrismaMap[update.status],
+        lastVerifiedAt: update.checkedAt,
+        expiredAt: isActive ? null : update.checkedAt,
+        expiryReason: isActive || isRemoved ? null : (update.reason ?? null),
+        removalReason: isRemoved ? (update.reason ?? null) : null,
+      },
+    })
+  }
+
+  async touchVerification(id: string, checkedAt: Date): Promise<void> {
+    await prisma.job.update({
+      where: { id },
+      data: { lastVerifiedAt: checkedAt },
+    })
+  }
+
   async exists(url: string): Promise<boolean> {
     const job = await prisma.job.findUnique({
       where: { url },
@@ -242,9 +306,13 @@ export class JobRepository implements IJobRepository {
   }
 
   private toWhereInput(filter?: IJobFilter): Prisma.JobWhereInput {
+    const status = filter?.status ?? EJobStatus.ACTIVE
+
     return {
       ...(filter?.contractType && { contractType: filter.contractType }),
-      ...(filter?.provider && { provider: filter.provider }),
+      ...(filter?.provider && { provider: prismaProviderMap[filter.provider] }),
+      status: jobStatusToPrismaMap[status],
+      ...(filter?.includeArchived ? {} : { archivedAt: null }),
     }
   }
 }

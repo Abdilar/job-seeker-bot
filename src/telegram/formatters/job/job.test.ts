@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { EContractType, EProvider, type IJob } from '../../../types'
+import { EContractType, EJobStatus, EProvider, type IJob } from '../../../types'
 import { JobFormatter } from './job.formatter'
 import { PAGINATION_LIMIT } from '../../constants'
 
@@ -9,6 +9,7 @@ const createJob = (overrides: Partial<IJob> = {}): IJob => ({
   url: 'https://example.com/jobs/1',
   contractType: EContractType.FULL_TIME,
   provider: EProvider.JOB_IN_JA,
+  status: EJobStatus.ACTIVE,
   salary: '50 میلیون تومان',
   postedAt: new Date('2026-09-20T10:00:00.000Z'),
   company: {
@@ -84,6 +85,18 @@ describe('JobFormatter', () => {
 
       const result = formatter.formatDetail(job)
       expect(result).toContain('💰 حقوق: <b>نامشخص</b>')
+    })
+
+    it('does not show a status line for an active job', () => {
+      const result = formatter.formatDetail(createJob({ status: EJobStatus.ACTIVE }))
+
+      expect(result).not.toContain('این آگهی منقضی شده است')
+    })
+
+    it('shows the status line for an inactive job', () => {
+      const result = formatter.formatDetail(createJob({ status: EJobStatus.EXPIRED }))
+
+      expect(result).toContain('⛔ این آگهی منقضی شده است.')
     })
   })
 })

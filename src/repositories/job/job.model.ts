@@ -1,9 +1,15 @@
 import type { Company, Job, Location } from '@prisma/client'
-import type { EProvider, ICrawledJob, IJob, IJobFilter } from '../../types'
+import type { EProvider, EJobStatus, ICrawledJob, IJob, IJobFilter } from '../../types'
 
 export type PrismaJobType = Job & {
   company: Company
   location: Location
+}
+
+export interface IJobVerificationUpdate {
+  status: EJobStatus
+  checkedAt: Date
+  reason?: string
 }
 
 export interface IJobRepository {
@@ -15,6 +21,9 @@ export interface IJobRepository {
   findLatestByProvider(provider: EProvider): Promise<IJob | null>
   findAll(): Promise<IJob[]>
   findPaginated(page: number, limit: number, filter?: IJobFilter): Promise<IJob[]>
+  expireOlderThan(cutoff: Date): Promise<number>
+  updateVerification(id: string, update: IJobVerificationUpdate): Promise<void>
+  touchVerification(id: string, checkedAt: Date): Promise<void>
   exists(url: string): Promise<boolean>
   count(filter?: IJobFilter): Promise<number>
 }
